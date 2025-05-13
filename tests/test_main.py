@@ -4,9 +4,11 @@ from pathlib import Path
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "main.py"
 
+
 def test_console_output():
     result = subprocess.run([sys.executable, SRC], capture_output=True, text=True)
     assert result.stdout.strip() == "Hello, World!"
+
 
 def test_exit_code_and_single_line():
     """Le script doit quitter avec un code 0 et n’afficher qu’une ligne."""
