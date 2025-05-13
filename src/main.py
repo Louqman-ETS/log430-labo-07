@@ -2,7 +2,7 @@ import os
 
 
 def main() -> None:
-    msg = os.getenv("MESSAGE", "Hello, World!")
+    msg = os.getenv("MESSAGE", "Hello, World!!")
     print(msg)
 
 
