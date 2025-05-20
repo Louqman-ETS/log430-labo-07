@@ -1,8 +1,8 @@
-# LOG430 - Labo 0
+# LOG430 - Labo 01
 
 ## Description du projet
 
-Ce projet est une introduction aux concepts de gestion de configuration et d'intégration continue dans le cadre du cours LOG430. Il s'agit d'un laboratoire visant à mettre en pratique les notions de CI/CD, de gestion de versions et d'automatisation des builds.
+Ce projet est réalisé dans le cadre du cours LOG430 – Architecture Logicielle à l’ÉTS. Il consiste à développer un système de caisse simple pour un petit magasin de quartier, en utilisant une architecture client/serveur à deux niveaux (2-tier).
 
 ## Instructions de build et d’exécution
 
