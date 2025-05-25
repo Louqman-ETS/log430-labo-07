@@ -1,84 +1,148 @@
-# LOG430 - Labo 01
+# Système de Caisse de Magasin - LOG430 Laboratoire 1
 
-## Description du projet
+Application Python console conforme au laboratoire 1 du cours LOG430.
 
-Ce projet est réalisé dans le cadre du cours LOG430 – Architecture Logicielle à l’ÉTS. Il consiste à développer un système de caisse simple pour un petit magasin de quartier, en utilisant une architecture client/serveur à deux niveaux (2-tier).
+## Description
 
-## Instructions de build et d’exécution
+Ce système simule une caisse de magasin avec une architecture client/serveur où:
+- Le client est une application console Python
+- Le serveur est une base de données SQLite locale accédée via SQLAlchemy
+- Les données sont persistantes grâce à un volume Docker dédié
 
-### Prérequis
-| Outil | Version conseillée | Rôle |
-|-------|-------------------|------|
-| Python | ≥ 3.13 | Exécution locale & tests |
-| Docker | ≥ 24 | Conteneurisation |
-| Git | ≥ 2.40 | Gestion de version |
-|VS Code | – | IDE prêt pour Docker |
+L'application permet de:
+- Sélectionner une des 3 caisses disponibles
+- Créer des ventes (transactions)
+- Rechercher des produits par ID, nom, code ou catégorie
+- Gérer des transactions simultanées de manière cohérente
+- Effectuer des retours de produits
+- Conserver les données entre les redémarrages
 
-### Étapes pour construire le projet
+## Structure du projet
 
-1. Clonez le dépôt :
-     ```bash
-     git clone https://github.com/Louqman-ETS/log430-labo-0.git
-     cd log430-labo-0
-     ```
-     
-### Exécution sans Docker
+```
+src/
+  ├── models.py    - Définition des entités (Produit, Categorie, etc.)
+  ├── db.py        - Configuration de la base de données SQLite
+  ├── dao.py       - Couche d'accès aux données
+  ├── service.py   - Logique métier et services
+  ├── main.py      - Application console
+  └── create_db.py - Script d'initialisation de la base de données
+```
 
-1. Lancez l'application :
-     ```bash
-     python src/main.py
-     ```
-     
-### Build & run avec Docker
+## Prérequis
 
-1. Construction de l’image :
-    ```bash
-     docker build -t hello-cli .
-     ```
+- Python 3.6+
+- SQLAlchemy
+- SQLite
 
-2. Exécution éphémère :
-   ```bash
-     docker run --rm hello-cli
+Ou alternativement:
+- Docker et Docker Compose
+
+## Installation
+
+### Installation standard
+
+1. Clonez ce dépôt:
    ```
-### Orchestration avec Docker Compose
-
-1. lance le service "hello" :
-    ```bash
-     docker compose up --build 
-    ```
-
-3. arrêt + suppression du conteneur :
-
-   ```bash
-     docker compose down
+   git clone [URL_DU_DEPOT]
+   cd log430-labo-01
    ```
 
-## Fonctionnement de la CI/CD
+2. Créez un environnement virtuel et activez-le:
+   ```
+   python -m venv .venv
+   source .venv/bin/activate  # Sur Linux/macOS
+   # ou
+   .venv\Scripts\activate     # Sur Windows
+   ```
 
-| Étape               | Outils                   | Description                                                                    |
-| ------------------- | ------------------------ | ------------------------------------------------------------------------------ |
-| **Lint**            | Black –check, Pylint     | Vérifie la conformité stylistique et repère les erreurs potentielles.          |
-| **Tests unitaires** | Pytest                   | Exécute deux tests sur la sortie du script et son code de retour.              |
-| **Build Docker**    | docker/build‑push‑action | Construit l’image à partir du `Dockerfile`.                                    |
-| **Push Docker Hub** | docker/login‑action      | Publie les tags `latest` et `SHA court` vers `docker.io/louqmas/log430-labo-0`. |
+3. Installez les dépendances:
+   ```
+   pip install -r requirements.txt
+   ```
 
-> Les identifiants Docker Hub sont fournis au workflow via deux secrets du dépôt :
-> DOCKERHUB_USERNAME et DOCKERHUB_TOKEN.
+4. Initialisez la base de données:
+   ```
+   python -m src.create_db
+   ```
 
-> Le fichier de configuration CI/CD se trouve dans `.github/workflows/ci.yml` .
+### Installation avec Docker
 
-## Choix techniques
+1. Clonez ce dépôt:
+   ```
+   git clone [URL_DU_DEPOT]
+   cd log430-labo-01
+   ```
 
-| Élément                | Justification                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------- |
-| **Python**             | Langage simple ; parfait pour démontrer la chaîne CI/CD sans surcharge.               |
-| **Docker (Slim 3.13)** | Isolation de l’app.                                                                   |
-| **Docker Compose**     | Point d’entrée unique ; permettra d’ajouter d’autres services.                        |
-| **GitHub Actions**     | Intégration native avec GitHub ; gratuit pour projets publics.                        |
-| **Black**              | Formatage automatique, déterministe.                                                  |
-| **Pylint**             | Analyse statique : noms incohérents, imports inutiles, etc.                           |
-| **Pytest**             | Syntaxe concise, exécution rapide.                                                    |
+2. Construisez l'image Docker:
+   ```
+   docker compose build
+   ```
 
-## Auteurs
+## Utilisation
 
-- Louqman Masbahi
+### Lancement standard
+
+1. Activez l'environnement virtuel:
+   ```
+   source .venv/bin/activate  # Sur Linux/macOS
+   # ou
+   .venv\Scripts\activate     # Sur Windows
+   ```
+
+2. Lancez l'application:
+   ```
+   python -m src.main
+   ```
+
+### Lancement avec Docker
+
+Pour lancer l'application en mode interactif (recommandé):
+```
+docker compose run --rm caisse-app
+```
+
+Cette commande lance l'application dans votre terminal et vous permet d'interagir directement avec elle. Les données sont automatiquement persistées dans un volume Docker nommé `db-data`.
+
+Pour lancer l'application en arrière-plan:
+```
+docker compose up -d
+```
+
+Pour voir les logs:
+```
+docker logs caisse-magasin
+```
+
+Pour arrêter l'application:
+```
+docker compose down
+```
+
+Note: L'option `--rm` n'est plus nécessaire car les données sont maintenant persistées dans le volume Docker.
+
+## Fonctionnalités
+
+- **Recherche de produits**: Par ID, nom, code ou catégorie
+- **Gestion des ventes**: Création, ajout de produits, finalisation
+- **Retour de produits**: Permet de retourner des produits vendus (mise à jour du stock)
+- **Catégories prédéfinies**: Alimentaire, Boissons, Hygiène, Ménage
+- **Transactions**: Garantit la cohérence des données même lors de ventes simultanées
+
+## Architecture
+
+L'application utilise une architecture en couches:
+- **Présentation**: Interface console dans `main.py`
+- **Logique métier**: Services dans `service.py`
+- **Accès aux données**: DAO dans `dao.py`
+- **Modèles**: Entités dans `models.py`
+- **Persistance**: Configuration SQLAlchemy dans `db.py`
+
+## Considérations techniques
+
+- Les transactions sont gérées via SQLAlchemy pour assurer la cohérence des données
+- Le système est conçu pour gérer plusieurs caisses travaillant en parallèle
+- La base de données est initialisée avec des données de test uniquement si elle est vide
+- Les données sont persistantes entre les redémarrages grâce au volume Docker
+- La base de données utilise le mode WAL (Write-Ahead Logging) de SQLite pour une meilleure performance et fiabilité
+- Utilisation de Docker pour faciliter le déploiement et garantir un environnement consistant

@@ -1,8 +1,11 @@
-version: "3.9"
-
 services:
-  hello:
+  caisse-app:
     build: .
-    container_name: hello-cli
-    environment:
-      - MESSAGE=Hello, World!
+    container_name: caisse-magasin
+    stdin_open: true  # docker run -i
+    tty: true        # docker run -t
+    volumes:
+      - db-data:/app/data
+
+volumes:
+  db-data:
