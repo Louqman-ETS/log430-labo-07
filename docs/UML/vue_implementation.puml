@@ -1,0 +1,134 @@
+@startuml Vue Implémentation
+
+' Définition des styles
+skinparam component {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    FontColor Black
+}
+
+skinparam package {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    FontColor Black
+}
+
+' Définition des composants
+package "src/" {
+    ' Couche de présentation
+    component "main.py" as Main {
+        interface "Interface utilisateur"
+    }
+    
+    ' Couche métier
+    component "service.py" as Service {
+        interface "ProduitService"
+        interface "CategorieService"
+        interface "VenteService"
+    }
+    
+    ' Couche d'accès aux données
+    component "dao.py" as DAO {
+        interface "ProduitDAO"
+        interface "CategorieDAO"
+        interface "VenteDAO"
+        interface "CaisseDAO"
+    }
+    
+    ' Modèles et configuration
+    component "models.py" as Models {
+        interface "Entités ORM"
+    }
+    
+    component "db.py" as DB {
+        interface "Base"
+        interface "SessionLocal"
+    }
+    
+    component "create_db.py" as CreateDB {
+        interface "Initialisation BD"
+    }
+}
+
+package "tests/" as TestsPackage {
+    component "test_models.py" as TestModels
+    component "test_dao.py" as TestDAO
+    component "test_service.py" as TestService
+    component "test_integration.py" as TestIntegration
+    component "run_tests.py" as RunTests
+}
+
+' Définition des relations entre composants
+Main --> Service : "utilise"
+Service --> DAO : "utilise"
+DAO --> Models : "utilise"
+DAO --> DB : "utilise"
+Models --> DB : "utilise"
+CreateDB --> Models : "utilise"
+CreateDB --> DB : "utilise"
+
+TestModels --> Models : "teste"
+TestDAO --> DAO : "teste"
+TestDAO --> Models : "utilise"
+TestService --> Service : "teste"
+TestService --> DAO : "utilise"
+TestIntegration --> Main : "teste"
+TestIntegration --> Service : "utilise"
+RunTests --> TestModels : "exécute"
+RunTests --> TestDAO : "exécute"
+RunTests --> TestService : "exécute"
+RunTests --> TestIntegration : "exécute"
+
+' Organisation visuelle
+Main -[hidden]-> Service
+Service -[hidden]-> DAO
+DAO -[hidden]-> Models
+Models -[hidden]-> DB
+DB -[hidden]-> CreateDB
+
+' Affichage de notes avec informations additionnelles
+note right of Main
+  Menu principal et sous-menus
+  Gestion des entrées utilisateur
+  Formatage des résultats
+end note
+
+note right of Service
+  Encapsulation de la logique métier
+  Validation des règles métier
+  Gestion des transactions
+end note
+
+note right of DAO
+  Abstraction de l'accès BD
+  Opérations CRUD
+  Requêtes SQL via SQLAlchemy
+end note
+
+note right of Models
+  Définition des entités
+  Mappings ORM
+  Relations entre tables
+end note
+
+note bottom of TestsPackage
+  Tests unitaires et d'intégration
+  Découverte automatique des tests
+end note
+
+' Ajouter un titre et une légende
+title Organisation des modules - Système de Caisse
+
+legend right
+  <b>Vue Implémentation - Structure des Composants</b>
+  
+  Ce diagramme illustre l'organisation modulaire
+  du système et le flux des dépendances entre les composants.
+  
+  L'architecture suit un modèle en couches:
+  - Présentation (main.py)
+  - Logique métier (service.py)
+  - Accès aux données (dao.py, models.py, db.py)
+endlegend
+
+@enduml 
