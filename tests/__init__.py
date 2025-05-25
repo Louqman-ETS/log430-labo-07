@@ -1,1 +1,1 @@
-# Package de tests du système de caisse de magasin 
+# Package de tests du système de caisse de magasin

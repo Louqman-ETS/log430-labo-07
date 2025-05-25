@@ -9,10 +9,8 @@ os.makedirs("data", exist_ok=True)
 DATABASE_URL = "sqlite:///data/store.db"
 
 # Créer le moteur avec les paramètres appropriés
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 
 # Configuration des paramètres SQLite pour une meilleure gestion des erreurs
 @event.listens_for(engine, "connect")
@@ -23,13 +21,15 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA temp_store=MEMORY")
     cursor.close()
 
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
     try:
         return db
     finally:
-        db.close() 
+        db.close()
