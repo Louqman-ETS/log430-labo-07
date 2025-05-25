@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  IMAGE_NAME: log430-labo-0
+  IMAGE_NAME: log430-labo-01
   REGISTRY: docker.io
   DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
   PYTHONPATH: ./src
