@@ -1,148 +1,141 @@
-# Système de Caisse de Magasin - LOG430 Laboratoire 1
+# Système de Caisse de Magasin - LOG430
 
-Application Python console conforme au laboratoire 1 du cours LOG430.
-
-## Description
-
-Ce système simule une caisse de magasin avec une architecture client/serveur où:
-- Le client est une application console Python
-- Le serveur est une base de données SQLite locale accédée via SQLAlchemy
-- Les données sont persistantes grâce à un volume Docker dédié
-
-L'application permet de:
-- Sélectionner une des 3 caisses disponibles
-- Créer des ventes (transactions)
-- Rechercher des produits par ID, nom, code ou catégorie
-- Gérer des transactions simultanées de manière cohérente
-- Effectuer des retours de produits
-- Conserver les données entre les redémarrages
-
-## Structure du projet
-
-```
-src/
-  ├── models.py    - Définition des entités (Produit, Categorie, etc.)
-  ├── db.py        - Configuration de la base de données SQLite
-  ├── dao.py       - Couche d'accès aux données
-  ├── service.py   - Logique métier et services
-  ├── main.py      - Application console
-  └── create_db.py - Script d'initialisation de la base de données
-```
-
-## Prérequis
-
-- Python 3.6+
-- SQLAlchemy
-- SQLite
-
-Ou alternativement:
-- Docker et Docker Compose
-
-## Installation
-
-### Installation standard
-
-1. Clonez ce dépôt:
-   ```
-   git clone [URL_DU_DEPOT]
-   cd log430-labo-01
-   ```
-
-2. Créez un environnement virtuel et activez-le:
-   ```
-   python -m venv .venv
-   source .venv/bin/activate  # Sur Linux/macOS
-   # ou
-   .venv\Scripts\activate     # Sur Windows
-   ```
-
-3. Installez les dépendances:
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. Initialisez la base de données:
-   ```
-   python -m src.create_db
-   ```
-
-### Installation avec Docker
-
-1. Clonez ce dépôt:
-   ```
-   git clone [URL_DU_DEPOT]
-   cd log430-labo-01
-   ```
-
-2. Construisez l'image Docker:
-   ```
-   docker compose build
-   ```
-
-## Utilisation
-
-### Lancement standard
-
-1. Activez l'environnement virtuel:
-   ```
-   source .venv/bin/activate  # Sur Linux/macOS
-   # ou
-   .venv\Scripts\activate     # Sur Windows
-   ```
-
-2. Lancez l'application:
-   ```
-   python -m src.main
-   ```
-
-### Lancement avec Docker
-
-Pour lancer l'application en mode interactif (recommandé):
-```
-docker compose run --rm caisse-app
-```
-
-Cette commande lance l'application dans votre terminal et vous permet d'interagir directement avec elle. Les données sont automatiquement persistées dans un volume Docker nommé `db-data`.
-
-Pour lancer l'application en arrière-plan:
-```
-docker compose up -d
-```
-
-Pour voir les logs:
-```
-docker logs caisse-magasin
-```
-
-Pour arrêter l'application:
-```
-docker compose down
-```
-
-Note: L'option `--rm` n'est plus nécessaire car les données sont maintenant persistées dans le volume Docker.
-
-## Fonctionnalités
-
-- **Recherche de produits**: Par ID, nom, code ou catégorie
-- **Gestion des ventes**: Création, ajout de produits, finalisation
-- **Retour de produits**: Permet de retourner des produits vendus (mise à jour du stock)
-- **Catégories prédéfinies**: Alimentaire, Boissons, Hygiène, Ménage
-- **Transactions**: Garantit la cohérence des données même lors de ventes simultanées
+Application de caisse de magasin avec architecture client/serveur 2-tier utilisant PostgreSQL.
 
 ## Architecture
 
-L'application utilise une architecture en couches:
-- **Présentation**: Interface console dans `main.py`
-- **Logique métier**: Services dans `service.py`
-- **Accès aux données**: DAO dans `dao.py`
-- **Modèles**: Entités dans `models.py`
-- **Persistance**: Configuration SQLAlchemy dans `db.py`
+```
+┌─────────────────┐    ┌─────────────────┐
+│   PC Client     │    │    Serveur      │
+│                 │    │                 │
+│  Application    │◄──►│   PostgreSQL    │
+│  Python Console │    │   Base données  │
+└─────────────────┘    └─────────────────┘
+```
 
-## Considérations techniques
+- **Client** : Application Python console interactive
+- **Serveur** : Base de données PostgreSQL
+- **Communication** : SQLAlchemy ORM + psycopg2
 
-- Les transactions sont gérées via SQLAlchemy pour assurer la cohérence des données
-- Le système est conçu pour gérer plusieurs caisses travaillant en parallèle
-- La base de données est initialisée avec des données de test uniquement si elle est vide
-- Les données sont persistantes entre les redémarrages grâce au volume Docker
-- La base de données utilise le mode WAL (Write-Ahead Logging) de SQLite pour une meilleure performance et fiabilité
-- Utilisation de Docker pour faciliter le déploiement et garantir un environnement consistant
+## Structure du Projet
+
+```
+src/
+├── main.py          # Point d'entrée de l'application
+├── db.py            # Configuration base de données
+├── models.py        # Modèles SQLAlchemy (tables)
+├── dao.py           # Accès aux données
+├── service.py       # Logique métier
+└── create_db.py     # Initialisation données
+
+docker-compose.yml         # Déploiement local (dev)
+docker-compose.server.yml  # Serveur PostgreSQL uniquement
+docker-compose.client.yml  # Application uniquement
+```
+
+## Déploiement
+
+### Option 1: Local (Développement)
+
+```bash
+# Tout sur la même machine
+docker-compose up --build
+docker exec -it caisse-magasin python -m src.main
+```
+
+### Option 2: Distribué (Production)
+
+#### Sur le Serveur (Base de données)
+
+```bash
+# Démarrer PostgreSQL
+docker-compose -f docker-compose.server.yml up -d
+
+# Vérifier
+docker-compose -f docker-compose.server.yml ps
+```
+
+#### Sur le PC Client (Application)
+
+```bash
+# 1. Modifier docker-compose.client.yml
+# Remplacer SERVER_IP par l'IP réelle du serveur
+
+# 2. Démarrer l'application
+docker-compose -f docker-compose.client.yml up -d
+
+# 3. Utiliser l'application
+docker exec -it caisse-magasin-client python -m src.main
+```
+
+## Configuration
+
+### Variables d'environnement
+
+```env
+DATABASE_URL=postgresql://user:password@HOST:5432/store_db
+POOL_SIZE=5
+MAX_OVERFLOW=10
+```
+
+### Connexion Base de Données
+
+- **Host** : IP du serveur PostgreSQL
+- **Port** : 5432
+- **Database** : store_db
+- **User** : user
+- **Password** : password
+
+## Utilisation
+
+### Menu Principal
+
+1. Sélectionner une caisse (1, 2 ou 3)
+2. Nouvelle vente
+3. Ajouter produits (recherche par nom/code/ID)
+4. Finaliser vente (génère reçu)
+5. Retour de produits
+6. Recherche produits par catégorie
+
+### Données Pré-chargées
+
+- **4 catégories** : Alimentaire, Boissons, Hygiène, Ménage
+- **25+ produits** avec codes, prix et stock
+- **3 caisses** disponibles
+
+## Tests
+
+```bash
+# Démarrer PostgreSQL
+docker-compose up -d db
+
+# Lancer les tests
+export DATABASE_URL="postgresql://user:password@localhost:5432/store_db"
+python -m tests.run_tests
+```
+
+## Commandes Utiles
+
+```bash
+# Voir les conteneurs
+docker-compose ps
+
+# Logs
+docker-compose logs caisse-app
+docker-compose logs db
+
+# Arrêter
+docker-compose down
+
+# Reset complet (supprime données)
+docker-compose down -v
+
+# Accès direct PostgreSQL
+docker exec -it log430-labo-01_db_1 psql -U user -d store_db
+```
+
+## Dépendances
+
+- **SQLAlchemy 2.0.23** - ORM
+- **psycopg2-binary 2.9.9** - Driver PostgreSQL
+- **python-dotenv 1.0.0** - Variables d'environnement

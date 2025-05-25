@@ -1,21 +1,12 @@
 import os
 from sqlalchemy.orm import Session
-import sqlite3  # ou votre système de base de données
 
 from src.db import engine, Base, SessionLocal
 from src.models import Categorie, Produit, Caisse
 
 
-def ensure_data_directory():
-    if not os.path.exists("data"):
-        os.makedirs("data")
-
-
 def initialize_db():
     """Initialise la base de données et crée les tables"""
-    # Créer le dossier data s'il n'existe pas
-    os.makedirs("data", exist_ok=True)
-
     # Créer les tables seulement si elles n'existent pas
     Base.metadata.create_all(bind=engine)
 

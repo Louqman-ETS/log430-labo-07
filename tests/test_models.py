@@ -4,17 +4,33 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 from src.models import Base, Categorie, Produit, Caisse, Vente, LigneVente
+from tests.test_config import setup_test_database, cleanup_test_database, get_test_session
 
 
 class TestModels(unittest.TestCase):
     """Tests unitaires pour les modèles de données"""
 
+    @classmethod
+    def setUpClass(cls):
+        """Configure l'environnement de test une seule fois"""
+        cls.engine = setup_test_database()
+
+    @classmethod
+    def tearDownClass(cls):
+        """Nettoie l'environnement après tous les tests"""
+        cleanup_test_database(cls.engine)
+
     def setUp(self):
-        """Configure l'environnement de test avec une BD en mémoire"""
-        self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(self.engine)
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        """Configure les données pour chaque test"""
+        self.session = get_test_session(self.engine)
+
+        # Nettoyer les données existantes
+        self.session.query(LigneVente).delete()
+        self.session.query(Vente).delete()
+        self.session.query(Produit).delete()
+        self.session.query(Categorie).delete()
+        self.session.query(Caisse).delete()
+        self.session.commit()
 
         # Créer des données de base pour les tests
         self.categorie = Categorie(
@@ -38,9 +54,9 @@ class TestModels(unittest.TestCase):
         self.session.commit()
 
     def tearDown(self):
-        """Nettoie l'environnement après les tests"""
+        """Nettoie les données après chaque test"""
+        self.session.rollback()
         self.session.close()
-        Base.metadata.drop_all(self.engine)
 
     def test_categorie(self):
         """Test du modèle Categorie"""

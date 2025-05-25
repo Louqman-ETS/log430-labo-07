@@ -1,0 +1,15 @@
+services:
+  caisse-app:
+    build: .
+    container_name: caisse-magasin-client
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      # Remplacez SERVER_IP par l'IP réelle de votre serveur
+      DATABASE_URL: postgresql://user:password@SERVER_IP:5432/store_db
+      POOL_SIZE: 5
+      MAX_OVERFLOW: 10
+    # Optionnel : si vous voulez accéder aux fichiers locaux
+    volumes:
+      - ./logs:/app/logs 
