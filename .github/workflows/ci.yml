@@ -6,10 +6,9 @@ on:
   pull_request:
 
 env:
-  IMAGE_NAME: log430-labo-01
+  APP_NAME: log430-labo-01
   REGISTRY: docker.io
   DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  PYTHONPATH: ./src
 
 jobs:
   lint:
@@ -53,7 +52,7 @@ jobs:
       - name: Set environment variables
         run: echo "DATABASE_URL=postgresql://user:password@localhost:5432/store_db" >> $GITHUB_ENV
       - name: Run unit tests
-        run: python -m tests.run_tests
+        run: PYTHONPATH=./src python -m tests.run_tests
 
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -72,74 +71,13 @@ jobs:
         id: vars
         run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
       
-      # Build et push de l'image de l'application
-      - name: Build & push application image
+      # Build et push de l'image de l'application client
+      - name: Build & push client image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}-app:${{ steps.vars.outputs.TAG }}
-            ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}-app:latest
+            ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.APP_NAME }}-client:${{ steps.vars.outputs.TAG }}
+            ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.APP_NAME }}-client:latest
       
-      # Créer et push du docker-compose pour le déploiement
-      - name: Create deployment docker-compose
-        run: |
-          cat > docker-compose.prod.yml << EOF
-          services:
-            db:
-              image: postgres:13
-              environment:
-                POSTGRES_USER: user
-                POSTGRES_PASSWORD: password
-                POSTGRES_DB: store_db
-              volumes:
-                - postgres_data:/var/lib/postgresql/data
-              healthcheck:
-                test: ["CMD-SHELL", "pg_isready -U user -d store_db"]
-                interval: 5s
-                timeout: 5s
-                retries: 5
-              networks:
-                - caisse-network
-
-            caisse-app:
-              image: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}-app:${{ steps.vars.outputs.TAG }}
-              container_name: caisse-magasin
-              stdin_open: true
-              tty: true
-              restart: unless-stopped
-              depends_on:
-                db:
-                  condition: service_healthy
-              environment:
-                DATABASE_URL: postgresql://user:password@db:5432/store_db
-                POOL_SIZE: 5
-                MAX_OVERFLOW: 10
-              networks:
-                - caisse-network
-
-          volumes:
-            postgres_data:
-
-          networks:
-            caisse-network:
-              driver: bridge
-          EOF
-      
-      # Upload du fichier de déploiement comme artifact
-      - name: Upload deployment files
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-files-${{ steps.vars.outputs.TAG }}
-          path: |
-            docker-compose.prod.yml
-            README.md
-          retention-days: 30
-      
-      # Optionnel : Déploiement automatique si vous avez un serveur
-      # - name: Deploy to production
-      #   if: github.ref == 'refs/heads/main'
-      #   run: |
-      #     echo "Déploiement vers la production avec docker-compose.prod.yml"
-      #     # Ici vous pourriez ajouter des commandes SSH pour déployer sur votre serveur

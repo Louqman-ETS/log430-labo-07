@@ -42,30 +42,28 @@ class Caisse(Base):
     __tablename__ = "caisses"
 
     id = Column(Integer, primary_key=True, index=True)
-    numero = Column(Integer, unique=True)
-    nom = Column(String)
+    numero = Column(Integer, unique=True, index=True)
+    nom = Column(String, index=True)
 
     ventes = relationship("Vente", back_populates="caisse")
 
     def __repr__(self):
-        return f"<Caisse(id={self.id}, numero={self.numero})>"
+        return f"<Caisse(id={self.id}, numero={self.numero}, nom='{self.nom}')>"
 
 
 class Vente(Base):
     __tablename__ = "ventes"
 
     id = Column(Integer, primary_key=True, index=True)
-    date_heure = Column(DateTime, default=datetime.datetime.now)
-    montant_total = Column(Float, default=0)
+    date_heure = Column(DateTime, default=datetime.datetime.utcnow)
+    montant_total = Column(Float, default=0.0)
     caisse_id = Column(Integer, ForeignKey("caisses.id"))
 
     caisse = relationship("Caisse", back_populates="ventes")
-    lignes = relationship(
-        "LigneVente", back_populates="vente", cascade="all, delete-orphan"
-    )
+    lignes = relationship("LigneVente", back_populates="vente")
 
     def __repr__(self):
-        return f"<Vente(id={self.id}, date={self.date_heure}, montant={self.montant_total})>"
+        return f"<Vente(id={self.id}, montant_total={self.montant_total})>"
 
 
 class LigneVente(Base):

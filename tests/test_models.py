@@ -4,7 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 from src.models import Base, Categorie, Produit, Caisse, Vente, LigneVente
-from tests.test_config import setup_test_database, cleanup_test_database, get_test_session
+from tests.test_config import (
+    setup_test_database,
+    cleanup_test_database,
+    get_test_session,
+)
 
 
 class TestModels(unittest.TestCase):

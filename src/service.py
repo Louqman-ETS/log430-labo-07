@@ -3,17 +3,11 @@ from sqlalchemy.orm import Session
 from contextlib import contextmanager
 
 from src.dao import ProduitDAO, CategorieDAO, VenteDAO, CaisseDAO
-from src.db import SessionLocal
+from src.db import db
 from src.models import Produit, Categorie, Vente, LigneVente, Caisse
 
-
-@contextmanager
-def get_db_session():
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+# Utiliser directement le gestionnaire de session de la classe Database
+get_db_session = db.get_session
 
 
 class ProduitService:

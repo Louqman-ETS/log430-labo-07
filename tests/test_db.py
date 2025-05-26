@@ -4,8 +4,18 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from src.db import Base
-from src.models import Categorie, Produit, Caisse, Vente, LigneVente  # Import des modèles
-from tests.test_config import setup_test_database, cleanup_test_database, get_test_session
+from src.models import (
+    Categorie,
+    Produit,
+    Caisse,
+    Vente,
+    LigneVente,
+)  # Import des modèles
+from tests.test_config import (
+    setup_test_database,
+    cleanup_test_database,
+    get_test_session,
+)
 
 
 class TestDBConfig(unittest.TestCase):
@@ -44,11 +54,13 @@ class TestDBConfig(unittest.TestCase):
         with self.engine.connect() as conn:
             # Vérifier que les tables ont été créées (PostgreSQL)
             result = conn.execute(
-                text("""
+                text(
+                    """
                     SELECT table_name 
                     FROM information_schema.tables 
                     WHERE table_schema = 'public'
-                """)
+                """
+                )
             )
             tables = [row[0] for row in result]
 

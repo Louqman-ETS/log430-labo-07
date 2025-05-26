@@ -20,64 +20,83 @@ skinparam artifact {
 }
 
 ' Définir les nœuds
-node "Poste de Caisse" as PosteCaisse {
-    node "Application Python" as AppPython {
-        artifact "Interface Console\n(main.py)" as Main
-        artifact "Services\n(service.py)" as Services
-        artifact "DAOs\n(dao.py)" as DAOs
-        artifact "Modèles\n(models.py)" as Models
-        artifact "Configuration DB\n(db.py)" as ConfigDB
-        
-        ' Relations internes
-        Main -down-> Services
-        Services -down-> DAOs
-        DAOs -down-> Models
-        DAOs .right.> ConfigDB
-        Models .right.> ConfigDB
+node "Docker Environment" as DockerEnv {
+    node "Caisse Container" as CaisseContainer {
+        node "Application Python" as AppPython {
+            artifact "Interface Console\n(main.py)" as Main
+            artifact "Services\n(service.py)" as Services
+            artifact "DAOs\n(dao.py)" as DAOs
+            artifact "Modèles\n(models.py)" as Models
+            artifact "Configuration DB\n(db.py)" as ConfigDB
+            
+            ' Relations internes
+            Main -down-> Services
+            Services -down-> DAOs
+            DAOs -down-> Models
+            DAOs .right.> ConfigDB
+            Models .right.> ConfigDB
+        }
     }
     
-    database "SQLite" as SQLite {
-        artifact "Fichier store.db" as StoreDB
+    node "Database Container" as DBContainer {
+        database "PostgreSQL" as PostgreSQL {
+            artifact "store_db" as StoreDB
+        }
     }
     
-    ' Connexion entre application et base de données
-    AppPython -- SQLite : "SQLite API\nvia SQLAlchemy"
+    ' Volume persistant
+    database "Docker Volume" as DockerVolume {
+        artifact "postgres_data" as PostgresData
+    }
+    
+    ' Connexions
+    CaisseContainer -- DBContainer : "PostgreSQL Protocol\nvia SQLAlchemy"
+    DBContainer -- DockerVolume : "Persistent Storage"
 }
 
 ' Notes explicatives
-note right of PosteCaisse
-  Architecture 2-tier locale
-  (3 postes de caisse indépendants maximum)
+note right of DockerEnv
+  Architecture containerisée
+  avec persistance des données
 end note
 
-note bottom of SQLite
-  Base de données fichier locale
+note bottom of PostgreSQL
+  Base de données PostgreSQL
   Transactions ACID
+  Port: 5432
 end note
 
-note top of AppPython
-  Application monolithique
-  exécutée localement
+note top of CaisseContainer
+  Application Python
+  dans container Docker
+end note
+
+note right of DockerVolume
+  Volume Docker pour
+  persistance des données
 end note
 
 ' Titre et légende
-title Architecture de déploiement - Système de Caisse (2-tier)
+title Architecture de déploiement - Système de Caisse (Containerisé)
 
 legend right
   <b>Vue Déploiement</b>
   
   Ce diagramme illustre l'architecture de déploiement
-  du système de caisse suivant un modèle client/serveur
-  à deux niveaux (2-tier) avec base de données locale.
+  du système de caisse utilisant Docker avec une base
+  de données PostgreSQL persistante.
   
   <b>Points forts:</b>
-  - Simplicité de déploiement
-  - Indépendance des postes
-  - Performances optimales pour transactions locales
+  - Containerisation complète
+  - Persistance des données
+  - Scalabilité améliorée
+  - Base de données robuste
   
-  <b>Limitations:</b>
-  - Pas de synchronisation entre caisses
-  - Scalabilité limitée (max 3 caisses)
+  <b>Caractéristiques:</b>
+  - PostgreSQL v13
+  - Volumes Docker
+  - Healthchecks
+  - Configuration via variables d'environnement
 endlegend
 
 @enduml 

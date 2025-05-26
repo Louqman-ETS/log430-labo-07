@@ -1,30 +1,72 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from contextlib import contextmanager
 import os
+from typing import Generator
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement
+# Configuration par défaut
+DEFAULT_CONFIG = {
+    "POOL_SIZE": 5,
+    "MAX_OVERFLOW": 10,
+    "POOL_TIMEOUT": 30,
+    "POOL_RECYCLE": 1800,
+}
+
 load_dotenv()
 
-# Configuration PostgreSQL depuis les variables d'environnement
-DATABASE_URL = os.getenv("DATABASE_URL")
-POOL_SIZE = int(os.getenv("POOL_SIZE", "5"))
-MAX_OVERFLOW = int(os.getenv("MAX_OVERFLOW", "10"))
 
-# Créer le moteur pour PostgreSQL avec une configuration plus robuste
-engine = create_engine(
-    DATABASE_URL,
-    pool_size=POOL_SIZE,
-    max_overflow=MAX_OVERFLOW,
-    pool_timeout=30,  # timeout de 30 secondes pour obtenir une connexion
-    pool_recycle=1800  # recycler les connexions après 30 minutes
-)
+class DatabaseConfig:
+    """Configuration de la base de données"""
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    def __init__(self):
+        self.url = os.getenv("DATABASE_URL")
+        if not self.url:
+            raise ValueError("DATABASE_URL must be set")
 
+        self.pool_size = int(os.getenv("POOL_SIZE", str(DEFAULT_CONFIG["POOL_SIZE"])))
+        self.max_overflow = int(
+            os.getenv("MAX_OVERFLOW", str(DEFAULT_CONFIG["MAX_OVERFLOW"]))
+        )
+        self.pool_timeout = DEFAULT_CONFIG["POOL_TIMEOUT"]
+        self.pool_recycle = DEFAULT_CONFIG["POOL_RECYCLE"]
+
+
+class Database:
+    """Gestionnaire de base de données"""
+
+    def __init__(self, config: DatabaseConfig):
+        self.engine = create_engine(
+            config.url,
+            pool_size=config.pool_size,
+            max_overflow=config.max_overflow,
+            pool_timeout=config.pool_timeout,
+            pool_recycle=config.pool_recycle,
+        )
+        self.SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=self.engine
+        )
+
+    @contextmanager
+    def get_session(self) -> Generator[Session, None, None]:
+        """Retourne une session de base de données dans un contexte géré"""
+        session = self.SessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+config = DatabaseConfig()
+db = Database(config)
 Base = declarative_base()
 
-def get_db():
-    """Retourne une nouvelle session de base de données"""
-    return SessionLocal()
+
+def get_db() -> Generator[Session, None, None]:
+    """Fonction helper pour obtenir une session DB"""
+    with db.get_session() as session:
+        yield session

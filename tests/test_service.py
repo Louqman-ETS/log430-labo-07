@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.models import Base, Categorie, Produit, Caisse, Vente, LigneVente
-from src.service import ProduitService, CategorieService, VenteService, get_db_session
-from src.db import SessionLocal
+from src.service import ProduitService, CategorieService, VenteService
+from tests.test_config import test_db
 
 
 class TestServices(unittest.TestCase):
@@ -13,56 +13,71 @@ class TestServices(unittest.TestCase):
 
     def setUp(self):
         """Configure l'environnement de test"""
-        # Créer une base de données en mémoire
-        self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(self.engine)
-        self.SessionMock = sessionmaker(bind=self.engine)
+        test_db.setup()
 
-        # Patcher la SessionLocal utilisée par get_db_session
-        self.session_patcher = patch("src.service.SessionLocal", self.SessionMock)
+        # Patcher la session de base de données
+        self.session_patcher = patch("src.db.db.get_session", test_db.get_session)
         self.session_patcher.start()
 
         # Créer une session pour configurer les données de test
-        self.session = self.SessionMock()
+        with test_db.get_session() as session:
+            # Nettoyer les données existantes
+            session.query(LigneVente).delete()
+            session.query(Vente).delete()
+            session.query(Produit).delete()
+            session.query(Categorie).delete()
+            session.query(Caisse).delete()
+            session.commit()
 
-        # Ajouter des données de test
-        # Catégories
-        self.categorie1 = Categorie(
-            nom="Alimentaire", description="Produits alimentaires"
-        )
-        self.categorie2 = Categorie(nom="Boissons", description="Produits à boire")
-        self.session.add_all([self.categorie1, self.categorie2])
-        self.session.commit()
+            # Ajouter des données de test
+            # Catégories
+            categorie1 = Categorie(
+                nom="Alimentaire", description="Produits alimentaires"
+            )
+            categorie2 = Categorie(nom="Boissons", description="Produits à boire")
+            session.add_all([categorie1, categorie2])
+            session.commit()
 
-        # Produits
-        self.produit1 = Produit(
-            code="ALI001",
-            nom="Pain",
-            description="Baguette fraîche",
-            prix=1.20,
-            quantite_stock=50,
-            categorie_id=self.categorie1.id,
-        )
-        self.produit2 = Produit(
-            code="BOI001",
-            nom="Eau minérale",
-            description="Bouteille 1L",
-            prix=0.90,
-            quantite_stock=100,
-            categorie_id=self.categorie2.id,
-        )
-        self.session.add_all([self.produit1, self.produit2])
+            # Stocker les IDs
+            self.categorie1_id = categorie1.id
+            self.categorie2_id = categorie2.id
 
-        # Caisse
-        self.caisse = Caisse(numero=1, nom="Caisse principale")
-        self.session.add(self.caisse)
-        self.session.commit()
+            # Produits
+            produit1 = Produit(
+                code="ALI001",
+                nom="Pain",
+                description="Baguette fraîche",
+                prix=1.20,
+                quantite_stock=50,
+                categorie_id=self.categorie1_id,
+            )
+            produit2 = Produit(
+                code="BOI001",
+                nom="Eau minérale",
+                description="Bouteille 1L",
+                prix=0.90,
+                quantite_stock=100,
+                categorie_id=self.categorie2_id,
+            )
+            session.add_all([produit1, produit2])
+            session.commit()
+
+            # Stocker les IDs
+            self.produit1_id = produit1.id
+            self.produit2_id = produit2.id
+
+            # Caisse
+            caisse = Caisse(numero=1, nom="Caisse principale")
+            session.add(caisse)
+            session.commit()
+
+            # Stocker l'ID
+            self.caisse_id = caisse.id
 
     def tearDown(self):
-        """Nettoie l'environnement après les tests"""
-        self.session.close()
+        """Nettoie l'environnement après chaque test"""
         self.session_patcher.stop()
-        Base.metadata.drop_all(self.engine)
+        test_db.cleanup()
 
     def test_produit_service_recherche(self):
         """Test de recherche de produits"""
@@ -100,7 +115,7 @@ class TestServices(unittest.TestCase):
     def test_produit_service_details(self):
         """Test de récupération des détails d'un produit"""
         # Produit existant
-        produit = ProduitService.get_produit_details(self.produit1.id)
+        produit = ProduitService.get_produit_details(self.produit1_id)
         self.assertIsNotNone(produit)
         self.assertEqual(produit["nom"], "Pain")
         self.assertEqual(produit["description"], "Baguette fraîche")
@@ -119,7 +134,7 @@ class TestServices(unittest.TestCase):
     def test_vente_service_demarrer(self):
         """Test de démarrage d'une vente"""
         # Caisse existante
-        vente_id = VenteService.demarrer_vente(self.caisse.id)
+        vente_id = VenteService.demarrer_vente(self.caisse_id)
         self.assertIsNotNone(vente_id)
 
         # Caisse inexistante
@@ -129,15 +144,15 @@ class TestServices(unittest.TestCase):
     def test_vente_service_ajouter_produit(self):
         """Test d'ajout de produit à une vente"""
         # Créer une vente
-        vente_id = VenteService.demarrer_vente(self.caisse.id)
+        vente_id = VenteService.demarrer_vente(self.caisse_id)
 
         # Ajouter un produit existant avec quantité valide
-        success, message = VenteService.ajouter_produit(vente_id, self.produit1.id, 2)
+        success, message = VenteService.ajouter_produit(vente_id, self.produit1_id, 2)
         self.assertTrue(success)
         self.assertIn("Pain", message)
 
         # Ajouter un produit avec quantité excessive
-        success, message = VenteService.ajouter_produit(vente_id, self.produit1.id, 100)
+        success, message = VenteService.ajouter_produit(vente_id, self.produit1_id, 100)
         self.assertFalse(success)
         self.assertIn("insuffisant", message)
 
@@ -149,9 +164,9 @@ class TestServices(unittest.TestCase):
     def test_vente_service_finaliser(self):
         """Test de finalisation d'une vente"""
         # Créer une vente avec des produits
-        vente_id = VenteService.demarrer_vente(self.caisse.id)
-        VenteService.ajouter_produit(vente_id, self.produit1.id, 2)
-        VenteService.ajouter_produit(vente_id, self.produit2.id, 1)
+        vente_id = VenteService.demarrer_vente(self.caisse_id)
+        VenteService.ajouter_produit(vente_id, self.produit1_id, 2)
+        VenteService.ajouter_produit(vente_id, self.produit2_id, 1)
 
         # Finaliser la vente
         success, details = VenteService.finaliser_vente(vente_id)

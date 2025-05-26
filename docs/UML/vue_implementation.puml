@@ -14,10 +14,11 @@ skinparam package {
 }
 
 ' Définition des composants
-package "src/" {
+package "Application (src/)" {
     ' Couche de présentation
     component "main.py" as Main {
-        interface "Interface utilisateur"
+        interface "Interface console"
+        interface "Gestion des menus"
     }
     
     ' Couche métier
@@ -25,6 +26,7 @@ package "src/" {
         interface "ProduitService"
         interface "CategorieService"
         interface "VenteService"
+        interface "TransactionService"
     }
     
     ' Couche d'accès aux données
@@ -33,24 +35,42 @@ package "src/" {
         interface "CategorieDAO"
         interface "VenteDAO"
         interface "CaisseDAO"
+        interface "TransactionDAO"
     }
     
     ' Modèles et configuration
     component "models.py" as Models {
-        interface "Entités ORM"
+        interface "Produit"
+        interface "Categorie"
+        interface "Vente"
+        interface "Transaction"
+        interface "Base"
     }
     
     component "db.py" as DB {
-        interface "Base"
+        interface "Engine"
         interface "SessionLocal"
+        interface "ConnectionPool"
     }
     
     component "create_db.py" as CreateDB {
         interface "Initialisation BD"
+        interface "Données initiales"
     }
 }
 
-package "tests/" as TestsPackage {
+package "Infrastructure" {
+    component "Docker" {
+        component "PostgreSQL" {
+            interface "store_db"
+        }
+        component "Volumes" {
+            interface "postgres_data"
+        }
+    }
+}
+
+package "Tests (tests/)" as TestsPackage {
     component "test_models.py" as TestModels
     component "test_dao.py" as TestDAO
     component "test_service.py" as TestService
@@ -66,6 +86,7 @@ DAO --> DB : "utilise"
 Models --> DB : "utilise"
 CreateDB --> Models : "utilise"
 CreateDB --> DB : "utilise"
+DB --> PostgreSQL : "connexion\npool"
 
 TestModels --> Models : "teste"
 TestDAO --> DAO : "teste"
@@ -79,56 +100,61 @@ RunTests --> TestDAO : "exécute"
 RunTests --> TestService : "exécute"
 RunTests --> TestIntegration : "exécute"
 
-' Organisation visuelle
-Main -[hidden]-> Service
-Service -[hidden]-> DAO
-DAO -[hidden]-> Models
-Models -[hidden]-> DB
-DB -[hidden]-> CreateDB
-
-' Affichage de notes avec informations additionnelles
+' Notes explicatives
 note right of Main
-  Menu principal et sous-menus
-  Gestion des entrées utilisateur
-  Formatage des résultats
+  Interface utilisateur console
+  Gestion des entrées/sorties
+  Menus interactifs
 end note
 
 note right of Service
-  Encapsulation de la logique métier
-  Validation des règles métier
+  Logique métier
+  Validation des données
   Gestion des transactions
+  Pool de connexions (5 + 10)
 end note
 
 note right of DAO
-  Abstraction de l'accès BD
+  Abstraction PostgreSQL
   Opérations CRUD
-  Requêtes SQL via SQLAlchemy
+  Requêtes via SQLAlchemy
 end note
 
 note right of Models
-  Définition des entités
-  Mappings ORM
-  Relations entre tables
+  Modèles SQLAlchemy
+  Relations entre entités
+  Contraintes de données
+end note
+
+note right of PostgreSQL
+  Base de données PostgreSQL
+  Transactions ACID
+  Persistance via volumes
 end note
 
 note bottom of TestsPackage
   Tests unitaires et d'intégration
-  Découverte automatique des tests
+  Couverture de code
+  Tests automatisés
 end note
 
-' Ajouter un titre et une légende
-title Organisation des modules - Système de Caisse
+' Titre et légende
+title Architecture d'Implémentation - Système de Caisse
 
 legend right
-  <b>Vue Implémentation - Structure des Composants</b>
+  <b>Vue Implémentation</b>
   
-  Ce diagramme illustre l'organisation modulaire
-  du système et le flux des dépendances entre les composants.
+  Architecture en couches avec :
+  - Interface console (main.py)
+  - Services métier (service.py)
+  - Accès données (dao.py)
+  - ORM SQLAlchemy (models.py)
+  - PostgreSQL + Docker
   
-  L'architecture suit un modèle en couches:
-  - Présentation (main.py)
-  - Logique métier (service.py)
-  - Accès aux données (dao.py, models.py, db.py)
+  Caractéristiques :
+  - Pool de connexions (5 permanentes, 10 overflow)
+  - Persistance via volumes Docker
+  - Tests automatisés
 endlegend
 
 @enduml 
