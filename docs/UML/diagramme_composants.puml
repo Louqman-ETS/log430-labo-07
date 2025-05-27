@@ -1,0 +1,91 @@
+@startuml Diagramme de Composants - Système de Caisse
+
+!define RECTANGLE class
+
+' Définition des packages/couches
+package "Couche Présentation" as presentation {
+  component [Application Principale] as app
+}
+
+package "Couche Logique Métier" as business {
+  component [Service Produit] as produit_service
+  component [Service Catégorie] as categorie_service  
+  component [Service Vente] as vente_service
+}
+
+package "Couche Accès Données" as data_access {
+  component [DAO Produit] as produit_dao
+  component [DAO Catégorie] as categorie_dao
+  component [DAO Vente] as vente_dao
+  component [DAO Ligne Vente] as ligne_vente_dao
+  component [DAO Caisse] as caisse_dao
+}
+
+package "Couche Modèle/ORM" as model {
+  component [Modèle Produit] as model_produit
+  component [Modèle Catégorie] as model_categorie
+  component [Modèle Vente] as model_vente
+  component [Modèle Ligne Vente] as model_ligne_vente
+  component [Modèle Caisse] as model_caisse
+  component [Configuration DB] as db_config
+}
+
+package "Infrastructure" as infrastructure {
+  component [SQLAlchemy ORM] as orm
+  component [psycopg2 Driver] as driver
+}
+
+
+
+' Relations entre composants
+app --> produit_service : appelle
+app --> categorie_service : appelle
+app --> vente_service : appelle
+
+produit_service --> produit_dao : utilise
+categorie_service --> categorie_dao : utilise
+vente_service --> vente_dao : utilise
+vente_service --> ligne_vente_dao : utilise
+vente_service --> caisse_dao : utilise
+
+produit_dao --> model_produit : utilise
+categorie_dao --> model_categorie : utilise
+vente_dao --> model_vente : utilise
+ligne_vente_dao --> model_ligne_vente : utilise
+caisse_dao --> model_caisse : utilise
+
+model_produit --> orm : hérite de
+model_categorie --> orm : hérite de
+model_vente --> orm : hérite de
+model_ligne_vente --> orm : hérite de
+model_caisse --> orm : hérite de
+db_config --> orm : configure
+orm --> driver : utilise
+
+
+
+' Interfaces externes
+interface "Console" as console
+
+app ..> console : affiche sur
+
+
+
+' Titre et légende
+title Système de Caisse - Diagramme de Composants
+
+legend right
+  <b>Architecture en Couches</b>
+  
+  • <b>Présentation</b> : Application console (main.py)
+  • <b>Logique Métier</b> : Services métier
+  • <b>Accès Données</b> : DAOs (logique d'accès)
+  • <b>Modèle/ORM</b> : Modèles SQLAlchemy (mapping)
+  • <b>Infrastructure</b> : ORM et drivers
+  
+  <b>Distinction DAO vs ORM</b>
+  • <b>DAO</b> : Logique métier d'accès aux données
+  • <b>Modèles ORM</b> : Mapping objet-relationnel
+endlegend
+
+@enduml 

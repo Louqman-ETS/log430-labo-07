@@ -1,0 +1,83 @@
+@startuml Vue Déploiement
+
+' Définir les styles
+skinparam node {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+    FontColor Black
+}
+
+skinparam database {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+    FontColor Black
+}
+
+skinparam artifact {
+    BackgroundColor Ivory
+    BorderColor Gray
+    FontColor Black
+}
+
+' Définir les nœuds
+node "Caisse Container" as CaisseContainer {
+    artifact "App Console Python" as AppPython
+}
+
+node "Database Container" as DBContainer {
+    database "PostgreSQL" as PostgreSQL {
+        artifact "store_db" as StoreDB
+    }
+}
+
+' Volume persistant
+database "Docker Volume" as DockerVolume {
+    artifact "postgres_data" as PostgresData
+}
+
+' Connexions
+CaisseContainer -- DBContainer : "PostgreSQL Protocol\nvia SQLAlchemy"
+DBContainer -- DockerVolume : "Persistent Storage"
+
+' Notes explicatives
+
+note bottom of PostgreSQL
+  Base de données PostgreSQL
+  Transactions ACID
+  Port: 5432
+end note
+
+note top of CaisseContainer
+  Application Python
+  dans container Docker
+end note
+
+note right of DockerVolume
+  Volume Docker pour
+  persistance des données
+end note
+
+' Titre et légende
+title Architecture de déploiement - Système de Caisse (2-tier)
+
+legend right
+  <b>Vue Déploiement</b>
+  
+  Ce diagramme illustre l'architecture de déploiement
+  du système de caisse utilisant Docker avec une base
+  de données PostgreSQL persistante.
+  
+  <b>Points forts:</b>
+  - Containerisation complète
+  - Persistance des données
+  - Scalabilité améliorée
+  - Base de données robuste
+  
+  <b>Caractéristiques:</b>
+  - PostgreSQL v13
+  - Volumes Docker
+  - Healthchecks
+  - Configuration via variables d'environnement
+endlegend
+
+@enduml 
