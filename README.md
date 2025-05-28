@@ -80,11 +80,9 @@ GRANT ALL PRIVILEGES ON DATABASE store_db TO "user";
 **Option B: Connexion à une base distante**
 ```bash
 # Créer le fichier .env à la racine du projet
-cat > .env << EOF
-DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
+DATABASE_URL=postgresql://user:password@ip-machine:5432/store_db
 POOL_SIZE=5
 MAX_OVERFLOW=10
-EOF
 ```
 
 #### 3. Initialisation des données
@@ -100,15 +98,7 @@ python -m src.create_db
 python -m src.main
 ```
 
-### Option 2: Docker Local (Développement)
-
-```bash
-# Tout sur la même machine
-docker-compose up --build
-docker exec -it caisse-magasin python -m src.main
-```
-
-### Option 3: Déploiement Distribué (Production)
+### Option 2: Déploiement Distribué
 
 #### Sur le Serveur (Base de données)
 
