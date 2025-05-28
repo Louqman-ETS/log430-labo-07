@@ -35,7 +35,6 @@ tests/
 ├── test_config.py   # Configuration des tests
 └── run_tests.py     # Script de lancement des tests
 
-docker-compose.yml         # Déploiement local (dev)
 docker-compose.server.yml  # Serveur PostgreSQL uniquement
 docker-compose.client.yml  # Application uniquement
 ```
