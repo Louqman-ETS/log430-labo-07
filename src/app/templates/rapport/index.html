@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Rapport Consolidé des Ventes - Maison Mère{% endblock %}
+
+{% block content %}
+<!-- Ajout du lien vers les icônes Material Design -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Rapport Consolidé des Ventes</h1>
+        <a href="{{ url_for('home.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour à l'accueil</span>
+        </a>
+    </div>
+
+    <p class="lead text-muted mb-4">Vue d'ensemble des performances commerciales</p>
+
+    <!-- Statistiques globales -->
+    <div class="section-title">
+        <h2>
+            <i class="material-icons">analytics</i>
+            Aperçu Global des Performances
+        </h2>
+        <p class="text-muted">Résumé des indicateurs clés de performance</p>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="material-icons align-middle me-2">euro</i>
+                        Chiffre d'Affaires Total
+                    </h5>
+                    <p class="display-6">{{ "%.2f"|format(total_ventes) }} €</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="material-icons align-middle me-2">receipt_long</i>
+                        Nombre Total de Ventes
+                    </h5>
+                    <p class="display-6">{{ nombre_ventes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventes par magasin -->
+    <div class="section-title">
+        <h2>
+            <i class="material-icons">store</i>
+            Performance par Point de Vente
+        </h2>
+        <p class="text-muted">Analyse détaillée des ventes par magasin</p>
+    </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title h5 mb-0">Répartition des Ventes par Magasin</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Nom</th>
+                            <th>Nombre de Ventes</th>
+                            <th>Total des Ventes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caisse in ventes_par_caisse %}
+                        <tr>
+                            <td>{{ caisse.numero }}</td>
+                            <td>{{ caisse.nom }}</td>
+                            <td>{{ caisse.nombre_ventes }}</td>
+                            <td>{{ "%.2f"|format(caisse.total_ventes or 0) }} €</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produits les plus vendus -->
+    <div class="section-title">
+        <h2>
+            <i class="material-icons">trending_up</i>
+            Analyse des Meilleures Ventes
+        </h2>
+        <p class="text-muted">Top 10 des produits les plus performants</p>
+    </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title h5 mb-0">Classement des Produits par Volume de Vente</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Nom</th>
+                            <th>Quantité Vendue</th>
+                            <th>Chiffre d'Affaires</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produit in produits_populaires %}
+                        <tr>
+                            <td>{{ produit.code }}</td>
+                            <td>{{ produit.nom }}</td>
+                            <td>{{ produit.quantite_vendue }}</td>
+                            <td>{{ "%.2f"|format(produit.chiffre_affaires) }} €</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- État des stocks -->
+    <div class="section-title">
+        <h2>
+            <i class="material-icons">inventory</i>
+            Gestion des Stocks
+        </h2>
+        <p class="text-muted">Suivi des niveaux de stock et alertes de réapprovisionnement</p>
+    </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title h5 mb-0">État Actuel des Stocks</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Nom</th>
+                            <th>Stock Restant</th>
+                            <th>Quantité Vendue</th>
+                            <th>État</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in stocks %}
+                        <tr>
+                            <td>{{ stock.code }}</td>
+                            <td>{{ stock.nom }}</td>
+                            <td>{{ stock.quantite_stock }}</td>
+                            <td>{{ stock.quantite_vendue or 0 }}</td>
+                            <td>
+                                {% if stock.quantite_stock > 20 %}
+                                    <span class="badge bg-success">Normal</span>
+                                {% elif stock.quantite_stock > 5 %}
+                                    <span class="badge bg-warning">Bas</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Critique</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+    --text-color: #2c3e50;
+    --gray-light: #f8f9fa;
+}
+
+.section-title {
+    margin: 2rem 0 1.5rem 0;
+}
+
+.section-title h2 {
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.section-title h2 .material-icons {
+    margin-right: 0.5rem;
+    font-size: 2rem;
+}
+
+.section-title p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+    background-color: white;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    background-color: var(--primary-color) !important;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-action .material-icons {
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.btn-action .btn-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+}
+
+.material-icons {
+    vertical-align: middle;
+}
+
+.display-6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.lead {
+    color: #6c757d;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,1 @@
+from .models import Categorie, Produit, Caisse, Vente, LigneVente 

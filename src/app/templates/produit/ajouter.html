@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter un Produit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Ajouter un Produit</h1>
+        <a href="{{ url_for('produit.liste') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour à la liste</span>
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Code</label>
+                            <input type="text" class="form-control" id="code" name="code" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nom" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="nom" name="nom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="prix" class="form-label">Prix</label>
+                            <input type="number" class="form-control" id="prix" name="prix" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantite_stock" class="form-label">Quantité en Stock</label>
+                            <input type="number" class="form-control" id="quantite_stock" name="quantite_stock" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categorie_id" class="form-label">Catégorie</label>
+                            <select class="form-control" id="categorie_id" name="categorie_id" required>
+                                {% for categorie in categories %}
+                                <option value="{{ categorie.id }}">{{ categorie.nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Ajouter</button>
+                            <a href="{{ url_for('produit.liste') }}" class="btn btn-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

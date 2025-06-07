@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Central{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Stock Central</h1>
+        <a href="{{ url_for('home.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour à l'accueil</span>
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Stock Central</h1>
+            <p class="lead">Consultation et gestion du stock central</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">État des Stocks</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Produit</th>
+                            <th>Stock Central</th>
+                            <th>Seuil d'Alerte</th>
+                            <th>État</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produit, stock, seuil in produits %}
+                        <tr>
+                            <td>{{ produit.code }}</td>
+                            <td>{{ produit.nom }}</td>
+                            <td>{{ stock or 0 }}</td>
+                            <td>{{ seuil or 20 }}</td>
+                            <td>
+                                {% if not stock or stock == 0 %}
+                                    <span class="badge bg-danger">Rupture</span>
+                                {% elif stock < seuil %}
+                                    <span class="badge bg-warning">Bas</span>
+                                {% else %}
+                                    <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" 
+                                        onclick="ouvrirModalReappro('{{ produit.id }}', '{{ produit.nom }}', '{{ stock or 0 }}')">
+                                    Demander Réappro
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Demande Réapprovisionnement -->
+<div class="modal fade" id="modalReappro" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Demande de Réapprovisionnement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formReappro">
+                    <input type="hidden" id="produitId" name="produitId">
+                    <div class="mb-3">
+                        <label class="form-label">Produit</label>
+                        <input type="text" class="form-control" id="produitNom" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock Central Actuel</label>
+                        <input type="text" class="form-control" id="stockActuel" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantité Demandée</label>
+                        <input type="number" class="form-control" id="quantiteDemandee" required min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="envoyerDemandeReappro()">
+                    Envoyer la Demande
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function ouvrirModalReappro(produitId, produitNom, stockActuel) {
+    document.getElementById('produitId').value = produitId;
+    document.getElementById('produitNom').value = produitNom;
+    document.getElementById('stockActuel').value = stockActuel;
+    document.getElementById('quantiteDemandee').value = '';
+    
+    new bootstrap.Modal(document.getElementById('modalReappro')).show();
+}
+
+function envoyerDemandeReappro() {
+    const produitId = document.getElementById('produitId').value;
+    const quantite = document.getElementById('quantiteDemandee').value;
+    
+    if (!quantite || quantite < 1) {
+        alert('Veuillez saisir une quantité valide');
+        return;
+    }
+    
+    fetch('/stock-central/demander-reappro', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            produit_id: produitId,
+            caisse_id: 1, // À adapter selon le contexte
+            quantite: parseInt(quantite)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erreur : ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Erreur lors de l\'envoi de la demande');
+        console.error('Erreur:', error);
+    });
+}
+</script>
+
+<style>
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %} 

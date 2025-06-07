@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Retours/Annulations - Caisse {{ caisse.numero }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="card-title">Retours et Annulations</h1>
+        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour aux caisses</span>
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <span class="material-icons align-middle me-2">info</span>
+                Pour effectuer un retour, sélectionnez la vente correspondante et cliquez sur "Annuler la vente". 
+                Les produits seront automatiquement remis en stock.
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Produits</th>
+                            <th>Montant Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vente in ventes %}
+                        <tr>
+                            <td>{{ vente.date_heure.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                {% for ligne in vente.lignes %}
+                                    <li>{{ ligne.quantite }}x {{ ligne.produit.nom }}</li>
+                                {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ "%.2f"|format(vente.montant_total) }} €</td>
+                            <td>
+                                <a href="{{ url_for('vente.annuler', vente_id=vente.id) }}" 
+                                   class="btn btn-warning"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir annuler cette vente ? Les produits seront remis en stock.')">
+                                    <span class="material-icons align-middle me-2">assignment_return</span>
+                                    Annuler la vente
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">Aucune vente à afficher</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.material-icons {
+    font-size: 20px;
+    vertical-align: text-bottom;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+</style>
+{% endblock %} 

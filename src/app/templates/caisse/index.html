@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Sélection de la Caisse{% endblock %}
+
+{% block content %}
+<!-- Ajout du lien vers les icônes Material Design -->
+<link href="https://fonts.googleapis.com/icon?family=Material-Icons" rel="stylesheet">
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Sélection de la Caisse</h1>
+        <a href="{{ url_for('home.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour à l'accueil</span>
+        </a>
+    </div>
+    
+    <div class="row">
+        {% for caisse in caisses %}
+        <div class="col-md-6 mb-4">
+            <a href="{{ url_for('caisse.options', caisse_id=caisse.id) }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm hover-card">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="card-title mb-0">Caisse {{ caisse.numero }}</h3>
+                            <h5 class="mb-0 text-white">{{ caisse.nom }}</h5>
+                        </div>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="icon-circle mx-auto">
+                            <i class="material-icons">point_of_sale</i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+    --text-color: #2c3e50;
+    --gray-light: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+    background-color: white;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    background-color: var(--primary-color) !important;
+    padding: 1.25rem;
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--primary-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem auto;
+}
+
+.icon-circle .material-icons {
+    font-size: 40px;
+    color: var(--primary-color);
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-action .material-icons {
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.btn-action .btn-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+h1, h3, h5 {
+    color: var(--text-color);
+}
+</style>
+{% endblock %} 

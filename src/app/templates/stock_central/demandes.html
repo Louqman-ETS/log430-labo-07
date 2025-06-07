@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Demandes de Réapprovisionnement{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Demandes de Réapprovisionnement</h1>
+            <p class="lead">Suivi des demandes de réapprovisionnement</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">Liste des Demandes</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Magasin</th>
+                            <th>Produit</th>
+                            <th>Quantité</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for demande in demandes %}
+                        <tr>
+                            <td>{{ demande.date_demande.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ demande.caisse.nom }}</td>
+                            <td>{{ demande.produit.nom }}</td>
+                            <td>{{ demande.quantite_demandee }}</td>
+                            <td>
+                                {% if demande.statut == 'en_attente' %}
+                                    <span class="badge bg-warning">En attente</span>
+                                {% elif demande.statut == 'validee' %}
+                                    <span class="badge bg-success">Validée</span>
+                                {% elif demande.statut == 'livree' %}
+                                    <span class="badge bg-info">Livrée</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if demande.statut == 'en_attente' %}
+                                <button class="btn btn-success btn-sm"
+                                        onclick="validerDemande('{{ demande.id }}')">
+                                    Valider
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('stock_central.index') }}" class="btn btn-outline-primary">
+            <i class="material-icons align-middle me-2">arrow_back</i>
+            Retour au Stock Central
+        </a>
+    </div>
+</div>
+
+<script>
+function validerDemande(demandeId) {
+    if (!confirm('Voulez-vous valider cette demande de réapprovisionnement ?')) {
+        return;
+    }
+    
+    fetch(`/stock-central/valider-demande/${demandeId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Erreur : ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Erreur lors de la validation de la demande');
+        console.error('Erreur:', error);
+    });
+}
+</script>
+
+<style>
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %} 

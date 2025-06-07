@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Nouvelle Vente - Caisse {{ caisse.numero }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Nouvelle Vente</h1>
+        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour aux caisses</span>
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <p class="lead">Caisse {{ caisse.numero }} - {{ caisse.nom }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recherche et liste des produits -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Recherche de Produits</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control" 
+                                   placeholder="Rechercher par code, nom ou description...">
+                            <button class="btn btn-outline-primary" type="button" onclick="rechercherProduits()">
+                                <i class="material-icons">search</i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="produitsTable">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Produit</th>
+                                    <th>Prix</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produit in produits %}
+                                <tr>
+                                    <td>{{ produit.code }}</td>
+                                    <td>{{ produit.nom }}</td>
+                                    <td>{{ "%.2f"|format(produit.prix) }} €</td>
+                                    <td>{{ produit.quantite_stock }}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm"
+                                                onclick="ajouterAuPanier('{{ produit.id }}', '{{ produit.code }}', '{{ produit.nom }}', {{ produit.prix }})">
+                                            <i class="material-icons">add_shopping_cart</i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panier -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h2 class="h5 mb-0">Panier</h2>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive mb-3">
+                        <table class="table" id="panierTable">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Qté</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2"><strong>Total</strong></td>
+                                    <td><strong id="totalPanier">0.00 €</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="finaliserVente()">
+                            <i class="material-icons align-middle me-2">payment</i>
+                            Finaliser la Vente
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="viderPanier()">
+                            <i class="material-icons align-middle me-2">remove_shopping_cart</i>
+                            Vider le Panier
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quantité -->
+<div class="modal fade" id="modalQuantite" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quantité</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="produitId">
+                <div class="mb-3">
+                    <label class="form-label">Produit</label>
+                    <input type="text" class="form-control" id="produitNom" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Quantité</label>
+                    <input type="number" class="form-control" id="quantite" value="1" min="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="confirmerAjoutPanier()">
+                    Ajouter au Panier
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let panier = [];
+
+function rechercherProduits() {
+    const terme = document.getElementById('searchInput').value;
+    
+    fetch(`/vente/rechercher/{{ caisse.id }}?terme=${encodeURIComponent(terme)}`)
+        .then(response => response.json())
+        .then(produits => {
+            const tbody = document.querySelector('#produitsTable tbody');
+            tbody.innerHTML = '';
+            
+            produits.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.code}</td>
+                        <td>${p.nom}</td>
+                        <td>${p.prix.toFixed(2)} €</td>
+                        <td>${p.stock}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm"
+                                    onclick="ajouterAuPanier('${p.id}', '${p.code}', '${p.nom}', ${p.prix})">
+                                <i class="material-icons">add_shopping_cart</i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        })
+        .catch(error => {
+            alert('Erreur lors de la recherche des produits');
+        });
+}
+
+function ajouterAuPanier(id, code, nom, prix) {
+    document.getElementById('produitId').value = id;
+    document.getElementById('produitNom').value = nom;
+    document.getElementById('quantite').value = '1';
+    
+    new bootstrap.Modal(document.getElementById('modalQuantite')).show();
+}
+
+function confirmerAjoutPanier() {
+    const id = document.getElementById('produitId').value;
+    const quantite = parseInt(document.getElementById('quantite').value);
+    
+    if (quantite <= 0) {
+        alert('La quantité doit être supérieure à 0');
+        return;
+    }
+    
+    fetch(`/vente/ajouter-produit/{{ caisse.id }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            produit_id: id,
+            quantite: quantite
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const produit = data.produit;
+            const index = panier.findIndex(p => p.id === produit.id);
+            
+            if (index !== -1) {
+                panier[index].quantite += produit.quantite;
+                panier[index].total += produit.total;
+            } else {
+                panier.push(produit);
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalQuantite')).hide();
+            afficherPanier();
+        } else {
+            alert('Erreur : ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Erreur lors de l\'ajout au panier');
+    });
+}
+
+function afficherPanier() {
+    const tbody = document.querySelector('#panierTable tbody');
+    tbody.innerHTML = '';
+    
+    let total = 0;
+    panier.forEach(p => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${p.nom}</td>
+                <td>${p.quantite}</td>
+                <td>${p.total.toFixed(2)} €</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="retirerDuPanier('${p.id}')">
+                        <i class="material-icons">remove_circle</i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        total += p.total;
+    });
+    
+    document.getElementById('totalPanier').textContent = total.toFixed(2) + ' €';
+    
+    const btnFinaliser = document.querySelector('.btn-success');
+    const btnVider = document.querySelector('.btn-outline-danger');
+    
+    if (panier.length > 0) {
+        btnFinaliser.removeAttribute('disabled');
+        btnVider.removeAttribute('disabled');
+    } else {
+        btnFinaliser.setAttribute('disabled', 'disabled');
+        btnVider.setAttribute('disabled', 'disabled');
+    }
+}
+
+function retirerDuPanier(id) {
+    panier = panier.filter(p => p.id !== id);
+    afficherPanier();
+}
+
+function viderPanier() {
+    panier = [];
+    afficherPanier();
+}
+
+function finaliserVente() {
+    if (panier.length === 0) return;
+    
+    fetch(`/vente/finaliser/{{ caisse.id }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            produits: panier
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            panier = [];
+            location.reload();
+        }
+    });
+}
+
+// Initialiser l'état des boutons au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    afficherPanier();
+    
+    // Attacher les événements aux boutons
+    document.querySelector('.btn-success').addEventListener('click', finaliserVente);
+    document.querySelector('.btn-outline-danger').addEventListener('click', viderPanier);
+    
+    // Activer la recherche en appuyant sur Entrée
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            rechercherProduits();
+        }
+    });
+});
+</script>
+
+<style>
+.table th {
+    background-color: #f8f9fa;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.material-icons {
+    font-size: 18px;
+    vertical-align: middle;
+}
+
+#panierTable {
+    margin-bottom: 0;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+</style>
+{% endblock %} 

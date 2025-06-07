@@ -1,0 +1,223 @@
+/* Variables globales */
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+    --success-color: #27ae60;
+    --danger-color: #e74c3c;
+    --warning-color: #f1c40f;
+    --text-color: #2c3e50;
+    --gray-light: #f8f9fa;
+    --white: #ffffff;
+}
+
+/* Styles de base */
+body {
+    color: var(--text-color);
+    background-color: var(--gray-light);
+}
+
+/* Typographie */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color);
+}
+
+.display-4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.lead {
+    color: #6c757d;
+}
+
+/* Cartes */
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+    background-color: var(--white);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    background-color: var(--primary-color) !important;
+    color: var(--white);
+    padding: 1rem 1.25rem;
+}
+
+.hover-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Boutons */
+.btn {
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.5rem;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-action .material-icons {
+    margin-right: 15px;
+    font-size: 24px;
+}
+
+.btn-action .btn-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-outline-danger {
+    border: 2px solid var(--danger-color);
+    color: var(--danger-color);
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--danger-color);
+    color: var(--white);
+}
+
+/* Tableaux */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--gray-light);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--primary-lighter);
+}
+
+/* Badges */
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+    border-radius: 6px;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.bg-danger {
+    background-color: var(--danger-color) !important;
+}
+
+.bg-warning {
+    background-color: var(--warning-color) !important;
+}
+
+/* Icônes */
+.material-icons {
+    font-size: 18px;
+    vertical-align: middle;
+}
+
+/* Input groups */
+.input-group {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.input-group .form-control {
+    border-right: none;
+}
+
+.input-group .btn {
+    border-left: none;
+}
+
+/* Modal */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+}
+
+.modal-header {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--gray-light);
+}
+
+/* Utilitaires */
+.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.container-fluid {
+    padding: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .btn-action {
+        padding: 15px;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+} 

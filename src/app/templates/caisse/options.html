@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Options - Caisse {{ caisse.numero }}{% endblock %}
+
+{% block content %}
+<!-- Ajout du lien vers les icônes Material Design -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Options de la Caisse</h1>
+        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+            <i class="material-icons">arrow_back</i>
+            <span class="btn-text">Retour à la Liste des Caisses</span>
+        </a>
+    </div>
+
+    <p class="lead mb-5">Caisse {{ caisse.numero }} - {{ caisse.nom }}</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body text-center p-5">
+                    <div class="icon-circle mb-4 mx-auto">
+                        <i class="material-icons">point_of_sale</i>
+                    </div>
+                    <h3 class="card-title">Nouvelle Vente</h3>
+                    <p class="card-text mb-4">Effectuer une nouvelle transaction de vente</p>
+                    <a href="{{ url_for('vente.index', caisse_id=caisse.id) }}" class="btn btn-primary btn-lg d-block">Commencer la Vente</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body text-center p-5">
+                    <div class="icon-circle mb-4 mx-auto">
+                        <i class="material-icons">search</i>
+                    </div>
+                    <h3 class="card-title">Recherche</h3>
+                    <p class="card-text mb-4">Rechercher des produits dans le catalogue</p>
+                    <a href="{{ url_for('caisse.recherche_produits', caisse_id=caisse.id) }}" class="btn btn-primary btn-lg d-block">Rechercher des Produits</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+    --text-color: #2c3e50;
+    --gray-light: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+    background-color: white;
+}
+
+.hover-card:hover {
+    transform: translateY(-10px);
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--primary-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle .material-icons {
+    font-size: 40px;
+    color: var(--primary-color);
+}
+
+.btn {
+    padding: 15px 30px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-action .material-icons {
+    margin-right: 12px;
+    font-size: 24px;
+}
+
+.btn-action .btn-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+h1, h3 {
+    color: var(--text-color);
+}
+
+.lead {
+    color: #6c757d;
+}
+</style>
+{% endblock %} 
