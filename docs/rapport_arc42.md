@@ -5,6 +5,10 @@
 **Date** : 09 juin 2025
 **Version** : 1.0  
 **Projet** : Système de Gestion Multi-Magasins
+**Github labo 0** : https://github.com/Louqman-ETS/log430-labo-0
+**Github labo 1** : https://github.com/Louqman-ETS/log430-labo-01
+**Github labo 2** : https://github.com/Louqman-ETS/log430-labo-01
+
 
 ---
 
