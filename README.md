@@ -127,7 +127,7 @@ Application web Flask pour la gestion de points de vente multi-magasins avec rep
 
 ### Option 1: Déploiement Docker (Recommandé)
 
-#### Sur le Serveur (Base de données) (Connectez vous à la VM la db est dans un container sur la VM)
+#### Sur le Serveur (Base de données) (Connectez vous à la VM la db est dans un container sur la VM)  
 
 ```bash
 # Démarrer PostgreSQL avec docker-compose
