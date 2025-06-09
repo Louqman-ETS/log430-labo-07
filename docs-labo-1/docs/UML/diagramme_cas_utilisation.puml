@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+actor Utilisateur
+
+rectangle "Système de Caisse de Magasin" {
+  usecase "Sélectionner une caisse" as UC1
+  usecase "Rechercher un produit" as UC2
+  usecase "Retour de produits" as UC3
+  usecase "Quitter" as UC4
+  
+  usecase "Démarrer une vente" as UC1_1
+  usecase "Ajouter produit à la vente" as UC1_2
+  usecase "Finaliser une vente" as UC1_3
+}
+
+Utilisateur -- UC1
+Utilisateur -- UC2
+Utilisateur -- UC3
+Utilisateur -- UC4
+
+UC1 ..> UC1_1 : include
+UC1_1 ..> UC1_2 : include
+UC1_2 ..> UC1_3 : include
+UC1_2 ..> UC2 : include
+
+note right of UC1 : Option 1 du menu principal
+
+note right of UC2 : Option 2 du menu principal\nRecherche par nom, code, ID ou catégorie
+
+note right of UC3 : Option 3 du menu principal\nRetour de produits et mise à jour du stock
+
+note right of UC4 : Option 0 du menu principal\nQuitter l'application
+
+title Cas d'utilisation - Système de Caisse de Magasin
+@enduml 

@@ -1,0 +1,111 @@
+@startuml Diagramme de Classes - Logique Métier
+
+' Définition des classes avec logique métier
+class Categorie {
+  +id: Integer
+  +nom: String
+  +description: String
+  --
+  +get_produits(): List<Produit>
+}
+
+class Produit {
+  +id: Integer
+  +code: String
+  +nom: String
+  +description: String
+  +prix: Float
+  +quantite_stock: Integer
+  --
+  +verifier_stock(quantite: Integer): Boolean
+  +reduire_stock(quantite: Integer): Boolean
+  +augmenter_stock(quantite: Integer): Boolean
+  +est_disponible(): Boolean
+  +get_categorie(): Categorie
+}
+
+class Caisse {
+  +id: Integer
+  +numero: Integer
+  +nom: String
+  --
+  +demarrer_vente(): Vente
+  +get_ventes(): List<Vente>
+  +est_active(): Boolean
+}
+
+class Vente {
+  +id: Integer
+  +date_heure: DateTime
+  +montant_total: Float
+  --
+  +ajouter_ligne(produit: Produit, quantite: Integer): LigneVente
+  +calculer_total(): Float
+  +finaliser(): Boolean
+  +annuler(): Boolean
+  +get_lignes(): List<LigneVente>
+  +get_caisse(): Caisse
+}
+
+class LigneVente {
+  +id: Integer
+  +quantite: Integer
+  +prix_unitaire: Float
+  --
+  +calculer_sous_total(): Float
+  +get_produit(): Produit
+  +get_vente(): Vente
+}
+
+' Services métier (classes de logique)
+class ProduitService <<Service>> {
+  +rechercher_produit(terme: String): List<Dict>
+  +rechercher_par_categorie(categorie: String): List<Dict>
+  +get_produit_details(id: Integer): Dict
+}
+
+class VenteService <<Service>> {
+  +demarrer_vente(caisse_id: Integer): Integer
+  +ajouter_produit(vente_id: Integer, produit_id: Integer, quantite: Integer): Tuple<Boolean, String>
+  +finaliser_vente(vente_id: Integer): Tuple<Boolean, Dict>
+  +effectuer_retour(vente_id: Integer): Tuple<Boolean, String>
+}
+
+class CategorieService <<Service>> {
+  +liste_categories(): List<Dict>
+}
+
+' Relations entre entités métier
+Categorie ||--o{ Produit : contient
+Produit ||--o{ LigneVente : "figure dans"
+Caisse ||--o{ Vente : "enregistre"
+Vente ||--o{ LigneVente : "contient"
+
+' Relations avec les services
+ProduitService ..> Produit : utilise
+ProduitService ..> Categorie : utilise
+VenteService ..> Vente : utilise
+VenteService ..> LigneVente : utilise
+VenteService ..> Produit : utilise
+CategorieService ..> Categorie : utilise
+
+' Titre et légende
+title Système de Caisse - Diagramme de Classes (Logique Métier)
+
+legend right
+  <b>Classes Métier</b>
+  • Entités principales avec leurs méthodes
+  • Logique de validation et calculs
+  • Relations bidirectionnelles
+  
+  <b>Services</b>
+  • Orchestration des opérations
+  • Logique métier complexe
+  • Interface pour la couche présentation
+  
+  <b>Responsabilités</b>
+  • <b>Entités</b> : État et comportements de base
+  • <b>Services</b> : Orchestration et règles métier
+endlegend
+
+@enduml 

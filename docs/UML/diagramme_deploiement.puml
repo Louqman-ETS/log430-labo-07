@@ -19,11 +19,19 @@ skinparam artifact {
     FontColor Black
 }
 
-' Définir les nœuds
-node "Caisse Container" as CaisseContainer {
-    artifact "App Console Python" as AppPython
+' Définir les nœuds - Architecture 3-tiers
+
+' Tier 1 - Présentation
+node "Navigateur Web" as Browser {
+    artifact "Interface Utilisateur" as UI
 }
 
+' Tier 2 - Logique Métier
+node "Gestion de magasin" as MagasinContainer {
+    artifact "App Flask Multi-Magasins" as AppFlask
+}
+
+' Tier 3 - Données
 node "Database Container" as DBContainer {
     database "PostgreSQL" as PostgreSQL {
         artifact "store_db" as StoreDB
@@ -35,21 +43,31 @@ database "Docker Volume" as DockerVolume {
     artifact "postgres_data" as PostgresData
 }
 
-' Connexions
-CaisseContainer -- DBContainer : "PostgreSQL Protocol\nvia SQLAlchemy"
+' Connexions entre les tiers
+Browser -- MagasinContainer : "HTTP :8081\n(Tier 1 → Tier 2)"
+MagasinContainer -- DBContainer : "PostgreSQL Protocol\nvia SQLAlchemy\n(Tier 2 → Tier 3)"
 DBContainer -- DockerVolume : "Persistent Storage"
 
 ' Notes explicatives
 
-note bottom of PostgreSQL
-  Base de données PostgreSQL
-  Transactions ACID
-  Port: 5432
+note top of Browser
+  Tier 1 - Présentation
+  Interface utilisateur web
+  Port: 8081
 end note
 
-note top of CaisseContainer
-  Application Python
-  dans container Docker
+note left of MagasinContainer
+  Tier 2 - Logique Métier
+  Application Flask Web
+  Gestion de 5 magasins
+  Règles métier
+end note
+
+note bottom of PostgreSQL
+  Tier 3 - Données
+  Base PostgreSQL
+  Multi-magasins avec stocks
+  Port: 5432
 end note
 
 note right of DockerVolume
@@ -58,26 +76,25 @@ note right of DockerVolume
 end note
 
 ' Titre et légende
-title Architecture de déploiement - Système de Caisse (2-tier)
+title Architecture de déploiement - Système Multi-Magasins (3-tier)
 
 legend right
-  <b>Vue Déploiement</b>
+  <b>Architecture 3-Tiers</b>
   
-  Ce diagramme illustre l'architecture de déploiement
-  du système de caisse utilisant Docker avec une base
-  de données PostgreSQL persistante.
+  <b>Tier 1 - Présentation:</b>
+  Interface web responsive
   
-  <b>Points forts:</b>
-  - Containerisation complète
-  - Persistance des données
-  - Scalabilité améliorée
-  - Base de données robuste
+  <b>Tier 2 - Logique Métier:</b>
+  Flask + SQLAlchemy
+  Gestion 5 magasins, 15 caisses
   
-  <b>Caractéristiques:</b>
-  - PostgreSQL v13
-  - Volumes Docker
-  - Healthchecks
-  - Configuration via variables d'environnement
+  <b>Tier 3 - Données:</b>
+  PostgreSQL + Docker Volume
+  Stocks par magasin
+  
+  <b>Déploiement:</b>
+  Docker containerisé
+  Port 8081
 endlegend
 
 @enduml 

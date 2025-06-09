@@ -1,111 +1,184 @@
-@startuml Diagramme de Classes - Logique Métier
+@startuml Diagramme de Classes MVC - Application Flask Multi-Magasins
 
-' Définition des classes avec logique métier
-class Categorie {
-  +id: Integer
-  +nom: String
-  +description: String
-  --
-  +get_produits(): List<Produit>
+' ===== COUCHE MODÈLE (Models) =====
+package "Models" {
+    class FlaskApp {
+        +db: SQLAlchemy
+        +config: Config
+        --
+        +create_app(): Flask
+        +register_blueprints(): void
+    }
+    
+    class "models.py" as models {
+        +Magasin: Model
+        +Caisse: Model
+        +Produit: Model
+        +Categorie: Model
+        +StockMagasin: Model
+        +StockCentral: Model
+        +Vente: Model
+        +LigneVente: Model
+        +DemandeReapprovisionnement: Model
+        --
+        +db.session.query(): Query
+        +db.session.add(): void
+        +db.session.commit(): void
+    }
 }
 
-class Produit {
-  +id: Integer
-  +code: String
-  +nom: String
-  +description: String
-  +prix: Float
-  +quantite_stock: Integer
-  --
-  +verifier_stock(quantite: Integer): Boolean
-  +reduire_stock(quantite: Integer): Boolean
-  +augmenter_stock(quantite: Integer): Boolean
-  +est_disponible(): Boolean
-  +get_categorie(): Categorie
+' ===== COUCHE CONTRÔLEUR (Controllers) =====
+package "Controllers" {
+    class "home_controller.py" as home_ctrl {
+        +bp: Blueprint
+        --
+        +index(): Response
+    }
+    
+    class "magasin_controller.py" as magasin_ctrl {
+        +bp: Blueprint
+        --
+        +index(): Response
+        +detail(magasin_id): Response
+        +caisses(magasin_id): Response
+    }
+    
+    class "produit_controller.py" as produit_ctrl {
+        +bp: Blueprint
+        --
+        +liste(magasin_id): Response
+        +ajouter(): Response
+        +modifier(id): Response
+    }
+    
+    class "vente_controller.py" as vente_ctrl {
+        +bp: Blueprint
+        --
+        +index(caisse_id): Response
+        +rechercher_produits(caisse_id): Response
+        +finaliser_vente(caisse_id): Response
+        +retours(caisse_id): Response
+        +annuler(vente_id): Response
+    }
+    
+    class "rapport_controller.py" as rapport_ctrl {
+        +bp: Blueprint
+        --
+        +index(magasin_id): Response
+    }
+    
+    class "stock_central_controller.py" as stock_ctrl {
+        +bp: Blueprint
+        --
+        +index(): Response
+        +demander_reappro(): Response
+        +valider_demande(demande_id): Response
+    }
+    
+    class "caisse_controller.py" as caisse_ctrl {
+        +bp: Blueprint
+        --
+        +options(caisse_id): Response
+    }
 }
 
-class Caisse {
-  +id: Integer
-  +numero: Integer
-  +nom: String
-  --
-  +demarrer_vente(): Vente
-  +get_ventes(): List<Vente>
-  +est_active(): Boolean
+' ===== COUCHE VUE (Views) =====
+package "Templates" {
+    class "home.html" as home_template {
+        --
+        +render_dashboard(): HTML
+    }
+    
+    class "magasin/" as magasin_views {
+        +index.html: Template
+        --
+        +render_magasin_list(): HTML
+    }
+    
+    class "produit/" as produit_views {
+        +liste.html: Template
+        +ajouter.html: Template
+        +modifier.html: Template
+        --
+        +render_produit_management(): HTML
+    }
+    
+    class "vente/" as vente_views {
+        +index.html: Template
+        +nouvelle.html: Template
+        +retour.html: Template
+        --
+        +render_pos_interface(): HTML
+    }
+    
+    class "rapport/" as rapport_views {
+        +index.html: Template
+        --
+        +render_analytics(): HTML
+    }
+    
+    class "stock_central/" as stock_views {
+        +index.html: Template
+        --
+        +render_stock_management(): HTML
+    }
+    
+    class "caisse/" as caisse_views {
+        +index.html: Template
+        +options.html: Template
+        --
+        +render_caisse_interface(): HTML
+    }
 }
 
-class Vente {
-  +id: Integer
-  +date_heure: DateTime
-  +montant_total: Float
-  --
-  +ajouter_ligne(produit: Produit, quantite: Integer): LigneVente
-  +calculer_total(): Float
-  +finaliser(): Boolean
-  +annuler(): Boolean
-  +get_lignes(): List<LigneVente>
-  +get_caisse(): Caisse
-}
+' ===== RELATIONS MVC =====
+' Models utilisés par Controllers
+models <-- home_ctrl : utilise
+models <-- magasin_ctrl : utilise
+models <-- produit_ctrl : utilise
+models <-- vente_ctrl : utilise
+models <-- rapport_ctrl : utilise
+models <-- stock_ctrl : utilise
+models <-- caisse_ctrl : utilise
 
-class LigneVente {
-  +id: Integer
-  +quantite: Integer
-  +prix_unitaire: Float
-  --
-  +calculer_sous_total(): Float
-  +get_produit(): Produit
-  +get_vente(): Vente
-}
+' Controllers vers Views
+home_ctrl --> home_template : rend
+magasin_ctrl --> magasin_views : rend
+produit_ctrl --> produit_views : rend
+vente_ctrl --> vente_views : rend
+rapport_ctrl --> rapport_views : rend
+stock_ctrl --> stock_views : rend
+caisse_ctrl --> caisse_views : rend
 
-' Services métier (classes de logique)
-class ProduitService <<Service>> {
-  +rechercher_produit(terme: String): List<Dict>
-  +rechercher_par_categorie(categorie: String): List<Dict>
-  +get_produit_details(id: Integer): Dict
-}
+' Configuration Flask
+FlaskApp --> home_ctrl : configure
+FlaskApp --> magasin_ctrl : configure
+FlaskApp --> produit_ctrl : configure
+FlaskApp --> vente_ctrl : configure
+FlaskApp --> rapport_ctrl : configure
+FlaskApp --> stock_ctrl : configure
+FlaskApp --> caisse_ctrl : configure
 
-class VenteService <<Service>> {
-  +demarrer_vente(caisse_id: Integer): Integer
-  +ajouter_produit(vente_id: Integer, produit_id: Integer, quantite: Integer): Tuple<Boolean, String>
-  +finaliser_vente(vente_id: Integer): Tuple<Boolean, Dict>
-  +effectuer_retour(vente_id: Integer): Tuple<Boolean, String>
-}
-
-class CategorieService <<Service>> {
-  +liste_categories(): List<Dict>
-}
-
-' Relations entre entités métier
-Categorie ||--o{ Produit : contient
-Produit ||--o{ LigneVente : "figure dans"
-Caisse ||--o{ Vente : "enregistre"
-Vente ||--o{ LigneVente : "contient"
-
-' Relations avec les services
-ProduitService ..> Produit : utilise
-ProduitService ..> Categorie : utilise
-VenteService ..> Vente : utilise
-VenteService ..> LigneVente : utilise
-VenteService ..> Produit : utilise
-CategorieService ..> Categorie : utilise
-
-' Titre et légende
-title Système de Caisse - Diagramme de Classes (Logique Métier)
+title Architecture MVC Implémentée - Application Flask Multi-Magasins
 
 legend right
-  <b>Classes Métier</b>
-  • Entités principales avec leurs méthodes
-  • Logique de validation et calculs
-  • Relations bidirectionnelles
+  <b>Architecture Réelle Implémentée</b>
   
-  <b>Services</b>
-  • Orchestration des opérations
-  • Logique métier complexe
-  • Interface pour la couche présentation
+  <b>Models:</b>
+  • models.py (9 entités SQLAlchemy)
+  • FlaskApp configuration
   
-  <b>Responsabilités</b>
-  • <b>Entités</b> : État et comportements de base
-  • <b>Services</b> : Orchestration et règles métier
+  <b>Controllers:</b>
+  • 7 fichiers *_controller.py
+  • Blueprints Flask organisés
+  
+  <b>Views:</b>
+  • Templates organisés par dossier
+  • Interface responsive Jinja2
+  
+  <b>Navigation:</b>
+  Magasins → Caisses → Ventes
+  Produits → Stocks → Rapports
 endlegend
 
 @enduml 

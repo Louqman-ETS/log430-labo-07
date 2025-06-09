@@ -1,12 +1,12 @@
 version: "3.8"
 
 services:
-  caisse-app:
+  flask-app:
     build: .
-    container_name: caisse-magasin-client
-    stdin_open: true
-    tty: true
+    container_name: flask-magasin-client
     restart: unless-stopped
+    ports:
+      - "8081:8080"
     volumes:
       - ./src:/app/src
     environment:

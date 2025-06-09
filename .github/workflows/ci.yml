@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  APP_NAME: log430-labo-01
+  APP_NAME: log430-labo-02
   REGISTRY: docker.io
   DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
@@ -50,9 +50,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Set environment variables
-        run: echo "DATABASE_URL=postgresql://user:password@localhost:5432/store_db" >> $GITHUB_ENV
-      - name: Run unit tests
-        run: PYTHONPATH=./src python -m tests.run_tests
+        run: |
+          echo "DATABASE_URL=postgresql://user:password@localhost:5432/store_db" >> $GITHUB_ENV
+          echo "FLASK_ENV=testing" >> $GITHUB_ENV
+          echo "SECRET_KEY=test-secret-key" >> $GITHUB_ENV
+      - name: Initialize test database
+        run: |
+          PYTHONPATH=./src python -m src.create_db
+      - name: Run application tests
+        run: |
+          echo "Running application structure tests..."
+          PYTHONPATH=./src python -m tests.test_app -v
+      - name: Run functionality tests  
+        run: |
+          echo "Running functionality tests..."
+          PYTHONPATH=./src python -m tests.test_functionality -v
+      - name: Run configuration tests
+        run: |
+          echo "Running configuration tests..."
+          PYTHONPATH=./src python -m tests.test_config -v
+      - name: Run complete test suite
+        run: |
+          echo "Running complete test suite..."
+          PYTHONPATH=./src python -m tests.run_tests
 
   build-and-deploy:
     runs-on: ubuntu-latest

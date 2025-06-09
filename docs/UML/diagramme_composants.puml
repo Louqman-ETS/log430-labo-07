@@ -1,91 +1,57 @@
-@startuml Diagramme de Composants - Système de Caisse
+@startuml Diagramme de Composants - Application Flask Multi-Magasins
 
-!define RECTANGLE class
-
-' Définition des packages/couches
-package "Couche Présentation" as presentation {
-  component [Application Principale] as app
+' Interface utilisateur
+package "Interface Utilisateur" as ui {
+  component [Navigateur Web] as browser
+  component [Templates Jinja2] as templates
+  component [Fichiers Statiques] as static
 }
 
-package "Couche Logique Métier" as business {
-  component [Service Produit] as produit_service
-  component [Service Catégorie] as categorie_service  
-  component [Service Vente] as vente_service
+' Application Flask
+package "Application Flask" as app {
+  component [Flask App] as flask_app
+  component [7 Controllers] as controllers
+  component [Models SQLAlchemy] as models
 }
 
-package "Couche Accès Données" as data_access {
-  component [DAO Produit] as produit_dao
-  component [DAO Catégorie] as categorie_dao
-  component [DAO Vente] as vente_dao
-  component [DAO Ligne Vente] as ligne_vente_dao
-  component [DAO Caisse] as caisse_dao
+' Infrastructure
+package "Infrastructure" as infra {
+  component [Blueprints] as blueprints
+  component [Jinja2] as jinja2
+  component [SQLAlchemy] as sqlalchemy
 }
 
-package "Couche Modèle/ORM" as model {
-  component [Modèle Produit] as model_produit
-  component [Modèle Catégorie] as model_categorie
-  component [Modèle Vente] as model_vente
-  component [Modèle Ligne Vente] as model_ligne_vente
-  component [Modèle Caisse] as model_caisse
-  component [Configuration DB] as db_config
-}
+' Relations principales
+browser --> flask_app : HTTP requests
+flask_app --> controllers : route
+controllers --> models : utilise
+controllers --> templates : rend
 
-package "Infrastructure" as infrastructure {
-  component [SQLAlchemy ORM] as orm
-  component [psycopg2 Driver] as driver
-}
+' Infrastructure
+flask_app --> blueprints : utilise
+templates --> jinja2 : moteur
+models --> sqlalchemy : ORM
+static --> flask_app : sert
 
+' Configuration
+blueprints --> controllers : contient
 
-
-' Relations entre composants
-app --> produit_service : appelle
-app --> categorie_service : appelle
-app --> vente_service : appelle
-
-produit_service --> produit_dao : utilise
-categorie_service --> categorie_dao : utilise
-vente_service --> vente_dao : utilise
-vente_service --> ligne_vente_dao : utilise
-vente_service --> caisse_dao : utilise
-
-produit_dao --> model_produit : utilise
-categorie_dao --> model_categorie : utilise
-vente_dao --> model_vente : utilise
-ligne_vente_dao --> model_ligne_vente : utilise
-caisse_dao --> model_caisse : utilise
-
-model_produit --> orm : hérite de
-model_categorie --> orm : hérite de
-model_vente --> orm : hérite de
-model_ligne_vente --> orm : hérite de
-model_caisse --> orm : hérite de
-db_config --> orm : configure
-orm --> driver : utilise
-
-
-
-' Interfaces externes
-interface "Console" as console
-
-app ..> console : affiche sur
-
-
-
-' Titre et légende
-title Système de Caisse - Diagramme de Composants
+title Application Flask Multi-Magasins - Vue Composants
 
 legend right
-  <b>Architecture en Couches</b>
+  <b>Architecture</b>
   
-  • <b>Présentation</b> : Application console (main.py)
-  • <b>Logique Métier</b> : Services métier
-  • <b>Accès Données</b> : DAOs (logique d'accès)
-  • <b>Modèle/ORM</b> : Modèles SQLAlchemy (mapping)
-  • <b>Infrastructure</b> : ORM et drivers
+  <b>Interface:</b>
+  • Navigateur + Templates + CSS/JS
   
-  <b>Distinction DAO vs ORM</b>
-  • <b>DAO</b> : Logique métier d'accès aux données
-  • <b>Modèles ORM</b> : Mapping objet-relationnel
+  <b>Application:</b>
+  • Flask App + 7 Controllers + Models
+  
+  <b>Infrastructure:</b>
+  • Blueprints + Jinja2 + SQLAlchemy
+  
+  <b>Flux:</b>
+  HTTP → Flask → Controllers → Models/Views
 endlegend
 
 @enduml 

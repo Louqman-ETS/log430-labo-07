@@ -9,18 +9,18 @@ ENV PYTHONPATH=/app
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
     netcat-traditional \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier les fichiers nécessaires
 COPY requirements.txt .
 COPY src/ src/
-COPY entrypoint.sh .
 
 # Installation des dépendances Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Rendre le script d'entrée exécutable
-RUN chmod +x entrypoint.sh
+# Exposer le port Flask
+EXPOSE 8080
 
-# Définir le script d'entrée
-ENTRYPOINT ["./entrypoint.sh"]
+# Lancer l'application Flask directement
+CMD ["python", "-m", "src.app.run"]

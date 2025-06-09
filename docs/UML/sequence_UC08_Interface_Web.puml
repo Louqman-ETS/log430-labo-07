@@ -1,0 +1,40 @@
+@startuml UC8 - Offrir une interface web minimale pour les gestionnaires
+
+actor "Gestionnaire" as GM
+participant "Navigateur Web" as Browser
+participant "home_controller.py" as Controller
+participant "models.py" as Models
+participant "Base de Données" as DB
+
+title UC8 - Offrir une interface web minimale pour les gestionnaires
+
+GM -> Browser : Accède à l'interface web légère
+Browser -> Controller : HTTP GET /dashboard
+
+Controller -> Models : Récupérer indicateurs clés
+Models -> DB : Query ventes récentes
+DB -> Models : Données ventes
+Models -> Controller : Résultats ventes
+
+Controller -> Models : Récupérer état des stocks
+Models -> DB : Query stocks par magasin
+DB -> Models : Niveaux de stock
+Models -> Controller : État des stocks
+
+Controller -> Models : Récupérer alertes actives
+Models -> DB : Query alertes non résolues
+DB -> Models : Alertes en cours
+Models -> Controller : Liste alertes
+
+Controller -> Browser : Interface web minimale
+Browser -> GM : Dashboard avec indicateurs essentiels
+
+note right of GM
+  Interface légère contient :
+  • Résumé des ventes
+  • État global des stocks
+  • Alertes actives
+  • Accès rapide sans système interne
+end note
+
+@enduml 

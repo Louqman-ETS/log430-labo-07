@@ -1,0 +1,40 @@
+@startuml UC2 - Consulter le stock central et déclencher un réapprovisionnement
+
+actor "Employé Magasin" as EM
+participant "Navigateur Web" as Browser
+participant "stock_central_controller.py" as Controller
+participant "models.py" as Models
+participant "Base de Données" as DB
+
+title UC2 - Consulter le stock central et déclencher un réapprovisionnement
+
+EM -> Browser : Accède à /stock-central
+Browser -> Controller : HTTP GET /stock-central
+
+Controller -> Models : Récupérer stock central
+Models -> DB : Query StockCentral
+DB -> Models : Stocks disponibles
+Models -> Controller : Résultats
+
+Controller -> Browser : Afficher stock central
+Browser -> EM : Interface stock central
+
+EM -> Browser : Clic "Demander réapprovisionnement"
+Browser -> Controller : HTTP POST /demander-reappro
+
+Controller -> Models : Créer DemandeReapprovisionnement
+Models -> DB : INSERT demande
+DB -> Models : Confirmation
+Models -> Controller : Succès
+
+Controller -> Browser : Confirmation demande créée
+Browser -> EM : Message de succès
+
+note right of EM
+  Actions possibles :
+  • Consulter stock central
+  • Initier demande réappro
+  (si produit insuffisant localement)
+end note
+
+@enduml 

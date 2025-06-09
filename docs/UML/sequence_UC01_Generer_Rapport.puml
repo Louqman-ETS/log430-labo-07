@@ -1,0 +1,40 @@
+@startuml UC1 - Générer un rapport consolidé des ventes
+
+actor "Gestionnaire Maison Mère" as GM
+participant "Navigateur Web" as Browser
+participant "rapport_controller.py" as Controller
+participant "models.py" as Models
+participant "Base de Données" as DB
+
+title UC1 - Générer un rapport consolidé des ventes
+
+GM -> Browser : Accède à /rapport
+Browser -> Controller : HTTP GET /rapport
+
+Controller -> Models : Récupérer ventes par magasin
+Models -> DB : Query ventes
+DB -> Models : Données ventes
+Models -> Controller : Résultats
+
+Controller -> Models : Récupérer produits les plus vendus
+Models -> DB : Query produits
+DB -> Models : Top produits
+Models -> Controller : Résultats
+
+Controller -> Models : Récupérer stocks restants
+Models -> DB : Query stocks
+DB -> Models : Stocks actuels
+Models -> Controller : Résultats
+
+Controller -> Controller : Compiler le rapport
+Controller -> Browser : Afficher rapport consolidé
+Browser -> GM : Rapport stratégique
+
+note right of GM
+  Rapport contient :
+  • CA par magasin
+  • Produits populaires
+  • Niveaux de stock
+end note
+
+@enduml 

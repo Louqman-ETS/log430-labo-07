@@ -1,0 +1,45 @@
+@startuml UC3 - Visualiser les performances des magasins dans un tableau de bord
+
+actor "Gestionnaire Maison Mère" as GM
+participant "Navigateur Web" as Browser
+participant "rapport_controller.py" as Controller
+participant "models.py" as Models
+participant "Base de Données" as DB
+
+title UC3 - Visualiser les performances des magasins dans un tableau de bord
+
+GM -> Browser : Accède au tableau de bord
+Browser -> Controller : HTTP GET /rapport
+
+Controller -> Models : Récupérer CA par magasin
+Models -> DB : Query ventes par magasin
+DB -> Models : Chiffres d'affaires
+Models -> Controller : Résultats
+
+Controller -> Models : Récupérer alertes rupture stock
+Models -> DB : Query stocks critiques
+DB -> Models : Produits en rupture
+Models -> Controller : Alertes
+
+Controller -> Models : Récupérer produits en surstock
+Models -> DB : Query stocks élevés
+DB -> Models : Produits en surstock
+Models -> Controller : Résultats
+
+Controller -> Models : Récupérer tendances hebdomadaires
+Models -> DB : Query ventes 7 derniers jours
+DB -> Models : Données tendances
+Models -> Controller : Résultats
+
+Controller -> Browser : Afficher tableau de bord synthétique
+Browser -> GM : Dashboard avec indicateurs clés
+
+note right of GM
+  Tableau de bord contient :
+  • CA par magasin
+  • Alertes rupture stock
+  • Produits en surstock
+  • Tendances hebdomadaires
+end note
+
+@enduml 
