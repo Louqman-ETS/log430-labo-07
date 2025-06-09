@@ -4,10 +4,10 @@
 **Auteur** : Louqman Masbahi  
 **Date** : 09 juin 2025
 **Version** : 1.0  
-**Projet** : Système de Gestion Multi-Magasins
-**Github labo 0** : https://github.com/Louqman-ETS/log430-labo-0
-**Github labo 1** : https://github.com/Louqman-ETS/log430-labo-01
-**Github labo 2** : https://github.com/Louqman-ETS/log430-labo-01
+**Projet** : Système de Gestion Multi-Magasins  
+**Github labo 0** : https://github.com/Louqman-ETS/log430-labo-0  
+**Github labo 1** : https://github.com/Louqman-ETS/log430-labo-01  
+**Github labo 2** : https://github.com/Louqman-ETS/log430-labo-01  
 
 
 ---
@@ -16,7 +16,7 @@
 
 ### 1.1 Aperçu du Système
 
-Ce rapport documente l'évolution architecturale d'un système de caisse simple (Lab 0) vers un système multi-magasins distribué (Lab 2) capable de gérer 5 magasins avec 15 caisses.
+Ce rapport documente l'évolution architecturale d'un système de caisse simple (Lab 1) vers un système multi-magasins (Lab 2) capable de gérer 5 magasins avec 15 caisses.
 
 ### 1.2 Objectifs Architecturaux
 
