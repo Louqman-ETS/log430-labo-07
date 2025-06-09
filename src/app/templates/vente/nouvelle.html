@@ -21,7 +21,7 @@
                             <select class="form-control" id="produit_id" name="produit_id" required>
                                 <option value="">Sélectionner un produit</option>
                                 {% for produit in produits %}
-                                <option value="{{ produit.id }}">{{ produit.code }} - {{ produit.nom }} ({{ "%.2f"|format(produit.prix) }} €)</option>
+                                <option value="{{ produit.id }}">{{ produit.code }} - {{ produit.nom }} ({{ "%.2f"|format(produit.prix) }} $)</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -52,13 +52,13 @@
                         <tr>
                             <td>{{ ligne.produit.nom }}</td>
                             <td>{{ ligne.quantite }}</td>
-                            <td>{{ "%.2f"|format(ligne.prix_unitaire) }} €</td>
-                            <td>{{ "%.2f"|format(ligne.prix_unitaire * ligne.quantite) }} €</td>
+                            <td>${{ "%.2f"|format(ligne.prix_unitaire) }}</td>
+                            <td>${{ "%.2f"|format(ligne.prix_unitaire * ligne.quantite) }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-info">
                             <td colspan="3"><strong>Total</strong></td>
-                            <td><strong>{{ "%.2f"|format(vente.montant_total) }} €</strong></td>
+                            <td><strong>${{ "%.2f"|format(vente.montant_total) }}</strong></td>
                         </tr>
                     </tbody>
                 </table>
@@ -78,7 +78,7 @@
                 <h3 class="card-title">Informations Caisse</h3>
                 <p><strong>Numéro :</strong> {{ caisse.numero }}</p>
                 <p><strong>Nom :</strong> {{ caisse.nom }}</p>
-                <a href="{{ url_for('caisse.index') }}" class="btn btn-secondary">Retour aux caisses</a>
+                <a href="{{ url_for('magasin.caisses', magasin_id=caisse.magasin_id) }}" class="btn btn-secondary">Retour aux caisses</a>
             </div>
         </div>
     </div>

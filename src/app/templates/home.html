@@ -9,46 +9,48 @@
 <div class="container">
     <div class="row justify-content-center text-center my-5">
         <div class="col-md-8">
-            <h1 class="display-4 mb-4">Système de Gestion<br>des Caisses</h1>
-            <p class="lead mb-5">Une solution simple et efficace pour gérer vos ventes et votre inventaire</p>
+            <h1 class="display-4 mb-4">Système de Gestion<br>Multi-Magasins</h1>
+            <p class="lead mb-5">Une solution complète pour gérer vos magasins, caisses et inventaire</p>
         </div>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm hover-card">
+        <div class="col-md-6 col-lg-5 mb-4">
+            <div class="card h-100 shadow-sm hover-card primary-card">
                 <div class="card-body text-center p-5">
                     <div class="icon-circle mb-4 mx-auto">
-                        <i class="material-icons">point_of_sale</i>
+                        <i class="material-icons">business</i>
                     </div>
-                    <h3 class="card-title">Système de Caisses</h3>
-                    <p class="card-text mb-4">Accédez à la gestion des caisses et effectuez vos ventes</p>
-                    <a href="{{ url_for('caisse.index') }}" class="btn btn-primary btn-lg d-block">Accéder aux Caisses</a>
+                    <h3 class="card-title">Nos Magasins</h3>
+                    <p class="card-text mb-4">Sélectionnez un magasin pour accéder à ses caisses, gérer ses produits et effectuer vos ventes</p>
+                    <a href="{{ url_for('magasin.index') }}" class="btn btn-primary btn-lg d-block">Accéder aux Magasins</a>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4 mb-4">
+        <div class="col-md-6 col-lg-5 mb-4">
             <div class="card h-100 shadow-sm hover-card">
                 <div class="card-body text-center p-5">
                     <div class="icon-circle mb-4 mx-auto">
                         <i class="material-icons">inventory</i>
                     </div>
                     <h3 class="card-title">Stock Central</h3>
-                    <p class="card-text mb-4">Gérez le stock central et les demandes de réapprovisionnement</p>
+                    <p class="card-text mb-4">Gérez le stock central et les demandes de réapprovisionnement entre magasins</p>
                     <a href="{{ url_for('stock_central.index') }}" class="btn btn-primary btn-lg d-block">Gérer les Stocks</a>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-4 mb-4">
+    </div>
+
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 col-lg-6 mb-4">
             <div class="card h-100 shadow-sm hover-card">
                 <div class="card-body text-center p-5">
                     <div class="icon-circle mb-4 mx-auto">
-                        <i class="material-icons">business</i>
+                        <i class="material-icons">assessment</i>
                     </div>
-                    <h3 class="card-title">Maison Mère</h3>
-                    <p class="card-text mb-4">Consultez les rapports consolidés et les statistiques de vente</p>
+                    <h3 class="card-title">Rapports & Statistiques</h3>
+                    <p class="card-text mb-4">Consultez les rapports consolidés et les statistiques de vente de tous vos magasins</p>
                     <a href="{{ url_for('rapport.index') }}" class="btn btn-primary btn-lg d-block">Accéder aux Rapports</a>
                 </div>
             </div>
@@ -63,6 +65,7 @@
     --primary-lighter: #ebf5fb;
     --text-color: #2c3e50;
     --gray-light: #f8f9fa;
+    --accent-color: #e67e22;
 }
 
 .card {
@@ -74,6 +77,24 @@
 
 .hover-card:hover {
     transform: translateY(-10px);
+}
+
+.primary-card {
+    background: linear-gradient(135deg, var(--primary-lighter) 0%, #ffffff 100%);
+    border: 2px solid var(--primary-light);
+}
+
+.primary-card .icon-circle {
+    background-color: var(--primary-color);
+}
+
+.primary-card .icon-circle .material-icons {
+    color: white;
+}
+
+.primary-card .card-title {
+    color: var(--primary-color);
+    font-weight: bold;
 }
 
 .icon-circle {
@@ -126,6 +147,12 @@ h1, h3 {
 
 .lead {
     color: #6c757d;
+}
+
+/* Effet visuel pour indiquer que c'est le point d'entrée principal */
+.primary-card:hover {
+    transform: translateY(-15px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
 }
 </style>
 {% endblock %} 

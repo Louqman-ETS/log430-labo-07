@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Magasins - Système de Caisse{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/icon?family=Material-Icons" rel="stylesheet">
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">Nos Magasins</h1>
+                <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+                    <i class="material-icons" style="font-size: 18px; vertical-align: middle;">home</i>
+                    Accueil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for magasin in magasins %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-circle mb-3 mx-auto">
+                        <i class="material-icons">store</i>
+                    </div>
+                    <h5 class="card-title">{{ magasin.nom }}</h5>
+                    <div class="info-section mb-3">
+                        <p class="card-text mb-1">
+                            <small class="text-muted">
+                                <i class="material-icons" style="font-size: 16px; vertical-align: middle;">location_on</i>
+                                {{ magasin.adresse or 'Adresse non renseignée' }}
+                            </small>
+                        </p>
+                        <p class="card-text mb-0">
+                            <small class="text-muted">
+                                <i class="material-icons" style="font-size: 16px; vertical-align: middle;">phone</i>
+                                {{ magasin.telephone or 'Téléphone non renseigné' }}
+                            </small>
+                        </p>
+                    </div>
+                    <a href="{{ url_for('magasin.caisses', magasin_id=magasin.id) }}" 
+                       class="btn btn-primary btn-lg w-100">
+                        <i class="material-icons me-2" style="font-size: 20px; vertical-align: middle;">point_of_sale</i>
+                        Accéder aux Caisses
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle .material-icons {
+    font-size: 30px;
+    color: var(--primary-color);
+}
+
+.info-section {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Effet d'emphase sur le bouton principal */
+.btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+</style>
+{% endblock %} 

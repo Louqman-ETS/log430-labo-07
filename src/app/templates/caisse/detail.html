@@ -6,7 +6,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Caisse {{ caisse.numero }} - {{ caisse.nom }}</h1>
-        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+        <a href="{{ url_for('magasin.caisses', magasin_id=caisse.magasin_id) }}" class="btn btn-outline-primary btn-action">
             <i class="material-icons">arrow_back</i>
             <span class="btn-text">Retour aux caisses</span>
         </a>
@@ -33,7 +33,7 @@
                         {% for vente in ventes %}
                         <tr>
                             <td>{{ vente.date_heure.strftime('%d/%m/%Y %H:%M') }}</td>
-                            <td>{{ "%.2f"|format(vente.montant_total) }} €</td>
+                            <td>${{ "%.2f"|format(vente.montant_total) }}</td>
                             <td>{{ vente.lignes|length }}</td>
                             <td>
                                 <a href="{{ url_for('vente.terminer', vente_id=vente.id) }}" class="btn btn-sm btn-info">Détails</a>
@@ -49,7 +49,7 @@
             </div>
 
             <div class="mt-4">
-                <a href="{{ url_for('caisse.index') }}" class="btn btn-secondary">Retour aux caisses</a>
+                <a href="{{ url_for('magasin.caisses', magasin_id=caisse.magasin_id) }}" class="btn btn-secondary">Retour aux caisses</a>
             </div>
         </div>
     </div>

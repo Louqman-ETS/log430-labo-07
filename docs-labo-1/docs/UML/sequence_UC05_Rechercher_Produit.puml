@@ -1,0 +1,56 @@
+@startuml UC05 - Rechercher un Produit
+
+actor "Utilisateur" as User
+participant "CaisseMagasinApp" as App
+participant "ProduitService" as ProduitService
+participant "Base de Données" as DB
+
+title UC05 - Rechercher un Produit
+
+User -> App : Choisit "Rechercher un produit"
+
+App --> User : "1. Recherche par terme\n2. Recherche par catégorie"
+User -> App : Saisit choix
+
+alt Recherche par terme
+    App --> User : "Terme de recherche:"
+    User -> App : Saisit terme
+    
+    App -> ProduitService : rechercher_produit(terme)
+    activate ProduitService
+    ProduitService -> DB : Recherche par nom/code/ID
+    DB --> ProduitService : Liste produits
+    ProduitService --> App : Produits trouvés
+    deactivate ProduitService
+    
+else Recherche par catégorie
+    App -> ProduitService : liste_categories()
+    activate ProduitService
+    ProduitService -> DB : Récupérer catégories
+    DB --> ProduitService : Liste catégories
+    ProduitService --> App : Catégories disponibles
+    deactivate ProduitService
+    
+    App --> User : Affiche catégories disponibles
+    App --> User : "ID de la catégorie:"
+    User -> App : Saisit ID catégorie
+    
+    App -> ProduitService : rechercher_par_categorie(categorie_id)
+    activate ProduitService
+    ProduitService -> DB : Recherche par catégorie
+    DB --> ProduitService : Produits de la catégorie
+    ProduitService --> App : Produits trouvés
+    deactivate ProduitService
+end
+
+alt Aucun produit trouvé
+    App --> User : "Aucun produit trouvé."
+    
+else Produits trouvés
+    App --> User : Affiche tableau des produits
+    loop Pour chaque produit
+        App --> User : "[ID] | [Code] | [Nom] | [Prix] | [Stock]"
+    end
+end
+
+@enduml 

@@ -32,7 +32,7 @@
                         {% for demande in demandes %}
                         <tr>
                             <td>{{ demande.date_demande.strftime('%d/%m/%Y %H:%M') }}</td>
-                            <td>{{ demande.caisse.nom }}</td>
+                            <td>{{ demande.magasin.nom }}</td>
                             <td>{{ demande.produit.nom }}</td>
                             <td>{{ demande.quantite_demandee }}</td>
                             <td>

@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="display-4">Nouvelle Vente</h1>
-        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+        <a href="{{ url_for('magasin.caisses', magasin_id=caisse.magasin_id) }}" class="btn btn-outline-primary btn-action">
             <i class="material-icons">arrow_back</i>
             <span class="btn-text">Retour aux caisses</span>
         </a>
@@ -52,8 +52,8 @@
                                 <tr>
                                     <td>{{ produit.code }}</td>
                                     <td>{{ produit.nom }}</td>
-                                    <td>{{ "%.2f"|format(produit.prix) }} €</td>
-                                    <td>{{ produit.quantite_stock }}</td>
+                                    <td>${{ "%.2f"|format(produit.prix) }}</td>
+                                    <td>{{ produit.stock_magasin }}</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm"
                                                 onclick="ajouterAuPanier('{{ produit.id }}', '{{ produit.code }}', '{{ produit.nom }}', {{ produit.prix }})">
@@ -90,7 +90,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="2"><strong>Total</strong></td>
-                                    <td><strong id="totalPanier">0.00 €</strong></td>
+                                    <td><strong id="totalPanier">$0.00</strong></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -159,7 +159,7 @@ function rechercherProduits() {
                     <tr>
                         <td>${p.code}</td>
                         <td>${p.nom}</td>
-                        <td>${p.prix.toFixed(2)} €</td>
+                        <td>${p.prix.toFixed(2)}</td>
                         <td>${p.stock}</td>
                         <td>
                             <button class="btn btn-primary btn-sm"
@@ -237,7 +237,7 @@ function afficherPanier() {
             <tr>
                 <td>${p.nom}</td>
                 <td>${p.quantite}</td>
-                <td>${p.total.toFixed(2)} €</td>
+                <td>${p.total.toFixed(2)}</td>
                 <td>
                     <button class="btn btn-danger btn-sm" onclick="retirerDuPanier('${p.id}')">
                         <i class="material-icons">remove_circle</i>
@@ -248,7 +248,7 @@ function afficherPanier() {
         total += p.total;
     });
     
-    document.getElementById('totalPanier').textContent = total.toFixed(2) + ' €';
+    document.getElementById('totalPanier').textContent = '$' + total.toFixed(2);
     
     const btnFinaliser = document.querySelector('.btn-success');
     const btnVider = document.querySelector('.btn-outline-danger');
@@ -272,8 +272,18 @@ function viderPanier() {
     afficherPanier();
 }
 
+let ventEnCours = false;
+
 function finaliserVente() {
-    if (panier.length === 0) return;
+    if (panier.length === 0 || ventEnCours) return;
+    
+    // Marquer la vente comme en cours pour éviter les doublons
+    ventEnCours = true;
+    
+    // Désactiver le bouton et changer le texte
+    const btnFinaliser = document.querySelector('.btn-success');
+    btnFinaliser.disabled = true;
+    btnFinaliser.innerHTML = '<i class="material-icons align-middle me-2">hourglass_empty</i>Traitement...';
     
     fetch(`/vente/finaliser/{{ caisse.id }}`, {
         method: 'POST',
@@ -287,9 +297,23 @@ function finaliserVente() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            alert(`Vente finalisée ! Montant: $${data.montant_total.toFixed(2)}`);
             panier = [];
             location.reload();
+        } else {
+            alert('Erreur: ' + data.message);
+            // Réactiver en cas d'erreur
+            ventEnCours = false;
+            btnFinaliser.disabled = false;
+            btnFinaliser.innerHTML = '<i class="material-icons align-middle me-2">payment</i>Finaliser la Vente';
         }
+    })
+    .catch(error => {
+        alert('Erreur lors de la finalisation');
+        // Réactiver en cas d'erreur réseau
+        ventEnCours = false;
+        btnFinaliser.disabled = false;
+        btnFinaliser.innerHTML = '<i class="material-icons align-middle me-2">payment</i>Finaliser la Vente';
     });
 }
 

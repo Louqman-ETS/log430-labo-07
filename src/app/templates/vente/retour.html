@@ -6,7 +6,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="card-title">Retours et Annulations</h1>
-        <a href="{{ url_for('caisse.index') }}" class="btn btn-outline-primary btn-action">
+        <a href="{{ url_for('magasin.caisses', magasin_id=caisse.magasin_id) }}" class="btn btn-outline-primary btn-action">
             <i class="material-icons">arrow_back</i>
             <span class="btn-text">Retour aux caisses</span>
         </a>
@@ -41,7 +41,7 @@
                                 {% endfor %}
                                 </ul>
                             </td>
-                            <td>{{ "%.2f"|format(vente.montant_total) }} €</td>
+                            <td>${{ "%.2f"|format(vente.montant_total) }}</td>
                             <td>
                                 <a href="{{ url_for('vente.annuler', vente_id=vente.id) }}" 
                                    class="btn btn-warning"

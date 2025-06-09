@@ -1,0 +1,47 @@
+@startuml UC04 - Retour de Produits
+
+actor "Utilisateur" as User
+participant "CaisseMagasinApp" as App
+participant "VenteService" as VenteService
+participant "Base de Données" as DB
+
+title UC04 - Retour de Produits
+
+User -> App : Choisit "Retour de produits"
+
+App --> User : "ID de la vente pour le retour:"
+User -> App : Saisit ID vente
+
+alt ID invalide ou vente introuvable
+    App --> User : "Vente introuvable"
+    
+else Vente trouvée
+    App --> User : "Confirmer le retour de la vente #[ID]? (o/n):"
+    User -> App : Saisit confirmation
+    
+    alt Confirmation refusée
+        App --> User : "Retour annulé."
+        
+    else Confirmation acceptée
+        App -> VenteService : effectuer_retour(vente_id)
+        activate VenteService
+        
+        VenteService -> DB : Transaction retour complète
+        activate DB
+
+        DB --> VenteService : Retour effectué
+        deactivate DB
+        
+        VenteService --> App : "Retour effectué (montant: [montant] €)"
+        deactivate VenteService
+        
+        App --> User : "Retour effectué pour la vente #[ID] (montant: [montant] €)"
+        App --> User : "Produits remis en stock."
+        
+        alt Vente retournée était en cours
+            App -> App : self.vente_en_cours = None
+        end
+    end
+end
+
+@enduml 

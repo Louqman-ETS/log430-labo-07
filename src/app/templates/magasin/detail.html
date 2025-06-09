@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}{{ magasin.nom }} - Détails Magasin{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/icon?family=Material-Icons" rel="stylesheet">
+
+<div class="container mt-4">
+    <!-- En-tête du magasin -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home.index') }}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('magasin.index') }}">Magasins</a></li>
+                    <li class="breadcrumb-item active">{{ magasin.nom }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Informations du magasin -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-circle-large me-4">
+                                    <i class="material-icons">store</i>
+                                </div>
+                                <div>
+                                    <h1 class="h2 mb-1">{{ magasin.nom }}</h1>
+                                    <p class="text-muted mb-0">Magasin {{ magasin.id }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item mb-2">
+                                        <i class="material-icons me-2">location_on</i>
+                                        <span>{{ magasin.adresse or 'Adresse non renseignée' }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="material-icons me-2">phone</i>
+                                        <span>{{ magasin.telephone or 'Téléphone non renseigné' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if magasin.email %}
+                                    <div class="info-item mb-2">
+                                        <i class="material-icons me-2">email</i>
+                                        <span>{{ magasin.email }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="stats-box">
+                                <h3 class="display-4 text-primary">{{ caisses|length }}</h3>
+                                <p class="text-muted">Caisses disponibles</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caisses du magasin -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-4">
+                <i class="material-icons me-2" style="vertical-align: middle;">point_of_sale</i>
+                Caisses du magasin
+            </h3>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for caisse in caisses %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card caisse-card">
+                <div class="card-body text-center p-4">
+                    <div class="caisse-icon mb-3">
+                        <i class="material-icons">payment</i>
+                    </div>
+                    <h5 class="card-title">{{ caisse.nom }}</h5>
+                    <p class="card-text text-muted">
+                        <small>Caisse n°{{ caisse.numero }}</small>
+                    </p>
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('vente.index', caisse_id=caisse.id) }}" 
+                           class="btn btn-primary">
+                            <i class="material-icons me-1" style="font-size: 18px;">shopping_cart</i>
+                            Nouvelle Vente
+                        </a>
+                        <a href="{{ url_for('caisse.options', caisse_id=caisse.id) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="material-icons" style="font-size: 18px;">settings</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not caisses %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="material-icons me-2" style="font-size: 24px; vertical-align: middle;">info</i>
+                Aucune caisse configurée pour ce magasin.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions rapides -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actions rapides</h5>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('magasin.index') }}" class="btn btn-outline-secondary">
+                            <i class="material-icons me-2">arrow_back</i>
+                            Retour aux magasins
+                        </a>
+                        <a href="{{ url_for('rapport.index') }}" class="btn btn-outline-info">
+                            <i class="material-icons me-2">assessment</i>
+                            Voir les rapports
+                        </a>
+                        <a href="{{ url_for('produit.liste') }}" class="btn btn-outline-success">
+                            <i class="material-icons me-2">inventory_2</i>
+                            Gérer les produits
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2c3e50;
+    --primary-light: #3498db;
+    --primary-lighter: #ebf5fb;
+}
+
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+
+.breadcrumb a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: var(--primary-light);
+}
+
+.icon-circle-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--primary-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle-large .material-icons {
+    font-size: 40px;
+    color: var(--primary-color);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+}
+
+.info-item .material-icons {
+    font-size: 20px;
+    color: #666;
+}
+
+.stats-box {
+    background-color: var(--primary-lighter);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.caisse-card {
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.caisse-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.caisse-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.caisse-icon .material-icons {
+    font-size: 30px;
+    color: var(--primary-color);
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %} 

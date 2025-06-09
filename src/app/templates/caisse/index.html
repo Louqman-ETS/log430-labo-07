@@ -1,41 +1,115 @@
 {% extends "base.html" %}
 
-{% block title %}Sélection de la Caisse{% endblock %}
+{% block title %}Caisses - {{ magasin.nom }}{% endblock %}
 
 {% block content %}
 <!-- Ajout du lien vers les icônes Material Design -->
 <link href="https://fonts.googleapis.com/icon?family=Material-Icons" rel="stylesheet">
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-4">Sélection de la Caisse</h1>
-        <a href="{{ url_for('home.index') }}" class="btn btn-outline-primary btn-action">
-            <i class="material-icons">arrow_back</i>
-            <span class="btn-text">Retour à l'accueil</span>
-        </a>
+<div class="container mt-4">
+    <!-- En-tête avec contexte magasin -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home.index') }}">Accueil</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('magasin.index') }}">Magasins</a></li>
+                    <li class="breadcrumb-item active">{{ magasin.nom }}</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-    
-    <div class="row">
-        {% for caisse in caisses %}
-        <div class="col-md-6 mb-4">
-            <a href="{{ url_for('caisse.options', caisse_id=caisse.id) }}" class="text-decoration-none">
-                <div class="card h-100 shadow-sm hover-card">
-                    <div class="card-header bg-primary text-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="card-title mb-0">Caisse {{ caisse.numero }}</h3>
-                            <h5 class="mb-0 text-white">{{ caisse.nom }}</h5>
+
+    <!-- Informations du magasin -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm magasin-header">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle-large me-3">
+                                    <i class="material-icons">store</i>
+                                </div>
+                                <div>
+                                    <h1 class="h3 mb-1">{{ magasin.nom }}</h1>
+                                    <p class="text-muted mb-0">{{ magasin.adresse or 'Adresse non renseignée' }}</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="card-body text-center">
-                        <div class="icon-circle mx-auto">
-                            <i class="material-icons">point_of_sale</i>
+                        <div class="col-md-6">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stats-mini">
+                                        <h4 class="text-primary">{{ caisses|length }}</h4>
+                                        <small class="text-muted">Caisses</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <a href="{{ url_for('produit.liste') }}?magasin_id={{ magasin.id }}" 
+                                       class="btn btn-outline-success btn-sm">
+                                        <i class="material-icons me-1" style="font-size: 16px;">category</i>
+                                        Gérer Produits
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Caisses du magasin</h2>
+        <a href="{{ url_for('magasin.index') }}" class="btn btn-outline-secondary">
+            <i class="material-icons me-2">arrow_back</i>
+            Retour aux magasins
+        </a>
+    </div>
+
+    
+    <div class="row">
+        {% for caisse in caisses %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm hover-card caisse-card">
+                <div class="card-body text-center p-4">
+                    <div class="caisse-icon mb-3">
+                        <i class="material-icons">payment</i>
+                    </div>
+                    <h5 class="card-title">{{ caisse.nom }}</h5>
+                    <p class="card-text text-muted">
+                        <small>Caisse n°{{ caisse.numero }}</small>
+                        <br><small class="text-info">{{ magasin.nom }}</small>
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('vente.index', caisse_id=caisse.id) }}" 
+                           class="btn btn-primary">
+                            <i class="material-icons me-2" style="font-size: 18px;">shopping_cart</i>
+                            Nouvelle Vente
+                        </a>
+                        <a href="{{ url_for('vente.retours', caisse_id=caisse.id) }}" 
+                           class="btn btn-outline-warning">
+                            <i class="material-icons me-2" style="font-size: 18px;">assignment_return</i>
+                            Retours
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
+
+    {% if not caisses %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="material-icons me-2" style="font-size: 24px; vertical-align: middle;">info</i>
+                Aucune caisse configurée pour ce magasin.
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
@@ -47,37 +121,98 @@
     --gray-light: #f8f9fa;
 }
 
-.card {
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+}
+
+.breadcrumb a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: var(--primary-light);
+}
+
+.magasin-header {
+    background: linear-gradient(135deg, var(--primary-lighter) 0%, #ffffff 100%);
+    border: 1px solid var(--primary-light);
+}
+
+.icon-circle-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle-large .material-icons {
+    font-size: 30px;
+    color: white;
+}
+
+.stats-mini h4 {
+    margin-bottom: 0;
+}
+
+.caisse-card {
     border: none;
     border-radius: 15px;
-    transition: transform 0.2s;
-    background-color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.hover-card:hover {
+.caisse-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
-.card-header {
-    border-radius: 15px 15px 0 0 !important;
-    background-color: var(--primary-color) !important;
-    padding: 1.25rem;
-}
-
-.icon-circle {
-    width: 80px;
-    height: 80px;
+.caisse-icon {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: var(--primary-lighter);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 1.5rem auto;
+    margin: 0 auto;
 }
 
-.icon-circle .material-icons {
-    font-size: 40px;
+.caisse-icon .material-icons {
+    font-size: 30px;
     color: var(--primary-color);
+}
+
+.btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-outline-warning {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+.btn-outline-warning:hover {
+    background-color: #f39c12;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .btn-action {
@@ -99,20 +234,17 @@
     text-align: left;
 }
 
-.btn-outline-primary {
-    border: 2px solid var(--primary-color);
-    background-color: transparent;
-    color: var(--primary-color);
-}
-
 .btn-outline-primary:hover {
-    background-color: var(--primary-color);
-    color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-h1, h3, h5 {
+/* Espacement des boutons */
+.d-grid.gap-2 {
+    gap: 0.5rem !important;
+}
+
+h1, h2, h3, h5 {
     color: var(--text-color);
 }
 </style>

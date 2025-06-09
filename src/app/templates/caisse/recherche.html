@@ -48,7 +48,7 @@
                                     <td><strong>{{ produit.code }}</strong></td>
                                     <td>{{ produit.nom }}</td>
                                     <td>{{ produit.description }}</td>
-                                    <td>{{ "%.2f"|format(produit.prix) }} €</td>
+                                    <td>${{ "%.2f"|format(produit.prix) }}</td>
                                     <td>
                                         {% if produit.quantite_stock > 0 %}
                                             <span class="badge bg-success">{{ produit.quantite_stock }}</span>

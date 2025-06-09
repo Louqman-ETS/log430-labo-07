@@ -5,10 +5,9 @@ import os
 
 db = SQLAlchemy()
 
+
 def create_app():
-    app = Flask(__name__, 
-                static_folder='static',
-                template_folder='templates')
+    app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(Config)
 
     db.init_app(app)
@@ -24,8 +23,10 @@ def create_app():
     from .controllers import home_controller
     from .controllers import rapport_controller
     from .controllers import stock_central_controller
-    
+    from .controllers import magasin_controller
+
     app.register_blueprint(home_controller.bp)
+    app.register_blueprint(magasin_controller.bp)
     app.register_blueprint(caisse_controller.bp)
     app.register_blueprint(produit_controller.bp)
     app.register_blueprint(vente_controller.bp)
@@ -33,8 +34,8 @@ def create_app():
     app.register_blueprint(stock_central_controller.bp)
 
     # Route par défaut
-    @app.route('/')
+    @app.route("/")
     def index():
-        return render_template('home.html')
+        return render_template("home.html")
 
-    return app 
+    return app

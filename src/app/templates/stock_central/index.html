@@ -128,7 +128,7 @@ function envoyerDemandeReappro() {
         },
         body: JSON.stringify({
             produit_id: produitId,
-            caisse_id: 1, // À adapter selon le contexte
+            magasin_id: null, // Sera géré côté serveur (premier magasin)
             quantite: parseInt(quantite)
         })
     })
