@@ -2,6 +2,8 @@
 
 Application web Flask pour la gestion de points de vente multi-magasins avec reporting stratégique et gestion centralisée des stocks.
 
+(Disponible sur la VM : [http://10.194.32.219:8081/](http://10.194.32.219:8081/)  ne pas oublier de se connecter au VPN de l'école si extérieur ETS)
+
 ## Table des Matières
 
 - [Fonctionnalités Principales](#fonctionnalités-principales)
