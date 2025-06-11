@@ -11,6 +11,7 @@ Application web Flask pour la gestion de points de vente multi-magasins avec rep
 - [Cas d'Utilisation](#cas-dutilisation)
 - [Structure du Projet](#structure-du-projet)
 - [Installation et Configuration](#installation-et-configuration)
+- [API RESTful (v1)](#api-restful-v1)
 - [Tests](#tests)
 - [Utilisation](#utilisation)
 - [Technologies Utilisées](#technologies-utilisées)
@@ -51,15 +52,34 @@ Application web Flask pour la gestion de points de vente multi-magasins avec rep
 - **Controller** : 7 contrôleurs Flask avec blueprints
 - **Déploiement** : Docker multi-conteneurs
 
+### Déploiement Unifié avec Supervisor
+
+Pour simplifier le déploiement, l'application web Flask et l'API RESTful (FastAPI) sont gérées au sein d'un unique conteneur Docker. Le gestionnaire de processus **Supervisor** est utilisé pour lancer et superviser les deux applications simultanément.
+
+```
+┌──────────────────────────────────────────────┐
+│                CONTAINER DOCKER              │
+│ ┌──────────────────────────────────────────┐ │
+│ │               SUPERVISOR                 │ │
+│ ├─────────────────────┬────────────────────┤ │
+│ │  (FLASK)            │  (FASTAPI)         │ │
+│ │  Port 8080          │  Port 8000         │ │
+│ └─────────────────────┴────────────────────┘ │
+└──────────────────────────────────────────────┘
+```
+
+Cette approche permet de partager le même environnement et les mêmes dépendances, tout en exposant les deux services sur des ports distincts. La configuration se trouve dans le fichier `supervisord.conf`.
+
 ### Déploiement Docker
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Navigateur    │    │  Container      │    │  Container      │
-│     Web         │───▶│    Flask        │───▶│  PostgreSQL     │
-│                 │    │   (Client)      │    │   (Serveur)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-     Port 8080              Port 8080             Port 5432
+┌─────────────────┐    ┌─────────────────────────────────┐    ┌─────────────────┐
+│                 │    │  Container Client               │    │  Container      │
+│   Navigateur    │───▶│    (Flask sur :8080)            │───▶│  PostgreSQL     │
+│       Web       │    │    (FastAPI sur :8000)          │    │   (Serveur)     │
+│                 │    │                                 │    │                 │
+└─────────────────┘    └─────────────────────────────────┘    └─────────────────┘
+     Ports 8081 & 8000         Ports 8080 & 8000                Port 5432
 ```
 
 
@@ -329,6 +349,62 @@ docker-compose -f docker-compose.client.yml restart
 # Arrêter tous les services
 docker-compose -f docker-compose.client.yml down
 docker-compose -f docker-compose.server.yml down
+```
+
+## API RESTful (v1)
+
+Ce projet expose également ses fonctionnalités via une API RESTful construite avec FastAPI.
+
+### Lancer l'API
+
+1.  **Configurer les Variables d'Environnement**:
+    Créez un fichier `.env` à la racine du projet s'il n'existe pas et ajoutez votre jeton secret :
+
+    ```env
+    # Pour l'API
+    API_TOKEN="votre_jeton_secret_personnel_ici"
+    ```
+
+2.  **Démarrer le serveur de l'API**:
+    Utilisez `uvicorn` pour lancer l'application FastAPI. Elle sera disponible à l'adresse `http://127.0.0.1:8000`.
+
+    ```bash
+    uvicorn src.app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    ```
+
+### Documentation de l'API
+
+L'API est auto-documentée grâce à FastAPI. Une fois le serveur démarré, vous pouvez accéder à :
+
+*   **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+*   **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+*   **Spécification OpenAPI**: Le schéma `openapi.json` est généré dynamiquement et est accessible à l'adresse `/api/v1/openapi.json`. Vous pouvez également le sauvegarder avec le script suivant :
+    ```bash
+    python3 scripts/generate_openapi_spec.py
+    ```
+
+### Tests de l'API
+
+Pour lancer les tests dédiés à l'API :
+
+```bash
+# Assurez-vous d'avoir un jeton API défini dans votre environnement
+export API_TOKEN="un-jeton-de-test"
+
+# Lancer les tests de l'API avec pytest
+pytest tests/api/v1/
+```
+
+### Exemple de Requête
+
+Voici un exemple de requête avec `curl` pour interroger le point de terminaison `/api/v1/products`.
+
+```bash
+# Remplacez "votre_jeton_secret_personnel_ici" par celui de votre fichier .env
+curl -X 'GET' \
+  'http://127.0.0.1:8000/api/v1/products?page=1&size=10' \
+  -H 'accept: application/json' \
+  -H 'X-API-Token: votre_jeton_secret_personnel_ici'
 ```
 
 ## Technologies Utilisées

@@ -15,12 +15,14 @@ RUN apt-get update && apt-get install -y \
 # Copier les fichiers nécessaires
 COPY requirements.txt .
 COPY src/ src/
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Installation des dépendances Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Installation des dépendances Python et création des répertoires nécessaires
+RUN pip install --no-cache-dir -r requirements.txt && mkdir -p /var/log/supervisor
 
-# Exposer le port Flask
+# Exposer les ports Flask et FastAPI
 EXPOSE 8080
+EXPOSE 8000
 
-# Lancer l'application Flask directement
-CMD ["python", "-m", "src.app.run"]
+# Lancer supervisor
+CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
