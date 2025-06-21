@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, List
 from sqlalchemy import asc, desc, func
 
 from src.app.models.models import Produit, Categorie, Magasin, Vente, Caisse, LigneVente
-from src.app.api.v1.models import (
+from src.api.v1.models import (
     ProductCreate,
     ProductUpdate,
     StoreCreate,

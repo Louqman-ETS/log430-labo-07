@@ -2,9 +2,9 @@ from typing import Optional, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.app.api.v1 import crud
-from src.app.api.v1.models import Product, ProductCreate, ProductUpdate, ProductPage
-from src.app.api.v1 import dependencies
+from src.api.v1 import crud
+from src.api.v1.models import Product, ProductCreate, ProductUpdate, ProductPage
+from src.api.v1 import dependencies
 from src.db import get_db
 from src.app.models.models import Produit as ProductModel
 
