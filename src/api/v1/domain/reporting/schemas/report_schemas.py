@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from decimal import Decimal
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import date
 
 
@@ -12,7 +12,7 @@ class GlobalSummaryResponse(BaseModel):
     average_ticket: Decimal
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StorePerformanceResponse(BaseModel):
@@ -26,7 +26,7 @@ class StorePerformanceResponse(BaseModel):
     performance_rating: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TopProductResponse(BaseModel):
@@ -41,7 +41,7 @@ class TopProductResponse(BaseModel):
     average_revenue_per_order: Decimal
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SalesReportResponse(BaseModel):
@@ -50,10 +50,10 @@ class SalesReportResponse(BaseModel):
     period: str
     start_date: date
     end_date: date
-    store_id: int = None
+    store_id: Optional[int] = None
     total_sales: int
     total_revenue: Decimal
     sales_data: List[Dict[str, Any]]
 
     class Config:
-        orm_mode = True
+        from_attributes = True

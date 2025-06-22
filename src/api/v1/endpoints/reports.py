@@ -214,7 +214,7 @@ async def get_all_stores_performance(
 async def get_sales_by_period(
     period: str = Query(
         ...,
-        regex="^(daily|weekly|monthly)$",
+        pattern="^(daily|weekly|monthly)$",
         description="Period: daily, weekly, or monthly",
     ),
     start_date: Optional[date] = Query(
@@ -272,7 +272,7 @@ async def get_inventory_status(
 async def get_revenue_trends(
     period: str = Query(
         default="monthly",
-        regex="^(daily|weekly|monthly)$",
+        pattern="^(daily|weekly|monthly)$",
         description="Period for trend analysis",
     ),
     months_back: int = Query(
