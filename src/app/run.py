@@ -17,14 +17,14 @@ if project_root not in sys.path:
 from src.app import create_app, db
 from src.app.models.models import Caisse, Categorie, Magasin
 
+# Créer l'application Flask au niveau du module pour Gunicorn
+app = create_app()
+
 
 def main():
     """Fonction principale pour lancer l'application"""
 
     print("🚀 Démarrage de l'application Multi-Magasins...")
-
-    # Créer l'application Flask
-    app = create_app()
 
     # Créer les tables de la base de données si elles n'existent pas
     with app.app_context():

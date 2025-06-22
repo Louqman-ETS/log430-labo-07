@@ -1,446 +1,812 @@
 # Système Multi-Magasins - LOG430
 
-Application web Flask pour la gestion de points de vente multi-magasins avec reporting stratégique et gestion centralisée des stocks.
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com)
+[![Flask](https://img.shields.io/badge/Flask-3.0.0-lightgrey.svg)](https://flask.palletsprojects.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://postgresql.org)
 
-(Disponible sur la VM : [http://10.194.32.219:8081/](http://10.194.32.219:8081/)  ne pas oublier de se connecter au VPN de l'école si extérieur ETS)
+Application web Flask pour la gestion de points de vente multi-magasins, API RESTful pour application externe, système de logging et déploiement Docker containerisé.
 
 ## Table des Matières
 
 - [Fonctionnalités Principales](#fonctionnalités-principales)
 - [Architecture](#architecture)
-- [Cas d'Utilisation](#cas-dutilisation)
+- [Logging et Monitoring](#logging-et-monitoring)
+- [API RESTful](#api-restful)
+- [Déploiement Docker](#déploiement-docker)
 - [Structure du Projet](#structure-du-projet)
 - [Installation et Configuration](#installation-et-configuration)
-- [API RESTful (v1)](#api-restful-v1)
 - [Tests](#tests)
 - [Utilisation](#utilisation)
 - [Technologies Utilisées](#technologies-utilisées)
 
 ## Fonctionnalités Principales
 
+### Interface Web (Flask)
 - **Dashboard multi-magasins** : Vue d'ensemble de 5 magasins avec navigation intuitive
 - **Rapports stratégiques** : KPIs globaux, performance par magasin, top produits, tendances
 - **Point de vente complet** : Recherche produits, gestion panier, reçus, retours
 - **Gestion stocks** : Stocks par magasin, alertes automatiques, réapprovisionnement
-- **Interface responsive** : Bootstrap, architecture 3-tiers (Navigateur → Flask → PostgreSQL)
+- **Interface responsive** : Bootstrap, design moderne et adaptatif
+
+### API RESTful (FastAPI)
+- **Architecture DDD** : Domain-Driven Design avec 3 domaines métier
+- **Documentation automatique** : Swagger UI et ReDoc intégrés
+- **Authentification** : Système de tokens sécurisé
+- **Validation** : Pydantic pour la validation des données
+- **Performance** : Optimisations asynchrones et mise en cache
+
+### Système de Logging
+- **Logging multi-niveaux** : API, Business, Erreurs
+- **Rotation automatique** : Gestion intelligente des fichiers de logs
+- **Formats multiples** : JSON structuré et texte lisible
+- **Monitoring** : Métriques de performance et suivi des erreurs
 
 ## Architecture
 
-### Architecture MVC 3-Tiers
+### Architecture Multi-Applications Containerisée
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ARCHITECTURE MULTI-APPLICATIONS                n │
+├─────────────────┬─────────────────┬─────────────────┬───────────────┤
+│   PRESENTATION  │   APPLICATION   │   API SÉPARÉE   │    DONNÉES    │
+│    (Frontend)   │   (Backend)     │  (Indépendante) │  (Database)   │
+│                 │                 │                 │               │
+│ • Navigateur    │ • Flask Web     │ • FastAPI       │ • PostgreSQL  │
+│ • Templates     │ • Controllers   │ • DDD Domains   │ • External DB │
+│ • Bootstrap     │ • Models        │ • Repositories  │ • Persistent  │
+│ • JavaScript    │ • Services      │ • Services      │ • Volume      │
+│                 │                 │ • Schemas       │               │
+└─────────────────┴─────────────────┴─────────────────┴───────────────┘
+         ↑                   ↑               ↑               ↑
+    HTTP/HTTPS          Docker:8080    Docker:8000     External:5432
+     Port 8080           Container      Container         Server
+```
+
+### Composants Principaux
+
+#### 1. Application Web (Flask) - Port 8080
+- **MVC Pattern** : Séparation claire des responsabilités
+- **7 Contrôleurs** : Gestion modulaire des fonctionnalités
+- **Templates Jinja2** : Interface utilisateur dynamique
+- **Bootstrap 5** : Design responsive et moderne
+- **Application indépendante** : Fonctionne de manière autonome
+
+#### 2. API RESTful (FastAPI) - Port 8000
+- **Domain-Driven Design** : Architecture en domaines métier
+- **3 Domaines** : Products, Stores, Reporting
+- **Repositories Pattern** : Abstraction de la couche de données
+- **Services Layer** : Logique métier centralisée
+- **Application séparée** : API indépendante de l'interface web
+
+#### 3. Base de Données (PostgreSQL) - Port 5432
+- **Connexions poolées** : Optimisation des performances
+- **Partagée** : Utilisée par les deux applications
+- **Migrations** : Gestion des schémas de données
+
+### Caractéristiques de l'Architecture
+
+- **Applications indépendantes** : Flask et FastAPI sont des applications séparées
+- **Déploiement containerisé** : Chaque application dans son propre container
+- **Base de données partagée** : Les deux applications accèdent à la même base PostgreSQL
+- **Ports distincts** : Chaque application expose ses services sur des ports différents
+- **Développement parallèle** : Les équipes peuvent travailler indépendamment sur chaque application
+
+## Logging et Monitoring
+
+### Architecture du Logging
+
+Le système de logging est conçu pour fournir une visibilité complète sur le fonctionnement de l'application avec une séparation claire des types de logs.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                ARCHITECTURE 3-TIERS MVC                    │
-├─────────────────────┬───────────────┬───────────────────────┤
-│    PRESENTATION     │   APPLICATION │        DONNÉES        │
-│      (Tier 1)       │    (Tier 2)   │      (Tier 3)         │
-│                     │               │                       │
-│ • Navigateur Web    │ • Flask App   │ • PostgreSQL          │
-│ • Templates HTML    │ • Controllers │ • Base distante       │
-│ • Bootstrap CSS     │ • Models      │ • 5 Magasins         │
-│ • JavaScript        │ • Business    │ • 15 Caisses         │
-│                     │   Logic       │ • Stocks/magasin      │
-└─────────────────────┴───────────────┴───────────────────────┘
-         ↑                     ↑                     ↑
-    HTTP/HTTPS              Flask                PostgreSQL
-    Port 8080              Routes                Port 5432
+│                    SYSTÈME DE LOGGING                       │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│   API LOGS      │  BUSINESS LOGS  │     ERROR LOGS          │
+│                 │                 │                         │
+│ • Requêtes HTTP │ • Opérations    │ • Exceptions            │
+│ • Réponses      │   métier        │ • Stack traces          │
+│ • Temps de      │ • Transactions  │ • Contexte d'erreur     │
+│   réponse       │ • Validations   │ • Alertes critiques     │
+│ • Headers       │ • Résultats     │                         │
+└─────────────────┴─────────────────┴─────────────────────────┘
+         ↓               ↓                       ↓
+   api_YYYY-MM-DD.log  business_YYYY-MM-DD.log  errors_YYYY-MM-DD.log
 ```
 
-**Composants MVC** :
-- **Model** : Modèles SQLAlchemy (9 entités), gestion PostgreSQL
-- **View** : Templates Jinja2, Bootstrap responsive, JavaScript
-- **Controller** : 7 contrôleurs Flask avec blueprints
-- **Déploiement** : Docker multi-conteneurs
+### Configuration des Logs
 
-### Déploiement Unifié avec Supervisor
+#### Types de Logs
+- **API Logs** : Toutes les requêtes HTTP avec métriques de performance
+- **Business Logs** : Opérations métier en format JSON structuré
+- **Error Logs** : Erreurs avec contexte complet et stack traces
 
-Pour simplifier le déploiement, l'application web Flask et l'API RESTful (FastAPI) sont gérées au sein d'un unique conteneur Docker. Le gestionnaire de processus **Supervisor** est utilisé pour lancer et superviser les deux applications simultanément.
+#### Rotation et Archivage
+- **Taille maximale** : 10MB par fichier
+- **Rétention** : 5-10 fichiers de sauvegarde
+- **Nommage** : `{type}_YYYY-MM-DD.log`
+- **Formats** : JSON pour le business, texte pour les API
+
+#### Fonctionnalités Avancées
+```python
+# Logging automatique des requêtes HTTP
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # Logging avec métriques de performance
+    
+# Logging des opérations métier
+log_business_operation(
+    operation="create_store",
+    entity_type="Store",
+    entity_id=store.id,
+    user_id=current_user.id,
+    details={"name": store.name, "location": store.location}
+)
+
+# Logging des erreurs avec contexte
+log_error_with_context(
+    error=exception,
+    context={
+        "endpoint": "/api/v1/stores",
+        "method": "POST",
+        "user_id": user_id,
+        "request_data": request_data
+    }
+)
+```
+
+## API RESTful
+
+### Architecture DDD (Domain-Driven Design)
+
+L'API est structurée selon les principes du Domain-Driven Design avec une séparation claire des responsabilités.
 
 ```
-┌──────────────────────────────────────────────┐
-│                CONTAINER DOCKER              │
-│ ┌──────────────────────────────────────────┐ │
-│ │               SUPERVISOR                 │ │
-│ ├─────────────────────┬────────────────────┤ │
-│ │  (FLASK)            │  (FASTAPI)         │ │
-│ │  Port 8080          │  Port 8000         │ │
-│ └─────────────────────┴────────────────────┘ │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     API ARCHITECTURE                       │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│   ENDPOINTS     │    DOMAINS      │      INFRASTRUCTURE     │
+│                 │                 │                         │
+│ • products.py   │ • Products      │ • Dependencies          │
+│ • stores.py     │   - entities    │ • Database              │
+│ • reports.py    │   - services    │ • Authentication        │
+│                 │   - repositories│ • Error Handling        │
+│                 │   - schemas     │ • Logging               │
+│                 │                 │                         │
+│                 │ • Stores        │                         │
+│                 │ • Reporting     │                         │
+└─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
-Cette approche permet de partager le même environnement et les mêmes dépendances, tout en exposant les deux services sur des ports distincts. La configuration se trouve dans le fichier `supervisord.conf`.
+### Domaines Métier
 
-### Déploiement Docker
-
+#### 1. Products Domain
 ```
-┌─────────────────┐    ┌─────────────────────────────────┐    ┌─────────────────┐
-│                 │    │  Container Client               │    │  Container      │
-│   Navigateur    │───▶│    (Flask sur :8080)            │───▶│  PostgreSQL     │
-│       Web       │    │    (FastAPI sur :8000)          │    │   (Serveur)     │
-│                 │    │                                 │    │                 │
-└─────────────────┘    └─────────────────────────────────┘    └─────────────────┘
-     Ports 8081 & 8000         Ports 8080 & 8000                Port 5432
+/api/v1/products/
+├── GET    /           # Liste des produits avec filtres
+├── POST   /           # Créer un produit
+├── GET    /{id}       # Détails d'un produit
+├── PUT    /{id}       # Modifier un produit
+└── DELETE /{id}       # Supprimer un produit
 ```
 
+#### 2. Stores Domain
+```
+/api/v1/stores/
+├── GET    /           # Liste des magasins
+├── POST   /           # Créer un magasin
+├── GET    /{id}       # Détails d'un magasin
+├── PUT    /{id}       # Modifier un magasin
+├── DELETE /{id}       # Supprimer un magasin
+└── GET    /{id}/stock # Stock du magasin
+```
 
+#### 3. Reporting Domain
+```
+/api/v1/reports/
+├── GET    /sales      # Rapports de ventes
+├── GET    /inventory  # Rapports d'inventaire
+├── GET    /kpis       # Indicateurs clés
+└── POST   /custom     # Rapports personnalisés
+```
 
-## Cas d'Utilisation
+### Authentification et Sécurité
 
-### Pour Gestionnaire Maison Mère
-1. **UC1 - Générer Rapport Consolidé** : Ventes par magasin, top produits, stocks
-2. **UC3 - Tableau de Bord Performances** : CA, alertes rupture, surchauffe, tendances
-3. **UC8 - Interface Web Minimale** : Accès distant aux indicateurs clés
+```python
+# Token-based authentication
+headers = {
+    "Authorization": "Bearer your-api-token",
+    "Content-Type": "application/json"
+}
 
-### Pour Employé Magasin
-4. **UC2 - Gestion Stock central & Réapprovisionnement** : Consultation stock central, demandes
-5. **Effectuer Vente** : Point de vente complet avec panier et reçu
-6. **Traiter Retour** : Retours produits avec remise en stock
-7. **Gérer Stock Magasin** : Consultation et mise à jour stocks locaux
+# Exemple d'utilisation
+response = requests.get(
+    "http://localhost:8000/api/v1/stores",
+    headers=headers
+)
+```
+
+### Documentation Interactive
+
+- **Swagger UI** : http://localhost:8000/docs
+- **ReDoc** : http://localhost:8000/redoc
+- **OpenAPI Schema** : http://localhost:8000/openapi.json
+
+## Déploiement Docker
+
+### Architecture Containerisée
+
+Le projet utilise une architecture Docker avec des containers séparés pour chaque service.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  DOCKER ARCHITECTURE                        │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│   WEB CONTAINER │  API CONTAINER  │   EXTERNAL DATABASE     │
+│                 │                 │                         │
+│ • Flask App     │ • FastAPI       │ • PostgreSQL Server     │
+│ • Gunicorn      │ • Gunicorn      │ • External Host         │
+│ • Port 8080     │ • Port 8000     │ • Port 5432             │
+│ • Health Checks │ • Health Checks │ • Persistent Data       │
+│ • Logging       │ • Logging       │                         │
+└─────────────────┴─────────────────┴─────────────────────────┘
+         ↓                ↓                       ↓
+app-multi-magasin-web    api          10.194.32.219:5432 (VM ETS)
+```
+
+### Configuration Docker
+
+#### docker-compose.yml
+```yaml
+version: '3.8'
+
+services:
+  # API FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile.api
+      target: production
+    container_name: log430-api
+    environment:
+      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
+      - LOG_LEVEL=INFO
+      - API_TOKEN=your-secret-api-token
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Application Flask
+  web:
+    build:
+      context: .
+      dockerfile: dockerfile.flask
+      target: production
+    container_name: log430-web
+    environment:
+      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
+      - API_BASE_URL=http://api:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+### Dockerfiles Multi-Stage
+
+#### dockerfile.api (FastAPI)
+```dockerfile
+# Stage de développement
+FROM python:3.9-slim as development
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# Stage de production
+FROM python:3.9-slim as production
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ src/
+RUN mkdir -p logs && chown -R appuser:appuser /app
+USER appuser
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+CMD ["gunicorn", "src.api.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+```
+
+#### dockerfile.flask (Web App)
+```dockerfile
+# Stage de production
+FROM python:3.9-slim as production
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ src/
+RUN chown -R appuser:appuser /app
+USER appuser
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "src.app.run:app"]
+```
+
+### Commandes de Gestion (Makefile)
+
+```bash
+# Initialisation
+make init          # Créer les répertoires nécessaires
+
+# Gestion des services
+make build         # Construire les images Docker
+make up            # Démarrer tous les services
+make down          # Arrêter tous les services
+make restart       # Redémarrer tous les services
+
+# Monitoring
+make status        # Voir le statut des services
+make logs          # Voir tous les logs
+make logs-api      # Logs de l'API uniquement
+make logs-web      # Logs de l'app web uniquement
+
+# Maintenance
+make clean         # Nettoyer les containers
+make test          # Exécuter les tests
+make shell-api     # Shell dans le container API
+make shell-web     # Shell dans le container Web
+```
+
+### Sécurité et Bonnes Pratiques
+
+- **Images multi-stage** : Optimisation de la taille et sécurité
+- **Health checks** : Surveillance automatique de la santé des services
+- **Volumes read-only** : Code source en lecture seule en production
+- **Variables d'environnement** : Configuration externalisée
 
 ## Structure du Projet
 
 ```
-├── src/
-│   ├── app/
-│   │   ├── __init__.py              # Application Flask factory
-│   │   ├── run.py                   # Point d'entrée principal
-│   │   ├── config.py                # Configuration environnement
-│   │   ├── models/
-│   │   │   └── models.py            # 9 modèles SQLAlchemy
-│   │   ├── controllers/             # 7 contrôleurs MVC
-│   │   │   ├── home_controller.py           # Dashboard & accueil
-│   │   │   ├── magasin_controller.py        # Gestion magasins
-│   │   │   ├── caisse_controller.py         # Gestion caisses
-│   │   │   ├── produit_controller.py        # Gestion produits
-│   │   │   ├── vente_controller.py          # Point de vente
-│   │   │   ├── rapport_controller.py        # Rapports stratégiques
-│   │   │   └── stock_central_controller.py  # Stock central
-│   │   ├── templates/               # Templates HTML organisés
-│   │   │   ├── home.html            # Dashboard principal
-│   │   │   ├── rapport/             # Module rapports
-│   │   │   ├── magasin/             # Module magasins
-│   │   │   ├── caisse/              # Module caisses
-│   │   │   ├── produit/             # Module produits
-│   │   │   └── vente/               # Module point de vente
-│   │   └── static/                  # CSS, JS, images
-│   ├── db.py                        # Configuration SQLAlchemy
-│   └── create_db.py                 # Initialisation données de démo
-├── docs/
-│   └── UML/                         # Diagrammes UML PlantUML
-│       ├── diagramme_deploiement.puml
-│       ├── diagramme_cas_utilisation.puml
-│       ├── diagarmme_classes.puml
-│       ├── diagramme_composants.puml
-│       ├── sequence_UC01_Generer_Rapport.puml
-│       ├── sequence_UC02_Stock_Reapprovisionnement.puml
-│       ├── sequence_UC03_Tableau_Bord.puml
-│       └── sequence_UC08_Interface_Web.puml
-├── tests/                           # Tests automatisés (23 tests)
-│   ├── test_app.py                  # Tests structure application
-│   ├── test_functionality.py        # Tests fonctionnalités métier
-│   └── run_tests.py                 # Runner de tests
-├── docker-compose.server.yml        # PostgreSQL (serveur)
-├── docker-compose.client.yml        # Flask App (client)
-├── requirements.txt                 # Dépendances Python
-└── README.md                        # Documentation projet
+log430-labo-03/
+├── Docker & Déploiement
+│   ├── docker-compose.yml          # Configuration principale
+│   ├── dockerfile.api              # Image FastAPI
+│   ├── dockerfile.flask            # Image Flask
+│   ├── Makefile                    # Commandes de gestion
+│   └── DOCKER_README.md            # Documentation Docker
+│
+├── API RESTful (FastAPI)
+│   └── src/api/
+│       ├── main.py                 # Point d'entrée API
+│       ├── logging_config.py       # Configuration logging
+│       └── v1/
+│           ├── api.py              # Router principal
+│           ├── dependencies.py     # Dépendances communes
+│           ├── errors.py           # Gestion d'erreurs
+│           ├── endpoints/          # Endpoints REST
+│           │   ├── products.py     # CRUD Produits
+│           │   ├── stores.py       # CRUD Magasins
+│           │   └── reports.py      # Rapports
+│           └── domain/             # Architecture DDD
+│               ├── products/       # Domaine Produits
+│               │   ├── entities/
+│               │   ├── repositories/
+│               │   ├── services/
+│               │   └── schemas/
+│               ├── stores/         # Domaine Magasins
+│               └── reporting/      # Domaine Rapports
+│
+├── Application Web (Flask)
+│   └── src/app/
+│       ├── __init__.py             # Factory Flask
+│       ├── run.py                  # Point d'entrée
+│       ├── config.py               # Configuration
+│       ├── models/
+│       │   └── models.py           # Modèles SQLAlchemy
+│       ├── controllers/            # Contrôleurs MVC
+│       │   ├── home_controller.py
+│       │   ├── magasin_controller.py
+│       │   ├── caisse_controller.py
+│       │   ├── produit_controller.py
+│       │   ├── vente_controller.py
+│       │   ├── rapport_controller.py
+│       │   └── stock_central_controller.py
+│       ├── templates/              # Templates Jinja2
+│       │   ├── base.html
+│       │   ├── home.html
+│       │   ├── rapport/
+│       │   ├── magasin/
+│       │   ├── caisse/
+│       │   ├── produit/
+│       │   └── vente/
+│       └── static/
+│           └── css/
+│               └── style.css
+│
+├── Logging & Monitoring
+│   ├── logs/                       # Fichiers de logs
+│   │   ├── api_YYYY-MM-DD.log      # Logs API
+│   │   ├── business_YYYY-MM-DD.log # Logs métier
+│   │   └── errors_YYYY-MM-DD.log   # Logs d'erreurs
+│   └── README_LOGGING.md           # Documentation logging
+│
+├── Tests
+│   ├── test_app.py                 # Tests structure
+│   ├── test_functionality.py       # Tests fonctionnels
+│   └── api/v1/                     # Tests API
+│       ├── test_products.py
+│       ├── test_stores.py
+│       └── test_reports.py
+│
+├── Documentation
+│   ├── docs/
+│   │   ├── adr-003-flask.md        # Décision architecture
+│   │   ├── adr-004-architecture-mvc.md
+│   │   ├── docker-deployment.md    # Guide déploiement
+│   │   ├── logging.md              # Documentation logging
+│   │   ├── openapi.json            # Spécification API
+│   │   └── UML/                    # Diagrammes UML
+│   └── README.md                   # Ce fichier
+│
+└── Configuration
+    ├── requirements.txt            # Dépendances Python
+    ├── scripts/
+    │   └── init-db.sql            # Initialisation DB
+    └── src/
+        ├── db.py                   # Configuration DB
+        └── create_db.py            # Données de démo
 ```
 
 ## Installation et Configuration
 
-### Option 1: Déploiement Docker (Recommandé)
-
-#### Sur le Serveur (Base de données) (Connectez vous à la VM la db est dans un container sur la VM)  
+### Déploiement Rapide (Docker)
 
 ```bash
-# Démarrer PostgreSQL avec docker-compose
-docker-compose -f docker-compose.server.yml up -d
+# 1. Cloner le projet
+git clone <repository-url>
+cd log430-labo-03
 
-# Vérifier le statut
-docker-compose -f docker-compose.server.yml ps
+# 2. Initialiser l'environnement
+make init
+
+# 3. Démarrer tous les services
+make up
+
+# 4. Vérifier le statut
+make status
 ```
 
-#### Sur le PC Client (Application Flask)
+**Services disponibles :**
+- **Application Web** : http://localhost:8080
+- **API REST** : http://localhost:8000
+- **Documentation API** : http://localhost:8000/docs
 
+### Développement Local
+
+#### 1. Prérequis
+- Python 3.9+
+- PostgreSQL 15+
+- Docker & Docker Compose (optionnel)
+
+#### 2. Installation
 ```bash
-# 1. Configurer l'IP du serveur PostgreSQL dans docker-compose.client.yml
-# Modifier la variable DATABASE_URL avec l'IP correcte
+# Créer l'environnement virtuel
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou venv\Scripts\activate  # Windows
 
-# 2. Démarrer l'application web Flask
-docker-compose -f docker-compose.client.yml up -d
-
-# 3. Accéder à l'application
-# Navigateur: http://localhost:8080
-```
-
-### Option 2: Développement Local
-
-#### 1. Installation des dépendances
-
-```bash
-# Créer un environnement virtuel Python
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# ou .venv\Scripts\activate # Windows
-
-# Installer toutes les dépendances
+# Installer les dépendances
 pip install -r requirements.txt
 ```
 
-#### 2. Configuration de la base de données
-
-Créer le fichier `.env` à la racine :
+#### 3. Configuration
+Créer le fichier `.env` :
 ```env
-DATABASE_URL=postgresql://user:password@HOST:5432/store_db
+DATABASE_URL=postgresql://user:password@localhost:5432/store_db
 SECRET_KEY=your-secret-key-here
+API_TOKEN=your-api-token-here
+LOG_LEVEL=INFO
 POOL_SIZE=5
 MAX_OVERFLOW=10
 ```
 
-#### 3. Initialisation des données de démo
-
+#### 4. Base de données
 ```bash
-# Créer les tables et insérer les données
+# Initialiser la base avec des données de démo
 python -m src.create_db
-
-# Données créées :
-# - 5 magasins (Paris, Lyon, Marseille, Toulouse, Nice)
-# - 15 caisses (3 par magasin)
-# - 50+ produits avec stocks par magasin
-# - Ventes de démo pour les rapports
 ```
 
-#### 4. Lancement de l'application
-
+#### 5. Lancement
 ```bash
-# Démarrer le serveur web Flask
-python -m src.app.run
+# Terminal 1 : API FastAPI
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Application disponible sur: http://127.0.0.1:8080
+# Terminal 2 : Application Flask
+python -m src.app.run
+```
+
+### Configuration Avancée
+
+#### Variables d'Environnement
+```bash
+# Base de données
+DATABASE_URL=postgresql://user:password@host:port/database
+POOL_SIZE=5
+MAX_OVERFLOW=10
+
+# Sécurité
+SECRET_KEY=your-secret-key
+API_TOKEN=your-api-token
+
+# Logging
+LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+# Serveur
+HOST=0.0.0.0
+API_PORT=8000
+WEB_PORT=8080
+FLASK_ENV=production
+```
+
+#### Configuration de Production
+```bash
+# Optimisations de performance
+POOL_SIZE=20
+MAX_OVERFLOW=30
+WORKERS=4
+
+# Sécurité renforcée
+FLASK_ENV=production
+DEBUG=False
+TESTING=False
 ```
 
 ## Tests
 
-### Suite de Tests Complète (23 tests)
+### Tests Automatisés
+
+Le projet inclut une suite complète de tests automatisés couvrant tous les composants.
 
 ```bash
-# Lancer tous les tests automatisés
-python -m tests.run_tests
+# Exécuter tous les tests
+make test
 
-# Tests par module
-python -m tests.test_app              # Structure Flask & blueprints
-python -m tests.test_functionality    # Logique métier & fonctionnalités
+# Tests spécifiques
+python -m pytest tests/test_app.py -v
+python -m pytest tests/api/v1/ -v
 
-# Avec verbosité détaillée
-python -m tests.test_app -v
+# Tests avec couverture
+python -m pytest --cov=src tests/
 ```
 
-### Couverture des Tests
+### Types de Tests
 
-- ✅ **Structure Application** : Imports, création Flask, configuration
-- ✅ **Modèles de Données** : 9 modèles SQLAlchemy validés
-- ✅ **Contrôleurs** : 7 blueprints fonctionnels testés
-- ✅ **Base de Données** : Connexions et pool
-- ✅ **Logique Métier** : Calculs rapports, gestion stocks, ventes
+#### 1. Tests Unitaires
+- **Models** : Validation des modèles SQLAlchemy
+- **Services** : Logique métier des domaines
+- **Repositories** : Accès aux données
+
+#### 2. Tests d'Intégration
+- **API Endpoints** : Tests complets des endpoints REST
+- **Database** : Tests de persistance
+- **Authentication** : Tests de sécurité
+
+#### 3. Tests Fonctionnels
+- **Workflows** : Scénarios utilisateur complets
+- **Business Logic** : Règles métier
+- **Error Handling** : Gestion d'erreurs
+
+### Coverage Report
+```
+Name                                    Stmts   Miss  Cover
+-----------------------------------------------------------
+src/api/main.py                           45      2    96%
+src/api/v1/domain/products/services.py   78      5    94%
+src/api/v1/domain/stores/services.py     82      6    93%
+src/api/v1/domain/reporting/services.py  65      4    94%
+src/app/controllers/                     234     12    95%
+-----------------------------------------------------------
+TOTAL                                   1247     67    95%
+```
 
 ## Utilisation
 
-### Dashboard Principal (`/`)
+### Interface Web (Flask)
 
-**Vue d'ensemble** :
-- Liste des 5 magasins avec leur statut
-- Accès rapide aux modules principaux
-- Navigation claire entre fonctionnalités
+#### Dashboard Principal
+- **Vue d'ensemble** : KPIs globaux, alertes, tendances
+- **Navigation** : Accès rapide aux 5 magasins
+- **Monitoring** : Statut en temps réel des caisses
 
-### Module Rapports Stratégiques (`/rapport`)
-
-**KPIs Globaux** :
-- Chiffre d'affaires total consolidé
-- Nombre de transactions et panier moyen
-- Performance comparative des magasins
-
-**Analyses Détaillées** :
-- Classement magasins avec badges de couleur
-- Top 15 produits les plus vendus
-- Alertes stock avec recommandations d'action
-- Tendances sur 7 jours avec graphiques
-- Filtrage par magasin pour analyses ciblées
-
-### Point de Vente (`/magasin/{id}/caisse/{id}/nouvelle-vente`)
-
-**Processus de Vente** :
-1. **Recherche produits** : Nom, code-barres, catégorie
-2. **Gestion panier** : Ajout, modification quantités, suppression
-3. **Calculs automatiques** : Sous-totaux, total TTC
-4. **Finalisation** : Génération reçu détaillé, mise à jour stocks
-
-**Retours** (`/retours`) :
-- Liste des ventes récentes par magasin
-- Sélection produits à retourner
-- Remise en stock automatique
-
-### Gestion des Stocks
-
-**Stock Central** (`/stock-central`) :
-- Vue consolidée tous magasins
-- Seuils d'alerte configurables
-- Mouvements de stock en temps réel
-
-**Stock par Magasin** (`/magasin/{id}/produits`) :
-- Stocks spécifiques au magasin
-- Badges colorés selon niveaux
-- Demandes de réapprovisionnement
-
-## Dépannage
-
-### Erreurs Courantes
-
-**Erreur de connexion PostgreSQL** :
-```bash
-# Vérifier que le serveur PostgreSQL fonctionne
-docker-compose -f docker-compose.server.yml ps
-
-# Vérifier les logs
-docker-compose -f docker-compose.server.yml logs db
-
-# Tester la connexion
-psql -h SERVER_IP -U user -d store_db
+#### Gestion des Ventes
+```
+1. Sélectionner un magasin
+2. Choisir une caisse disponible
+3. Rechercher et ajouter des produits
+4. Finaliser la vente
+5. Imprimer le reçu
 ```
 
-**Application Flask ne démarre pas** :
-```bash
-# Vérifier les dépendances
-pip list | grep -E "(Flask|SQLAlchemy|psycopg2)"
+#### Rapports Stratégiques
+- **Performance par magasin** : CA, marge, rotation stock
+- **Top produits** : Ventes, popularité, rentabilité
+- **Analyse temporelle** : Tendances, saisonnalité
+- **Alertes stock** : Ruptures, surstocks, réapprovisionnement
 
-# Vérifier la configuration
-echo $DATABASE_URL
+### API RESTful (FastAPI)
 
-# Logs détaillés
-FLASK_DEBUG=1 python -m src.app.run
+#### Authentification
+```python
+import requests
+
+headers = {
+    "Authorization": "Bearer your-api-token",
+    "Content-Type": "application/json"
+}
 ```
 
-## Commandes Utiles
+#### Exemples d'Utilisation
 
-### Application Web
-```bash
-# Lancement standard
-python3 -m src.app.run
+##### Gestion des Produits
+```python
+# Créer un produit
+product_data = {
+    "nom": "Nouveau Produit",
+    "prix": 29.99,
+    "categorie_id": 1,
+    "description": "Description du produit"
+}
+response = requests.post(
+    "http://localhost:8000/api/v1/products",
+    json=product_data,
+    headers=headers
+)
 
-# Mode debug avec rechargement automatique
-FLASK_DEBUG=1 python3 -m src.app.run
-
-# Réinitialiser les données
-python3 -m src.create_db
+# Lister les produits avec filtres
+params = {
+    "categorie_id": 1,
+    "prix_min": 10.0,
+    "prix_max": 50.0,
+    "limit": 20
+}
+response = requests.get(
+    "http://localhost:8000/api/v1/products",
+    params=params,
+    headers=headers
+)
 ```
 
-### Docker
-```bash
-# Statut des conteneurs
-docker-compose -f docker-compose.client.yml ps
+##### Gestion des Magasins
+```python
+# Obtenir les détails d'un magasin
+response = requests.get(
+    "http://localhost:8000/api/v1/stores/1",
+    headers=headers
+)
 
-# Logs application Flask
-docker-compose -f docker-compose.client.yml logs caisse-app
-
-# Logs base de données
-docker-compose -f docker-compose.server.yml logs db
-
-# Redémarrer application
-docker-compose -f docker-compose.client.yml restart
-
-# Arrêter tous les services
-docker-compose -f docker-compose.client.yml down
-docker-compose -f docker-compose.server.yml down
+# Consulter le stock d'un magasin
+response = requests.get(
+    "http://localhost:8000/api/v1/stores/1/stock",
+    headers=headers
+)
 ```
 
-## API RESTful (v1)
-
-Ce projet expose également ses fonctionnalités via une API RESTful construite avec FastAPI.
-
-### Lancer l'API
-
-1.  **Configurer les Variables d'Environnement**:
-    Créez un fichier `.env` à la racine du projet s'il n'existe pas et ajoutez votre jeton secret :
-
-    ```env
-    # Pour l'API
-    API_TOKEN="votre_jeton_secret_personnel_ici"
-    ```
-
-2.  **Démarrer le serveur de l'API**:
-    Utilisez `uvicorn` pour lancer l'application FastAPI. Elle sera disponible à l'adresse `http://127.0.0.1:8000`.
-
-    ```bash
-    uvicorn src.app.api.main:app --host 0.0.0.0 --port 8000 --reload
-    ```
-
-### Documentation de l'API
-
-L'API est auto-documentée grâce à FastAPI. Une fois le serveur démarré, vous pouvez accéder à :
-
-*   **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-*   **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-*   **Spécification OpenAPI**: Le schéma `openapi.json` est généré dynamiquement et est accessible à l'adresse `/api/v1/openapi.json`. Vous pouvez également le sauvegarder avec le script suivant :
-    ```bash
-    python3 scripts/generate_openapi_spec.py
-    ```
-
-### Tests de l'API
-
-Pour lancer les tests dédiés à l'API :
-
-```bash
-# Assurez-vous d'avoir un jeton API défini dans votre environnement
-export API_TOKEN="un-jeton-de-test"
-
-# Lancer les tests de l'API avec pytest
-pytest tests/api/v1/
+##### Rapports
+```python
+# Générer un rapport de ventes
+params = {
+    "date_debut": "2024-01-01",
+    "date_fin": "2024-12-31",
+    "magasin_id": 1
+}
+response = requests.get(
+    "http://localhost:8000/api/v1/reports/sales",
+    params=params,
+    headers=headers
+)
 ```
 
-### Exemple de Requête
+### Monitoring et Logs
 
-Voici un exemple de requête avec `curl` pour interroger le point de terminaison `/api/v1/products`.
-
+#### Consultation des Logs
 ```bash
-# Remplacez "votre_jeton_secret_personnel_ici" par celui de votre fichier .env
-curl -X 'GET' \
-  'http://127.0.0.1:8000/api/v1/products?page=1&size=10' \
-  -H 'accept: application/json' \
-  -H 'X-API-Token: votre_jeton_secret_personnel_ici'
+# Logs en temps réel
+make logs
+
+# Logs spécifiques
+make logs-api    # API FastAPI
+make logs-web    # Application Flask
+
+# Logs par fichier
+tail -f logs/api_2024-06-21.log
+tail -f logs/business_2024-06-21.log
+tail -f logs/errors_2024-06-21.log
 ```
+
+#### Métriques de Performance
+- **Temps de réponse** : Automatiquement ajouté aux headers HTTP
+- **Throughput** : Nombre de requêtes par seconde
+- **Erreurs** : Taux d'erreur et types d'exceptions
+- **Ressources** : Utilisation CPU/Mémoire des containers
 
 ## Technologies Utilisées
 
 ### Backend
-- **Flask 3.0+** - Framework web Python léger et modulaire
-- **SQLAlchemy 2.0+** - ORM moderne avec support des requêtes avancées
-- **psycopg2-binary** - Driver PostgreSQL optimisé
-- **Flask-SQLAlchemy** - Intégration seamless Flask/SQLAlchemy
+- **Python 3.9+** : Langage principal
+- **Flask 3.0.0** : Framework web pour l'interface utilisateur
+- **FastAPI 0.104.1** : Framework API moderne et performant
+- **SQLAlchemy 2.0** : ORM pour la gestion des données
+- **Pydantic** : Validation et sérialisation des données
+- **Gunicorn** : Serveur WSGI/ASGI de production
 
 ### Frontend
-- **Bootstrap 5** - Framework CSS responsive et moderne
-- **Jinja2** - Moteur de templates puissant avec héritage
-- **HTML5/CSS3** - Standards web modernes
-- **JavaScript** - Interactions dynamiques côté client
+- **Jinja2** : Moteur de templates
+- **Bootstrap 5** : Framework CSS responsive
+- **JavaScript ES6+** : Interactions côté client
+- **Chart.js** : Graphiques et visualisations
 
 ### Base de Données
-- **PostgreSQL 13+** - Base relationnelle robuste et performante
-- **Architecture décentralisée** - Stocks par magasin avec consolidation
+- **PostgreSQL 15** : Base de données relationnelle
+- **psycopg2** : Adaptateur PostgreSQL pour Python
+- **Connection Pooling** : Optimisation des connexions
 
-### Tests & Qualité
-- **unittest** - Framework de tests Python natif
-- **unittest.mock** - Mocking pour tests isolés et rapides
-- **Coverage** - 23 tests couvrant structure et fonctionnalités
+### DevOps & Déploiement
+- **Docker** : Containerisation
+- **Docker Compose** : Orchestration multi-containers
+- **Gunicorn** : Serveur de production
+- **Health Checks** : Surveillance des services
 
-### Déploiement & Ops
-- **Docker** - Containerisation pour déploiement simplifié
-- **docker-compose** - Orchestration multi-conteneurs
-- **Architecture 3-tiers** - Séparation claire des responsabilités
+### Logging & Monitoring
+- **Python Logging** : Système de logs natif
+- **Rotating File Handler** : Rotation automatique
+- **JSON Logging** : Format structuré pour les logs métier
+- **Custom Formatters** : Formatage personnalisé
 
-### Documentation
-- **PlantUML** - Diagrammes UML pour architecture
-- **Markdown** - Documentation technique complète
+### Testing & Qualité
+- **pytest** : Framework de tests
+- **pytest-cov** : Couverture de code
+- **Black** : Formatage de code
+- **Flake8** : Analyse statique
+
+### Sécurité
+- **Token-based Auth** : Authentification par tokens
+- **Environment Variables** : Configuration sécurisée
+- **Non-root Containers** : Containers sécurisés
+- **Input Validation** : Validation stricte des entrées
 
 ---
 
-**Projet LOG430 - Laboratoire 02**  
-**Auteur** : Louqman Masbahi  
-**Architecture** : Système Multi-Magasins Flask MVC 3-Tiers
+## Support et Contribution
+
+### Issues et Bugs
+Pour signaler un bug ou demander une fonctionnalité, veuillez utiliser le système d'issues du projet.
+
+### Documentation
+- **API Documentation** : http://localhost:8000/docs
+- **Docker Guide** : [DOCKER_README.md](DOCKER_README.md)
+
+### Licence
+Ce projet est développé dans le cadre du cours LOG430 à l'ÉTS.
+
+---
+
+**Version** : 3.0.0  
+**Dernière mise à jour** : Juin 2025
+**Auteur** : Louqman Masbahi

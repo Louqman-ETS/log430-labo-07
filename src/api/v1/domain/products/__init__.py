@@ -1,0 +1,1 @@
+# Products Domain - Bounded Context

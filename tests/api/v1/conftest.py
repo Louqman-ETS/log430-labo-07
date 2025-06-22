@@ -3,9 +3,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from unittest.mock import MagicMock
 
-from src.app.api.main import app
+from src.api.main import app
 from src.db import get_db
-from src.app.api.v1 import dependencies
+from src.api.v1 import dependencies
 
 
 @pytest.fixture

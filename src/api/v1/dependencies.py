@@ -1,24 +1,53 @@
+import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
-import os
+from dotenv import load_dotenv
 
-API_TOKEN_ENV_VAR = "API_TOKEN"
-API_TOKEN_SCHEME = APIKeyHeader(name="X-API-Token", auto_error=False)
+from .errors import AuthenticationError
+
+load_dotenv()
+
+# Configuration du token API
+API_TOKEN = os.getenv("API_TOKEN")
+if not API_TOKEN:
+    raise ValueError("API_TOKEN environment variable is required")
+
+# Schema pour l'authentification par header
+api_key_header = APIKeyHeader(
+    name="X-API-Token", description="API Token for authentication"
+)
 
 
-def get_api_token() -> str:
-    api_token = os.getenv(API_TOKEN_ENV_VAR)
+async def api_token_auth(api_token: str = Depends(api_key_header)) -> str:
+    """
+    Vérifie l'authentification par token API
+
+    Args:
+        api_token: Token fourni dans le header X-API-Token
+
+    Returns:
+        str: Le token validé
+
+    Raises:
+        AuthenticationError: Si le token est invalide ou manquant
+    """
     if not api_token:
-        raise RuntimeError(f"{API_TOKEN_ENV_VAR} environment variable not set")
+        raise AuthenticationError("API Token is required")
+
+    if api_token != API_TOKEN:
+        raise AuthenticationError("Invalid API Token")
+
     return api_token
 
 
-def api_token_auth(
-    api_token_header: str = Depends(API_TOKEN_SCHEME),
-    valid_api_token: str = Depends(get_api_token),
-):
-    if not api_token_header or api_token_header != valid_api_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API Token",
-        )
+def get_current_token(token: str = Depends(api_token_auth)) -> str:
+    """
+    Obtient le token actuel (après validation)
+
+    Args:
+        token: Token validé
+
+    Returns:
+        str: Le token validé
+    """
+    return token

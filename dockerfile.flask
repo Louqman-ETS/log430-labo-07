@@ -1,0 +1,68 @@
+# Multi-stage Dockerfile pour Application Flask
+FROM python:3.9-slim as base
+
+# Variables d'environnement
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    FLASK_APP=src.app.run:app
+
+WORKDIR /app
+
+# Stage de développement
+FROM base as development
+
+# Installation des outils de développement
+RUN apt-get update && apt-get install -y \
+    curl \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Installation des dépendances
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copie du code source
+COPY src/ src/
+
+# Exposition du port
+EXPOSE 8080
+
+# Commande de développement avec rechargement automatique
+CMD ["flask", "run", "--host", "0.0.0.0", "--port", "8080", "--debug"]
+
+# Stage de production
+FROM base as production
+
+# Installation des dépendances système minimales
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Création d'un utilisateur non-root pour la sécurité
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Installation des dépendances Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copie du code source
+COPY src/ src/
+
+# Ajustement des permissions
+RUN chown -R appuser:appuser /app
+
+# Passage à l'utilisateur non-root
+USER appuser
+
+# Exposition du port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Commande de production avec Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "src.app.run:app"] 

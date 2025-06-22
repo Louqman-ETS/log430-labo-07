@@ -1,121 +1,169 @@
-from typing import Optional, Any, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import List, Optional
 
-from src.api.v1 import crud
-from src.api.v1.models import Product, ProductCreate, ProductUpdate, ProductPage
-from src.api.v1 import dependencies
 from src.db import get_db
-from src.app.models.models import Produit as ProductModel
+from ..dependencies import api_token_auth
+from ..errors import NotFoundError, DuplicateError, BusinessLogicError
 
-router = APIRouter(dependencies=[Depends(dependencies.api_token_auth)])
+from ..domain.products.entities.product import Product
+from ..domain.products.repositories.product_repository import ProductRepository
+from ..domain.products.services.product_service import ProductService
+from ..domain.products.schemas import (
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse,
+    ProductPage,
+)
+
+router = APIRouter()
 
 
-@router.get("", response_model=ProductPage)
-def read_products(
-    db: Session = Depends(get_db),
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(20, ge=1, le=100, description="Page size"),
+def get_product_service(db: Session = Depends(get_db)) -> ProductService:
+    """Dependency injection for ProductService"""
+    product_repository = ProductRepository(db)
+    return ProductService(product_repository)
+
+
+@router.get("/", response_model=ProductPage)
+async def read_products(
+    page: int = Query(default=1, ge=1, description="Page number"),
+    size: int = Query(default=20, ge=1, le=100, description="Page size"),
     sort: Optional[str] = Query(
-        "id,asc", description="Sort by field and order (field,asc|desc)"
+        default="id,asc", description="Sort by field and order (field,asc|desc)"
     ),
-    category: Optional[str] = Query(None, description="Filter by category name"),
-) -> Any:
-    """
-    Retrieve products with pagination, sorting, and filtering.
-    """
-    sort_field, sort_order = sort.split(",") if "," in sort else (sort, "asc")
-
-    products = crud.get_products(
-        db,
-        skip=(page - 1) * size,
-        limit=size,
-        sort=sort_field,
-        order=sort_order,
-        category=category,
-    )
-    total = crud.get_products_count(db, category=category)
-    return {
-        "total": total,
-        "page": page,
-        "size": size,
-        "items": products,
-    }
+    search: Optional[str] = Query(
+        default=None, description="Search in product names and codes"
+    ),
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Retrieve products with pagination, sorting, and filtering."""
+    return product_service.get_products_paginated(page=page, size=size)
 
 
-@router.post("", response_model=Product, status_code=status.HTTP_201_CREATED)
-def create_product(
-    *,
-    db: Session = Depends(get_db),
-    product_in: ProductCreate,
-) -> Any:
-    """
-    Create new product.
-    """
-    product = crud.create_product(db, obj_in=product_in)
+@router.get("/{product_id}", response_model=ProductResponse)
+async def read_product(
+    product_id: int,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Get product by ID."""
+    product = product_service.get_product_by_id(product_id)
+    if not product:
+        raise NotFoundError("Product", product_id)
     return product
 
 
-@router.get("/{product_id}", response_model=Product)
-def read_product(
-    *,
-    db: Session = Depends(get_db),
+@router.post("/", response_model=ProductResponse, status_code=201)
+async def create_product(
+    product: ProductCreate,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Create new product."""
+    try:
+        return product_service.create_product(product)
+    except ValueError as e:
+        raise DuplicateError("Product", "code", product.code)
+
+
+@router.put("/{product_id}", response_model=ProductResponse)
+async def update_product(
     product_id: int,
-) -> Any:
-    """
-    Get product by ID.
-    """
-    product = crud.get_product(db, product_id=product_id)
+    product: ProductUpdate,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Update a product completely."""
+    try:
+        updated_product = product_service.update_product(product_id, product)
+        if not updated_product:
+            raise NotFoundError("Product", product_id)
+        return updated_product
+    except ValueError as e:
+        if "already exists" in str(e):
+            raise DuplicateError("Product", "code", product.code)
+        raise BusinessLogicError(str(e))
+
+
+@router.patch("/{product_id}", response_model=ProductResponse)
+async def partial_update_product(
+    product_id: int,
+    product: ProductUpdate,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Partially update a product."""
+    try:
+        updated_product = product_service.update_product(product_id, product)
+        if not updated_product:
+            raise NotFoundError("Product", product_id)
+        return updated_product
+    except ValueError as e:
+        if "already exists" in str(e):
+            raise DuplicateError("Product", "code", product.code or "")
+        raise BusinessLogicError(str(e))
+
+
+@router.delete("/{product_id}", response_model=ProductResponse)
+async def delete_product(
+    product_id: int,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Delete a product."""
+    # First get the product to return it
+    product = product_service.get_product_by_id(product_id)
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise NotFoundError("Product", product_id)
+
+    # Then delete it
+    deleted = product_service.delete_product(product_id)
+    if not deleted:
+        raise NotFoundError("Product", product_id)
+
     return product
 
 
-@router.put("/{product_id}", response_model=Product)
-def update_product(
-    *,
-    db: Session = Depends(get_db),
+# Business endpoints
+@router.post("/{product_id}/reduce-stock", response_model=ProductResponse)
+async def reduce_product_stock(
     product_id: int,
-    product_in: ProductUpdate,
-) -> Any:
-    """
-    Update a product completely.
-    """
-    product = crud.get_product(db, product_id=product_id)
+    quantity: int = Query(..., ge=1, description="Quantity to reduce"),
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Reduce product stock (business operation)."""
+    try:
+        updated_product = product_service.reduce_product_stock(product_id, quantity)
+        if not updated_product:
+            raise NotFoundError("Product", product_id)
+        return updated_product
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise NotFoundError("Product", product_id)
+        raise BusinessLogicError(str(e))
+
+
+@router.get("/low-stock/", response_model=List[ProductResponse])
+async def get_low_stock_products(
+    threshold: int = Query(default=10, ge=0, description="Stock threshold"),
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Get products with low stock."""
+    return product_service.get_low_stock_products(threshold)
+
+
+@router.get("/by-code/{code}", response_model=ProductResponse)
+async def get_product_by_code(
+    code: str,
+    _: str = Depends(api_token_auth),  # Authentification requise
+    product_service: ProductService = Depends(get_product_service),
+):
+    """Get product by code."""
+    product = product_service.get_product_by_code(code)
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    product = crud.update_product(db, db_obj=product, obj_in=product_in)
-    return product
-
-
-@router.patch("/{product_id}", response_model=Product)
-def partial_update_product(
-    *,
-    db: Session = Depends(get_db),
-    product_id: int,
-    product_in: ProductUpdate,
-) -> Any:
-    """
-    Partially update a product.
-    """
-    product = crud.get_product(db, product_id=product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    product = crud.update_product(db, db_obj=product, obj_in=product_in)
-    return product
-
-
-@router.delete("/{product_id}", response_model=Product)
-def delete_product(
-    *,
-    db: Session = Depends(get_db),
-    product_id: int,
-) -> Any:
-    """
-    Delete a product.
-    """
-    product = crud.get_product(db, product_id=product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    product = crud.delete_product(db, db_obj=product)
+        raise NotFoundError("Product", code)
     return product
