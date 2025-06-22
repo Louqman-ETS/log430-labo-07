@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional
 
 
@@ -23,14 +23,13 @@ class StoreUpdate(BaseModel):
 class StoreResponse(BaseModel):
     """Schema for store response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nom: str
     adresse: Optional[str] = None
     telephone: Optional[str] = None
     email: Optional[str] = None
-
-    class Config:
-        orm_mode = True
 
 
 class StorePage(BaseModel):

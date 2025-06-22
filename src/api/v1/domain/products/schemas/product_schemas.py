@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from decimal import Decimal
 
@@ -28,6 +28,8 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     """Schema for product response"""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     code: str
     nom: str
@@ -35,9 +37,6 @@ class ProductResponse(BaseModel):
     prix: Decimal
     quantite_stock: int
     categorie_id: int
-
-    class Config:
-        orm_mode = True
 
 
 class ProductPage(BaseModel):
