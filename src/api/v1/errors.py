@@ -92,19 +92,21 @@ class DatabaseTimeoutError(APIError):
             message=message,
             status_code=503,
             error_code="DATABASE_TIMEOUT",
-            details={"retry_after": "30"}
+            details={"retry_after": "30"},
         )
 
 
 class ServiceUnavailableError(APIError):
     """Service Unavailable Error - System under heavy load"""
 
-    def __init__(self, message: str = "Service temporarily unavailable due to high load"):
+    def __init__(
+        self, message: str = "Service temporarily unavailable due to high load"
+    ):
         super().__init__(
             message=message,
             status_code=503,
             error_code="SERVICE_UNAVAILABLE",
-            details={"retry_after": "60"}
+            details={"retry_after": "60"},
         )
 
 
@@ -116,7 +118,7 @@ class RateLimitError(APIError):
             message=message,
             status_code=429,
             error_code="RATE_LIMIT_EXCEEDED",
-            details={"retry_after": str(retry_after)}
+            details={"retry_after": str(retry_after)},
         )
 
 

@@ -41,21 +41,21 @@ async def read_products(
 ):
     """Retrieve products with pagination, sorting, and filtering."""
     # Cache key pour cette requête
-    cache_key = cache_key_for_request("products", {
-        "page": page, "size": size, "sort": sort, "search": search
-    })
-    
+    cache_key = cache_key_for_request(
+        "products", {"page": page, "size": size, "sort": sort, "search": search}
+    )
+
     # Vérifier le cache d'abord
     cached_result = cache_service.get(cache_key)
     if cached_result is not None:
         return cached_result
-    
+
     # Si pas en cache, récupérer les données
     result = product_service.get_products_paginated(page=page, size=size)
-    
+
     # Mettre en cache pour 2 minutes (endpoint souvent consulté)
     cache_service.set(cache_key, result, ttl=120)
-    
+
     return result
 
 
@@ -68,20 +68,20 @@ async def read_product(
     """Get product by ID."""
     # Cache key pour ce produit spécifique
     cache_key = cache_key_for_request("product", {"id": product_id})
-    
+
     # Vérifier le cache d'abord
     cached_result = cache_service.get(cache_key)
     if cached_result is not None:
         return cached_result
-    
+
     # Si pas en cache, récupérer le produit
     product = product_service.get_product_by_id(product_id)
     if not product:
         raise NotFoundError("Product", product_id)
-    
+
     # Mettre en cache pour 5 minutes (données de produit changent peu)
     cache_service.set(cache_key, product, ttl=300)
-    
+
     return product
 
 
