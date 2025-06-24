@@ -8,7 +8,7 @@ services:
       dockerfile: dockerfile.api
       target: production
     container_name: log430-api
-    restart: unless-stopped
+    restart: "no"
     environment:
       - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -35,7 +35,7 @@ services:
       dockerfile: dockerfile.flask
       target: production
     container_name: log430-web
-    restart: unless-stopped
+    restart: "no"
     environment:
       - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
       - API_BASE_URL=http://api:8000

@@ -5,6 +5,8 @@ import logging
 
 from src.api.v1.api import api_router
 from src.api.v1.errors import add_exception_handlers
+from src.api.v1.middleware.metrics_middleware import MetricsMiddleware
+from src.api.v1.services.metrics_service import metrics_service, CONTENT_TYPE_LATEST
 from .logging_config import setup_logging, get_logger, log_api_call
 
 # Setup logging before creating the app
@@ -94,6 +96,9 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
+
 # Set all CORS enabled origins
 app.add_middleware(
     CORSMiddleware,
@@ -112,6 +117,14 @@ app.include_router(api_router, prefix="/api/v1")
 async def health_check():
     """Check API health status."""
     return {"status": "healthy", "message": "API is running"}
+
+
+# Endpoint des métriques Prometheus (sans authentification)
+@app.get("/metrics", tags=["monitoring"])
+async def get_metrics():
+    """Expose Prometheus metrics."""
+    metrics_data = metrics_service.get_metrics()
+    return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
 
 
 # Endpoint de documentation des erreurs

@@ -1,0 +1,38 @@
+groups:
+  - name: api_alerts
+    rules:
+      - alert: APIDown
+        expr: up{job="api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "API is down"
+          description: "L'API n'est plus accessible depuis {{ $value }} secondes"
+
+      - alert: APIHighErrorRate
+        expr: rate(api_errors_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API error rate is high"
+          description: "Taux d'erreur élevé: {{ $value }} erreurs/sec"
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API latency is high"
+          description: "Latence P95 élevée: {{ $value }}s"
+
+      - alert: APIHighLoad
+        expr: api_active_requests > 100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API under high load"
+          description: "Charge élevée: {{ $value }} requêtes actives" 

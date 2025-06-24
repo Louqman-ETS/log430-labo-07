@@ -5,6 +5,7 @@ from typing import List, Optional
 from src.db import get_db
 from ..dependencies import api_token_auth
 from ..errors import NotFoundError, DuplicateError, BusinessLogicError
+from ..services.cache_service import cache_service, cache_key_for_request
 
 from ..domain.products.entities.product import Product
 from ..domain.products.repositories.product_repository import ProductRepository
@@ -39,7 +40,23 @@ async def read_products(
     product_service: ProductService = Depends(get_product_service),
 ):
     """Retrieve products with pagination, sorting, and filtering."""
-    return product_service.get_products_paginated(page=page, size=size)
+    # Cache key pour cette requête
+    cache_key = cache_key_for_request("products", {
+        "page": page, "size": size, "sort": sort, "search": search
+    })
+    
+    # Vérifier le cache d'abord
+    cached_result = cache_service.get(cache_key)
+    if cached_result is not None:
+        return cached_result
+    
+    # Si pas en cache, récupérer les données
+    result = product_service.get_products_paginated(page=page, size=size)
+    
+    # Mettre en cache pour 2 minutes (endpoint souvent consulté)
+    cache_service.set(cache_key, result, ttl=120)
+    
+    return result
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
@@ -49,9 +66,22 @@ async def read_product(
     product_service: ProductService = Depends(get_product_service),
 ):
     """Get product by ID."""
+    # Cache key pour ce produit spécifique
+    cache_key = cache_key_for_request("product", {"id": product_id})
+    
+    # Vérifier le cache d'abord
+    cached_result = cache_service.get(cache_key)
+    if cached_result is not None:
+        return cached_result
+    
+    # Si pas en cache, récupérer le produit
     product = product_service.get_product_by_id(product_id)
     if not product:
         raise NotFoundError("Product", product_id)
+    
+    # Mettre en cache pour 5 minutes (données de produit changent peu)
+    cache_service.set(cache_key, product, ttl=300)
+    
     return product
 
 

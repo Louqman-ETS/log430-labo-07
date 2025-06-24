@@ -40,6 +40,8 @@ FROM base as production
 # Installation des dépendances système minimales
 RUN apt-get update && apt-get install -y \
     curl \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -67,5 +69,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Commande de production avec Gunicorn
-CMD ["gunicorn", "src.api.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-"] 
+# Commande de production avec Gunicorn - Pas de redémarrage automatique
+CMD ["gunicorn", "src.api.main:app", "-w", "8", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload", "--timeout", "120", "--graceful-timeout", "60", "--worker-connections", "2000"] 

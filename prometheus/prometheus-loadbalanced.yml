@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  # Scraper l'API via le load balancer (métriques agrégées)
+  - job_name: 'api-loadbalanced'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Scraper les instances individuelles pour les métriques par instance
+  - job_name: 'api-instances'
+    static_configs:
+      - targets: ['log430-api-1:8000', 'log430-api-2:8000', 'log430-api-3:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    # Labels pour identifier les instances
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance_name
+        regex: 'log430-api-(\d+):8000'
+        replacement: 'api-${1}'
+
+  # Métriques Nginx (optionnel)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['log430-nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090'] 

@@ -84,6 +84,42 @@ class BusinessLogicError(APIError):
         )
 
 
+class DatabaseTimeoutError(APIError):
+    """Database Timeout Error"""
+
+    def __init__(self, message: str = "Database operation timed out"):
+        super().__init__(
+            message=message,
+            status_code=503,
+            error_code="DATABASE_TIMEOUT",
+            details={"retry_after": "30"}
+        )
+
+
+class ServiceUnavailableError(APIError):
+    """Service Unavailable Error - System under heavy load"""
+
+    def __init__(self, message: str = "Service temporarily unavailable due to high load"):
+        super().__init__(
+            message=message,
+            status_code=503,
+            error_code="SERVICE_UNAVAILABLE",
+            details={"retry_after": "60"}
+        )
+
+
+class RateLimitError(APIError):
+    """Rate Limit Exceeded Error"""
+
+    def __init__(self, message: str = "Too many requests", retry_after: int = 60):
+        super().__init__(
+            message=message,
+            status_code=429,
+            error_code="RATE_LIMIT_EXCEEDED",
+            details={"retry_after": str(retry_after)}
+        )
+
+
 def create_error_response(
     status_code: int,
     message: str,
