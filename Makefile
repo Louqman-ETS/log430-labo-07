@@ -1,82 +1,190 @@
-# Makefile pour LOG430-Labo-03
-.PHONY: help build up down restart logs clean test
-
-# Variables
-COMPOSE_FILE=docker-compose.yml
-PROJECT_NAME=log430-labo-03
+# Makefile pour l'écosystème de microservices LOG430
+.PHONY: help build start stop clean logs test
 
 # Couleurs pour l'affichage
+CYAN=\033[0;36m
 GREEN=\033[0;32m
 YELLOW=\033[1;33m
 RED=\033[0;31m
 NC=\033[0m # No Color
 
-help: ## Afficher l'aide
-	@echo "$(GREEN)LOG430-Labo-03 - Commandes Docker Compose$(NC)"
+help: ## 📋 Afficher l'aide
+	@echo "$(CYAN)🛒 Écosystème E-Commerce - Microservices$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Commandes disponibles:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "$(GREEN)Services Magasin (Existants):$(NC)"
+	@echo "  • Products API (8001) - Gestion produits & catégories"
+	@echo "  • Stores API (8002) - Gestion magasins & caisses"
+	@echo "  • Sales API (8003) - Gestion ventes & ligne de ventes"
+	@echo "  • Stock API (8004) - Gestion stocks & inventaires"
+	@echo "  • Reporting API (8005) - Rapports & analytics"
+	@echo ""
+	@echo "$(YELLOW)Services E-Commerce (Nouveaux):$(NC)"
+	@echo "  • Customers API (8006) - Comptes clients & authentification"
+	@echo "  • Cart API (8007) - Paniers d'achat"
+	@echo "  • Orders API (8008) - Commandes & checkout"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-build: ## Construire les images Docker
-	@echo "$(GREEN)Construction des images Docker...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) build --no-cache
+# ================================
+# SERVICES MAGASIN (EXISTANTS)
+# ================================
 
-up: ## Démarrer tous les services
-	@echo "$(GREEN)Démarrage des services...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) up -d
-	@echo "$(GREEN)Services démarrés!$(NC)"
-	@echo "$(YELLOW)Web App:$(NC) http://localhost:8080"
-	@echo "$(YELLOW)API:$(NC) http://localhost:8000"
-	@echo "$(YELLOW)API Docs:$(NC) http://localhost:8000/docs"
+build-store: ## 🏗️ Construire tous les services magasin
+	@echo "$(CYAN)🏗️ Construction des services magasin...$(NC)"
+	docker-compose -f docker-compose.yml build
 
-up-dev: ## Démarrer en mode développement
-	@echo "$(GREEN)Démarrage en mode développement...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) up --build
+start-store: ## 🚀 Démarrer tous les services magasin
+	@echo "$(GREEN)🚀 Démarrage des services magasin...$(NC)"
+	docker-compose -f docker-compose.yml up -d
+	@echo "$(GREEN)✅ Services magasin démarrés!$(NC)"
+	@echo "📊 Dashboards disponibles:"
+	@echo "  • Grafana: http://localhost:3000"
+	@echo "  • Prometheus: http://localhost:9090"
 
-down: ## Arrêter tous les services
-	@echo "$(RED)Arrêt des services...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) down
+stop-store: ## 🛑 Arrêter tous les services magasin
+	@echo "$(YELLOW)🛑 Arrêt des services magasin...$(NC)"
+	docker-compose -f docker-compose.yml down
 
-restart: down up ## Redémarrer tous les services
+# ================================
+# SERVICES E-COMMERCE (NOUVEAUX)
+# ================================
 
-logs: ## Voir les logs de tous les services
-	docker-compose -f $(COMPOSE_FILE) logs -f
+build-ecommerce: ## 🛒 Construire tous les services e-commerce
+	@echo "$(CYAN)🛒 Construction des services e-commerce...$(NC)"
+	docker-compose -f docker-compose.ecommerce.yml build
 
-logs-api: ## Voir les logs de l'API
-	docker-compose -f $(COMPOSE_FILE) logs -f api
+start-ecommerce: ## 🚀 Démarrer tous les services e-commerce
+	@echo "$(GREEN)🚀 Démarrage des services e-commerce...$(NC)"
+	docker-compose -f docker-compose.ecommerce.yml up -d
+	@echo "$(GREEN)✅ Services e-commerce démarrés!$(NC)"
+	@echo "🛒 APIs disponibles:"
+	@echo "  • Customers API: http://localhost:8006"
+	@echo "  • Cart API: http://localhost:8007" 
+	@echo "  • Orders API: http://localhost:8008"
+	@echo "  • Load Balancer: http://localhost:8080"
 
-logs-web: ## Voir les logs de l'app web
-	docker-compose -f $(COMPOSE_FILE) logs -f web
+stop-ecommerce: ## 🛑 Arrêter tous les services e-commerce
+	@echo "$(YELLOW)🛑 Arrêt des services e-commerce...$(NC)"
+	docker-compose -f docker-compose.ecommerce.yml down
 
-status: ## Voir le statut des services
-	@echo "$(GREEN)Statut des services:$(NC)"
-	docker-compose -f $(COMPOSE_FILE) ps
+# ================================
+# COMMANDES GLOBALES
+# ================================
 
-clean: ## Nettoyer les containers
-	@echo "$(RED)Nettoyage des containers...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) down --remove-orphans
+build: build-store build-ecommerce ## 🏗️ Construire TOUS les services
+
+start: start-store start-ecommerce ## 🚀 Démarrer TOUS les services
+	@echo ""
+	@echo "$(GREEN)🎉 ÉCOSYSTÈME COMPLET DÉMARRÉ!$(NC)"
+	@echo ""
+	@echo "$(CYAN)🏪 Services Magasin:$(NC)"
+	@echo "  • Products API: http://localhost:8001"
+	@echo "  • Stores API: http://localhost:8002"
+	@echo "  • Sales API: http://localhost:8003"
+	@echo "  • Stock API: http://localhost:8004"
+	@echo "  • Reporting API: http://localhost:8005"
+	@echo ""
+	@echo "$(YELLOW)🛒 Services E-Commerce:$(NC)"
+	@echo "  • Customers API: http://localhost:8006"
+	@echo "  • Cart API: http://localhost:8007"
+	@echo "  • Orders API: http://localhost:8008"
+
+stop: stop-store stop-ecommerce ## 🛑 Arrêter TOUS les services
+
+restart: stop start ## 🔄 Redémarrer TOUS les services
+
+# ================================
+# LOGS ET MONITORING
+# ================================
+
+logs-store: ## 📜 Voir les logs des services magasin
+	docker-compose -f docker-compose.yml logs -f
+
+logs-ecommerce: ## 📜 Voir les logs des services e-commerce
+	docker-compose -f docker-compose.ecommerce.yml logs -f
+
+logs: ## 📜 Voir TOUS les logs
+	@echo "$(CYAN)📜 Logs des services magasin:$(NC)"
+	docker-compose -f docker-compose.yml logs --tail=50
+	@echo ""
+	@echo "$(YELLOW)📜 Logs des services e-commerce:$(NC)"
+	docker-compose -f docker-compose.ecommerce.yml logs --tail=50
+
+status: ## 📊 Vérifier le statut de tous les services
+	@echo "$(CYAN)📊 Statut des services:$(NC)"
+	@echo ""
+	@echo "$(GREEN)🏪 Services Magasin:$(NC)"
+	@docker-compose -f docker-compose.yml ps
+	@echo ""
+	@echo "$(YELLOW)🛒 Services E-Commerce:$(NC)"
+	@docker-compose -f docker-compose.ecommerce.yml ps
+
+# ================================
+# TESTS
+# ================================
+
+test-store: ## 🧪 Exécuter les tests des services magasin
+	@echo "$(CYAN)🧪 Tests des services magasin...$(NC)"
+	cd services && python run_all_tests.py
+
+test-ecommerce: ## 🧪 Exécuter les tests des services e-commerce
+	@echo "$(CYAN)🧪 Tests des services e-commerce...$(NC)"
+	@echo "🧑‍💼 Test Customers API..."
+	cd services/customers-api && python -m pytest tests/ -v
+	@echo "🛒 Test Cart API..."
+	cd services/cart-api && python -m pytest tests/ -v
+	@echo "📦 Test Orders API..."
+	cd services/orders-api && python -m pytest tests/ -v
+
+test: test-store test-ecommerce ## 🧪 Exécuter TOUS les tests
+
+# ================================
+# INITIALISATION ET NETTOYAGE
+# ================================
+
+init-data: ## 📊 Initialiser les données de test
+	@echo "$(CYAN)📊 Initialisation des données de test...$(NC)"
+	@echo "🏪 Initialisation services magasin..."
+	cd services/products-api/src && python init_db.py
+	cd services/stores-api/src && python init_db.py
+	@echo "🛒 Initialisation services e-commerce..."
+	cd services/customers-api/src && python init_db.py
+	@echo "$(GREEN)✅ Données de test initialisées!$(NC)"
+
+clean: ## 🧹 Nettoyer les containers et volumes
+	@echo "$(RED)🧹 Nettoyage des containers et volumes...$(NC)"
+	docker-compose -f docker-compose.yml down -v
+	docker-compose -f docker-compose.ecommerce.yml down -v
 	docker system prune -f
+	@echo "$(GREEN)✅ Nettoyage terminé!$(NC)"
 
-clean-all: ## Nettoyage complet (images, containers)
-	@echo "$(RED)Nettoyage complet...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) down --remove-orphans --rmi all
-	docker system prune -af
+# ================================
+# DÉVELOPPEMENT
+# ================================
 
-test: ## Exécuter les tests
-	@echo "$(GREEN)Exécution des tests...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) exec api python -m pytest tests/ -v
+dev-customers: ## 🔧 Mode développement Customers API
+	cd services/customers-api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8006
 
-shell-api: ## Ouvrir un shell dans le container API
-	docker-compose -f $(COMPOSE_FILE) exec api /bin/bash
+dev-cart: ## 🔧 Mode développement Cart API
+	cd services/cart-api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8007
 
-shell-web: ## Ouvrir un shell dans le container Web
-	docker-compose -f $(COMPOSE_FILE) exec web /bin/bash
+dev-orders: ## 🔧 Mode développement Orders API
+	cd services/orders-api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8008
 
-init: ## Initialiser le projet (première utilisation)
-	@echo "$(GREEN)Initialisation du projet...$(NC)"
-	@mkdir -p logs
-	@echo "$(YELLOW)Créez un fichier .env basé sur .env.example$(NC)"
-	@echo "$(GREEN)Projet initialisé! Utilisez 'make up' pour démarrer.$(NC)"
+# ================================
+# DOCUMENTATION
+# ================================
 
-# Commande par défaut
-.DEFAULT_GOAL := help 
+docs: ## 📚 Ouvrir la documentation des APIs
+	@echo "$(CYAN)📚 Documentation des APIs:$(NC)"
+	@echo "🏪 Services Magasin:"
+	@echo "  • Products API: http://localhost:8001/docs"
+	@echo "  • Stores API: http://localhost:8002/docs"
+	@echo "  • Sales API: http://localhost:8003/docs"
+	@echo "  • Stock API: http://localhost:8004/docs"
+	@echo "  • Reporting API: http://localhost:8005/docs"
+	@echo ""
+	@echo "🛒 Services E-Commerce:"
+	@echo "  • Customers API: http://localhost:8006/docs"
+	@echo "  • Cart API: http://localhost:8007/docs"
+	@echo "  • Orders API: http://localhost:8008/docs" 

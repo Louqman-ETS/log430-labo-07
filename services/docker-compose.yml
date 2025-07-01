@@ -29,7 +29,7 @@ services:
     depends_on:
       - products-db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,7 +63,7 @@ services:
     depends_on:
       - stores-db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -102,7 +102,7 @@ services:
       - products-api
       - stores-api
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -140,7 +140,7 @@ services:
       - products-api
       - stores-api
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -182,11 +182,153 @@ services:
       - sales-api
       - stock-api
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
+
+  # ============================================================================
+  # SERVICES E-COMMERCE
+  # ============================================================================
+
+  # Service Customers API (Port 8006)
+  customers-db:
+    image: postgres:15-alpine
+    container_name: customers-db
+    environment:
+      POSTGRES_DB: customers_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5450:5432"
+    volumes:
+      - customers_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  customers-api:
+    build: ./customers-api
+    container_name: customers-api
+    environment:
+      CUSTOMERS_DATABASE_URL: postgresql://postgres:password@customers-db:5432/customers_db
+      SECRET_KEY: your-super-secret-key-change-in-production
+    ports:
+      - "8006:8006"
+    depends_on:
+      - customers-db
+    volumes:
+      - ../logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service Cart API (Port 8007)
+  cart-db:
+    image: postgres:15-alpine
+    container_name: cart-db
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5451:5432"
+    volumes:
+      - cart_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  cart-api:
+    build: ./cart-api
+    container_name: cart-api
+    environment:
+      CART_DATABASE_URL: postgresql://postgres:password@cart-db:5432/cart_db
+      PRODUCTS_API_URL: http://products-api:8001
+      STOCK_API_URL: http://stock-api:8004
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8007:8007"
+    depends_on:
+      - cart-db
+      - redis
+      - products-api
+      - stock-api
+    volumes:
+      - ../logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8007/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service Orders API (Port 8008)
+  orders-db:
+    image: postgres:15-alpine
+    container_name: orders-db
+    environment:
+      POSTGRES_DB: orders_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5452:5432"
+    volumes:
+      - orders_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  orders-api:
+    build: ./orders-api
+    container_name: orders-api
+    environment:
+      ORDERS_DATABASE_URL: postgresql://postgres:password@orders-db:5432/orders_db
+      CART_API_URL: http://cart-api:8007
+      PRODUCTS_API_URL: http://products-api:8001
+      STOCK_API_URL: http://stock-api:8004
+      SALES_API_URL: http://sales-api:8003
+    ports:
+      - "8008:8008"
+    depends_on:
+      - orders-db
+      - cart-api
+      - products-api
+      - stock-api
+      - sales-api
+    volumes:
+      - ../logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8008/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Redis pour cache et sessions
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   products_db_data:
@@ -194,6 +336,10 @@ volumes:
   sales_db_data:
   stock_db_data:
   reporting_db_data:
+  customers_db_data:
+  cart_db_data:
+  orders_db_data:
+  redis_data:
 
 networks:
   default:

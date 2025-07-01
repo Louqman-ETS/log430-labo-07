@@ -110,11 +110,16 @@ def main():
     
     # Liste des services à tester
     services = [
+        # Services magasins physiques
         "products-api",
         "sales-api", 
         "stock-api",
         "stores-api",
-        "reporting-api"
+        "reporting-api",
+        # Services e-commerce
+        "customers-api",
+        "cart-api",
+        "orders-api"
     ]
     
     total_passed = 0
@@ -153,19 +158,48 @@ def main():
             print(f"   - {service}")
     
     # Vérifications des améliorations
-    print(f"\n🔥 AMÉLIORATIONS TESTÉES:")
-    print(f"   ✅ Logging structuré avec Request-ID")
-    print(f"   ✅ Middleware de traçage HTTP") 
-    print(f"   ✅ Gestion d'erreurs standardisée")
-    print(f"   ✅ APIs RESTful compliant")
-    print(f"   ✅ Inter-service communication (Sales)")
-    print(f"   ✅ Architecture DDD")
+    print(f"\n🔥 FONCTIONNALITÉS TESTÉES:")
+    print(f"   🏪 MAGASINS PHYSIQUES:")
+    print(f"     ✅ Gestion des produits et catégories")
+    print(f"     ✅ Système de ventes et lignes de vente")
+    print(f"     ✅ Gestion des stocks centralisés")
+    print(f"     ✅ Magasins et caisses enregistreuses")
+    print(f"     ✅ Rapports et analytics")
+    print(f"   🛒 E-COMMERCE:")
+    print(f"     ✅ Comptes clients et authentification JWT")
+    print(f"     ✅ Paniers d'achat (clients + invités)")
+    print(f"     ✅ Commandes et checkout complet")
+    print(f"   🔧 ARCHITECTURE:")
+    print(f"     ✅ Logging structuré avec Request-ID")
+    print(f"     ✅ Middleware de traçage HTTP") 
+    print(f"     ✅ Gestion d'erreurs standardisée")
+    print(f"     ✅ APIs RESTful compliant")
+    print(f"     ✅ Communication inter-services")
+    print(f"     ✅ Architecture DDD")
+    print(f"     ✅ Coordination entre bases de données")
     
     if total_failed == 0 and not failed_services:
-        print(f"\n🎉 TOUS LES TESTS SONT PASSÉS! Architecture production-ready! 🚀")
+        print(f"\n🎉 TOUS LES TESTS SONT PASSÉS!")
+        print(f"🏪 Système de magasins physiques: OPÉRATIONNEL")
+        print(f"🛒 Système e-commerce: OPÉRATIONNEL")
+        print(f"🔗 Coordination inter-services: VALIDÉE")
+        print(f"🚀 Architecture production-ready!")
         return 0
     else:
         print(f"\n🔧 Certains tests ont échoué, vérifiez les détails ci-dessus.")
+        
+        # Détail des échecs par catégorie
+        store_services = ["products-api", "sales-api", "stock-api", "stores-api", "reporting-api"]
+        ecommerce_services = ["customers-api", "cart-api", "orders-api"]
+        
+        store_failures = [s for s in failed_services if s in store_services]
+        ecommerce_failures = [s for s in failed_services if s in ecommerce_services]
+        
+        if store_failures:
+            print(f"🏪 Échecs magasins physiques: {', '.join(store_failures)}")
+        if ecommerce_failures:
+            print(f"🛒 Échecs e-commerce: {', '.join(ecommerce_failures)}")
+            
         return 1
 
 if __name__ == "__main__":
