@@ -1,0 +1,200 @@
+version: '3.8'
+
+services:
+  # Products Service (Port 8001)
+  products-db:
+    image: postgres:15
+    container_name: products-db
+    environment:
+      POSTGRES_DB: products_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - products_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  products-api:
+    build: ./products-api
+    container_name: products-api
+    environment:
+      PRODUCTS_DATABASE_URL: postgresql://postgres:password@products-db:5432/products_db
+    ports:
+      - "8001:8001"
+    depends_on:
+      - products-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Stores Service (Port 8002)
+  stores-db:
+    image: postgres:15
+    container_name: stores-db
+    environment:
+      POSTGRES_DB: stores_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - stores_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  stores-api:
+    build: ./stores-api
+    container_name: stores-api
+    environment:
+      STORES_DATABASE_URL: postgresql://postgres:password@stores-db:5432/stores_db
+    ports:
+      - "8002:8002"
+    depends_on:
+      - stores-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Sales Service (Port 8003) - NOUVEAU
+  sales-db:
+    image: postgres:15
+    container_name: sales-db
+    environment:
+      POSTGRES_DB: sales_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - sales_db_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  sales-api:
+    build: ./sales-api
+    container_name: sales-api
+    environment:
+      SALES_DATABASE_URL: postgresql://postgres:password@sales-db:5432/sales_db
+      PRODUCTS_API_URL: http://products-api:8001/api/v1
+      STORES_API_URL: http://stores-api:8002/api/v1
+      STOCK_API_URL: http://stock-api:8004/api/v1
+    ports:
+      - "8003:8003"
+    depends_on:
+      - sales-db
+      - products-api
+      - stores-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Stock Service (Port 8004) - NOUVEAU  
+  stock-db:
+    image: postgres:15
+    container_name: stock-db
+    environment:
+      POSTGRES_DB: stock_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - stock_db_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  stock-api:
+    build: ./stock-api
+    container_name: stock-api
+    environment:
+      STOCK_DATABASE_URL: postgresql://postgres:password@stock-db:5432/stock_db
+      PRODUCTS_API_URL: http://products-api:8001/api/v1
+      STORES_API_URL: http://stores-api:8002/api/v1
+    ports:
+      - "8004:8004"
+    depends_on:
+      - stock-db
+      - products-api
+      - stores-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Reporting Service (Port 8005) - MODIFIÉ POUR ANALYTICS SEULEMENT
+  reporting-db:
+    image: postgres:15
+    container_name: reporting-db
+    environment:
+      POSTGRES_DB: reporting_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - reporting_db_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  reporting-api:
+    build: ./reporting-api
+    container_name: reporting-api
+    environment:
+      REPORTING_DATABASE_URL: postgresql://postgres:password@reporting-db:5432/reporting_db
+      PRODUCTS_API_URL: http://products-api:8001/api/v1
+      STORES_API_URL: http://stores-api:8002/api/v1
+      SALES_API_URL: http://sales-api:8003/api/v1
+      STOCK_API_URL: http://stock-api:8004/api/v1
+    ports:
+      - "8005:8005"
+    depends_on:
+      - reporting-db
+      - products-api
+      - stores-api
+      - sales-api
+      - stock-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  products_db_data:
+  stores_db_data:
+  sales_db_data:
+  stock_db_data:
+  reporting_db_data:
+
+networks:
+  default:
+    name: microservices-network 
