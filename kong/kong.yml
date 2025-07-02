@@ -1,0 +1,302 @@
+_format_version: "3.0"
+
+# =============================================================================
+# SERVICES - Définition des backends microservices
+# =============================================================================
+services:
+  - name: products-service
+    url: http://products-api:8001
+
+  - name: stores-service
+    url: http://stores-api:8002
+
+  - name: sales-service
+    url: http://sales-api:8003
+
+  - name: stock-service
+    url: http://stock-api:8004
+
+  - name: reporting-service
+    url: http://reporting-api:8005
+
+  - name: customers-service
+    url: http://customers-api:8006
+
+  - name: cart-service
+    url: http://cart-api:8007
+
+  - name: orders-service
+    url: http://orders-api:8008
+
+# =============================================================================
+# ROUTES - Routage dynamique vers les services
+# =============================================================================
+routes:
+  # Products API
+  - name: products-route
+    service: products-service
+    paths: ["/api/v1/products"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  - name: categories-route
+    service: products-service
+    paths: ["/api/v1/categories"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Stores API
+  - name: stores-route
+    service: stores-service
+    paths: ["/api/v1/stores"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  - name: cash-registers-route
+    service: stores-service
+    paths: ["/api/v1/cash_registers"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Sales API
+  - name: sales-route
+    service: sales-service
+    paths: ["/api/v1/sales"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Stock API
+  - name: stock-route
+    service: stock-service
+    paths: ["/api/v1/stock"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Reporting API
+  - name: reports-route
+    service: reporting-service
+    paths: ["/api/v1/reports"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Customers API (E-commerce)
+  - name: customers-route
+    service: customers-service
+    paths: ["/api/v1/customers"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  - name: auth-route
+    service: customers-service
+    paths: ["/api/v1/auth"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Cart API (E-commerce)
+  - name: carts-route
+    service: cart-service
+    paths: ["/api/v1/carts"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # Orders API (E-commerce)
+  - name: orders-route
+    service: orders-service
+    paths: ["/api/v1/orders"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+
+  # =============================================================================
+  # ROUTES DOCUMENTATION SWAGGER (avec authentification)
+  # =============================================================================
+  
+  # Products Documentation
+  - name: products-docs
+    service: products-service
+    paths: ["/docs/products"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Stores Documentation  
+  - name: stores-docs
+    service: stores-service
+    paths: ["/docs/stores"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Sales Documentation
+  - name: sales-docs
+    service: sales-service
+    paths: ["/docs/sales"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Stock Documentation
+  - name: stock-docs
+    service: stock-service
+    paths: ["/docs/stock"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Reporting Documentation
+  - name: reporting-docs
+    service: reporting-service
+    paths: ["/docs/reporting"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Customers Documentation
+  - name: customers-docs
+    service: customers-service
+    paths: ["/docs/customers"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Cart Documentation
+  - name: cart-docs
+    service: cart-service
+    paths: ["/docs/cart"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Orders Documentation
+  - name: orders-docs
+    service: orders-service
+    paths: ["/docs/orders"]
+    strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names: ["X-API-Key", "apikey"]
+      - name: request-transformer
+        config:
+          replace:
+            uri: "/docs"
+
+  # Route pour /openapi.json (SANS authentification pour Swagger UI)
+  - name: openapi-schema
+    service: products-service
+    paths: ["/openapi.json"]
+    strip_path: false
+    # PAS de plugin key-auth = pas d'authentification requise
+
+# =============================================================================
+# CONSUMERS - Clients API avec authentification
+# =============================================================================
+consumers:
+  - username: log430-client
+    keyauth_credentials:
+      - key: "api-key-log430"
+
+# =============================================================================
+# PLUGINS GLOBAUX (sauf authentification)
+# =============================================================================
+plugins:
+  # 1. CORS Support
+  - name: cors
+    config:
+      origins: ["*"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "X-API-Key", "Authorization"]
+      credentials: true
+
+  # 2. Request ID pour traçabilité
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+
+  # 3. Rate Limiting
+  - name: rate-limiting
+    config:
+      minute: 1000
+      hour: 10000
+
+  # 4. Logging centralisé
+  - name: http-log
+    config:
+      http_endpoint: "http://kong-logs:3000/logs"
+      method: "POST"
+      timeout: 1000 

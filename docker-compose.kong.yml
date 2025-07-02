@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # KONG GATEWAY - Point d'entrée principal (Mode déclaratif)
+  # =============================================================================
+  kong-gateway:
+    image: kong:3.4
+    container_name: kong-gateway
+    environment:
+      # Configuration déclarative (sans base de données)
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      
+      # Configuration Gateway
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8009
+      
+      # Logging centralisé
+      KONG_LOG_LEVEL: info
+      KONG_PLUGINS: bundled,correlation-id,http-log
+      
+    volumes:
+      - ./kong:/kong/declarative
+      - kong_logs:/kong/logs
+    ports:
+      - "8000:8000"    # Kong Proxy (Point d'entrée principal)
+      - "8443:8443"    # Kong Proxy SSL
+      - "8009:8009"    # Kong Admin API 
+    # Pas de dépendances en mode déclaratif
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # KONG LOGGING SERVICE - Collecteur de logs centralisé
+  # =============================================================================
+  kong-logs:
+    image: node:18-alpine
+    container_name: kong-logs
+    working_dir: /app
+    volumes:
+      - ./kong/logging:/app
+      - kong_logs:/app/logs
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install express morgan && node server.js"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  kong_logs:
+
+networks:
+  microservices-network:
+    external: true 

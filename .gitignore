@@ -33,3 +33,12 @@ ENV/
 Thumbs.db
 
 logs/
+
+# Kong Gateway
+kong/logging/node_modules/
+kong/logging/logs/
+kong/logging/package-lock.json
+
+# Load testing results
+*-results.json
+k6-results/
