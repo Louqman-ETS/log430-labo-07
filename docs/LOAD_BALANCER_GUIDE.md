@@ -98,15 +98,15 @@ Kong utilise l'algorithme **Round-Robin** qui distribue les requêtes séquentie
 
 ### Avantages
 
-- ✅ **Distribution équitable** : Chaque instance reçoit le même nombre de requêtes
-- ✅ **Simplicité** : Algorithme simple et prévisible
-- ✅ **Performance** : Pas de calcul complexe nécessaire
-- ✅ **Résilience** : Exclusion automatique des instances défaillantes
+- **Distribution équitable** : Chaque instance reçoit le même nombre de requêtes
+- **Simplicité** : Algorithme simple et prévisible
+- **Performance** : Pas de calcul complexe nécessaire
+- **Résilience** : Exclusion automatique des instances défaillantes
 
 ### Limitations
 
-- ⚠️ **Pas de pondération** : Ne tient pas compte de la charge des instances
-- ⚠️ **Pas d'affinité** : Une session peut être traitée par différentes instances
+- **Pas de pondération** : Ne tient pas compte de la charge des instances
+- **Pas d'affinité** : Une session peut être traitée par différentes instances
 
 ## Health Checks
 
@@ -238,8 +238,8 @@ curl http://localhost:9001/upstreams/inventory-api-upstream/targets
 Chaque instance produit des logs avec l'ID d'instance :
 
 ```
-2025-01-04 20:06:00 [INFO] inventory-api: 🔍 [inventory-api-1][req123] GET /api/v1/products/ - Started
-2025-01-04 20:06:00 [INFO] inventory-api: ✅ [inventory-api-1][req123] 200 - Completed in 45ms
+2025-01-04 20:06:00 [INFO] inventory-api: [inventory-api-1][req123] GET /api/v1/products/ - Started
+2025-01-04 20:06:00 [INFO] inventory-api: [inventory-api-1][req123] 200 - Completed in 45ms
 ```
 
 ### Headers de Traçage
@@ -360,11 +360,11 @@ Le load balancing respecte la sécurité Kong :
 
 Le système de load balancing implémenté avec Kong offre :
 
-- ✅ **Distribution équitable** des requêtes (Round-Robin)
-- ✅ **Haute disponibilité** avec health checks automatiques  
-- ✅ **Scalabilité horizontale** simple à mettre en œuvre
-- ✅ **Monitoring complet** avec métriques et logs
-- ✅ **Performance optimale** avec des temps de réponse < 12ms
-- ✅ **Résilience** aux pannes d'instances individuelles
+- **Distribution équitable** des requêtes (Round-Robin)
+- **Haute disponibilité** avec health checks automatiques
+- **Scalabilité horizontale** simple à mettre en œuvre
+- **Monitoring complet** avec métriques et logs
+- **Performance optimale** avec des temps de réponse < 12ms
+- **Résilience** aux pannes d'instances individuelles
 
 Le système est prêt pour la production et peut facilement être étendu avec des instances supplémentaires selon les besoins de charge. 

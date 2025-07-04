@@ -1,113 +1,129 @@
-# 📊 Guide de Monitoring API - LOG430
+# Guide de Monitoring - API avec Load Balancer
 
-## 🚀 Démarrage rapide
+## Démarrage rapide
 
-### 1. Lancer l'API
+### 1. Démarrer l'infrastructure complète
 ```bash
-docker-compose up -d
+# Démarrer avec monitoring
+make monitoring-up
+
+# Ou démarrer séparément
+make kong-up
+make loadbalanced-up
+make monitoring-up
 ```
 
-### 2. Lancer le monitoring
+### 2. Accéder aux dashboards
+- **Grafana** : http://localhost:3000 (admin/admin)
+- **Prometheus** : http://localhost:9090
+- **Kong Admin** : http://localhost:9001
+
+### 3. Lancer des tests de charge
 ```bash
-docker-compose -f docker-compose.monitoring.yml up -d
+# Test simple
+./simple-test-lb.sh
+
+# Test de stress K6
+cd k6-tests
+k6 run loadbalanced-stress-test.js
 ```
 
-### 3. Accéder aux interfaces
+### 4. Observer les métriques
+- Ouvrir Grafana → Dashboard "API Load Balancer Monitoring"
+- Surveiller les graphiques en temps réel
+- Analyser les performances par instance
 
-| Service | URL | Identifiants |
-|---------|-----|-------------|
-| **API** | http://localhost:8000 | - |
-| **Prometheus** | http://localhost:9090 | - |
-| **Grafana** | http://localhost:3000 | admin / admin |
+### 5. Analyser les résultats
+- Comparer les métriques avant/pendant/après les tests
+- Identifier les goulots d'étranglement
+- Optimiser la configuration
 
-## 📈 Métriques surveillées
+## Dashboard Grafana
 
-### 1. **Health** (Santé de l'API)
-- `up{job="api"}` → 1=API accessible, 0=API down
-- `api_health_status` → 1=sain, 0=malade (interne)
+Le dashboard "API Load Balancer Monitoring" inclut :
 
-### 2. **Traffic** (Trafic)
-- `rate(api_requests_total[1m])` → Requêtes par seconde
-- Par endpoint et méthode HTTP
+- **API Health** → Santé interne (si API accessible)
+- **Request Rate** → Requêtes par seconde
+- **Latency** → Temps de réponse (P50, P95, P99)
+- **Error Rate** → Taux d'erreur par instance
+- **Load Distribution** → Distribution des requêtes entre instances
 
-### 3. **Latency** (Latence)
-- `histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m]))` → P95
-- `histogram_quantile(0.50, rate(api_request_duration_seconds_bucket[5m]))` → P50 (médiane)
+## Tests de stress avec métriques
 
-### 4. **Errors** (Erreurs)
-- `rate(api_errors_total[1m])` → Erreurs par seconde
-- `rate(api_requests_total{status_code=~"4..|5.."}[1m])` → Erreurs HTTP
-
-### 5. **Saturation** (Charge)
-- `api_active_requests` → Requêtes en cours
-- Indicateur de surcharge
-
-## 🎯 Dashboard Grafana
-
-Le dashboard **"API Performance Dashboard"** contient :
-
-- 🟢 **API Status** → Statut externe (Prometheus peut-il scraper ?)
-- ❤️ **API Health** → Santé interne (si API accessible)
-- 📈 **Traffic** → Taux de requêtes en temps réel
-- ⏱️ **Latency** → Temps de réponse (P50, P95, P99)
-- ❌ **Errors** → Taux d'erreur par type
-- 🚦 **Saturation** → Charge active et load
-
-## 🧪 Tests de stress avec métriques
-
-### Lancer un test K6
+### Test K6 avec métriques
 ```bash
-k6 run k6-tests/simple-stress-test.js
+cd k6-tests
+k6 run --out prometheus-remote-write=http://localhost:9090/api/v1/write loadbalanced-stress-test.js
 ```
 
-### Pendant le test, observez :
-1. **Traffic** augmente progressivement
-2. **Latency** monte avec la charge
-3. **Errors** apparaissent si API surchargée
-4. **Saturation** montre la charge active
+### Test simple avec curl
+```bash
+# Test de charge basique
+for i in {1..100}; do
+  curl -s -H "apikey: admin-api-key-12345" \
+    http://localhost:9000/inventory/api/v1/products/ \
+    -w "Time: %{time_total}s, Status: %{http_code}\n" \
+    -o /dev/null &
+done
+wait
+```
 
-### Si l'API crash :
-- **API Status** → 🔴 API DOWN
-- **API Health** → Pas de données
-- **Alerte** déclenchée après 30s
+### Monitoring en temps réel
+```bash
+# Surveiller les logs Kong
+docker logs -f kong-gateway
 
-## 🚨 Alertes configurées
+# Surveiller les métriques système
+docker stats
 
-- **APIDown** → API inaccessible > 30s (CRITIQUE)
-- **APIHighErrorRate** → > 10 erreurs/sec (WARNING)
-- **APIHighLatency** → P95 > 2s (WARNING)
-- **APIHighLoad** → > 100 requêtes actives (WARNING)
+# Surveiller les instances API
+docker logs -f inventory-api-1
+docker logs -f inventory-api-2
+docker logs -f inventory-api-3
+```
 
-## 🔧 Comparaison avant/après améliorations
+## Comparaison avant/après améliorations
 
-Pour comparer les performances :
+### Métriques à surveiller
+1. **Latence moyenne** : Temps de réponse moyen
+2. **Percentiles** : P95, P99 pour les requêtes les plus lentes
+3. **Throughput** : Requêtes par seconde
+4. **Taux d'erreur** : Pourcentage d'erreurs HTTP
+5. **Distribution** : Équilibrage entre instances
+6. **Resource usage** : CPU, mémoire par instance
 
-1. **Avant** → Lancez test + capturez métriques Grafana
-2. **Améliorations** → Modifiez le code
-3. **Après** → Relancez test + comparez métriques
+### Exemple de comparaison
+```
+AVANT (1 instance) :
+- Latence P95: 250ms
+- Throughput: 50 req/s
+- Taux d'erreur: 2%
 
-### Métriques clés à comparer :
-- **P95 Latency** → Plus bas = mieux
-- **Request Rate** → Plus haut = mieux
-- **Error Rate** → Plus bas = mieux  
-- **Point de rupture** → Charge max avant crash
+APRÈS (3 instances + LB) :
+- Latence P95: 80ms
+- Throughput: 150 req/s
+- Taux d'erreur: 0.1%
+```
 
-## 📚 Endpoints utiles
+## Endpoints utiles
 
-- **Métriques Prometheus** : `http://localhost:8000/metrics`
-- **Health API** : `http://localhost:8000/health`
-- **API Token** : `9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84`
+- **Métriques Prometheus** : http://localhost:9090/metrics
+- **Santé Kong** : http://localhost:9001/status
+- **Métriques Kong** : http://localhost:9001/metrics
+- **APIs Kong** : http://localhost:9001/services
 
-## 🛠️ Commandes utiles
+## Commandes utiles
 
 ```bash
-# Voir les logs de l'API
-docker-compose logs -f api
+# Redémarrer une instance spécifique
+docker restart inventory-api-2
 
-# Redémarrer le monitoring
-docker-compose -f docker-compose.monitoring.yml restart
+# Voir les métriques en temps réel
+watch -n 1 'curl -s http://localhost:9001/metrics | grep kong_http_requests_total'
 
-# Arrêter tout
-docker-compose down
-docker-compose -f docker-compose.monitoring.yml down
+# Analyser les logs avec filtrage
+docker logs inventory-api-1 2>&1 | grep "ERROR\|WARN"
+
+# Vérifier la distribution des requêtes
+docker logs kong-gateway 2>&1 | grep "upstream" | tail -20
 ``` 

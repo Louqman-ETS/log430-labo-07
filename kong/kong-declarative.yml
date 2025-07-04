@@ -1,0 +1,298 @@
+_format_version: "3.0"
+_transform: true
+
+# Configuration des services
+services:
+  - name: inventory-api
+    url: http://inventory-api:8001
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 5
+    routes:
+      - name: inventory-route
+        paths:
+          - /inventory
+        strip_path: true
+        preserve_host: false
+    plugins:
+      # Plugin CORS pour inventory-api
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:8080"
+            - "http://localhost:5000"
+            - "https://yourdomain.com"
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - apikey
+            - X-Request-ID
+            - X-Instance-ID
+          exposed_headers:
+            - X-Auth-Token
+            - X-Request-ID
+            - X-Instance-ID
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      # Plugin d'authentification
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+      # Plugin de rate limiting
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 1000
+          policy: local
+
+  - name: ecommerce-api
+    url: http://ecommerce-api:8000
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 5
+    routes:
+      - name: ecommerce-route
+        paths:
+          - /ecommerce
+        strip_path: true
+        preserve_host: false
+    plugins:
+      # Plugin CORS pour ecommerce-api
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:8080"
+            - "http://localhost:5000"
+            - "https://yourdomain.com"
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - apikey
+            - X-Request-ID
+          exposed_headers:
+            - X-Auth-Token
+            - X-Request-ID
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      # Plugin d'authentification
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+      # Plugin de rate limiting
+      - name: rate-limiting
+        config:
+          minute: 200
+          hour: 2000
+          policy: local
+
+  - name: retail-api
+    url: http://retail-api:8002
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 5
+    routes:
+      - name: retail-route
+        paths:
+          - /retail
+        strip_path: true
+        preserve_host: false
+    plugins:
+      # Plugin CORS pour retail-api
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:8080"
+            - "http://localhost:5000"
+            - "https://yourdomain.com"
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - apikey
+            - X-Request-ID
+          exposed_headers:
+            - X-Auth-Token
+            - X-Request-ID
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      # Plugin d'authentification
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+      # Plugin de rate limiting
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 1000
+          policy: local
+
+  - name: reporting-api
+    url: http://reporting-api:8005
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 5
+    routes:
+      - name: reporting-route
+        paths:
+          - /reporting
+        strip_path: true
+        preserve_host: false
+    plugins:
+      # Plugin CORS pour reporting-api
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:8080"
+            - "http://localhost:5000"
+            - "https://yourdomain.com"
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - apikey
+            - X-Request-ID
+          exposed_headers:
+            - X-Auth-Token
+            - X-Request-ID
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      # Plugin d'authentification
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+      # Plugin de rate limiting
+      - name: rate-limiting
+        config:
+          minute: 50
+          hour: 500
+          policy: local
+
+# Configuration des upstreams pour load balancing
+upstreams:
+  - name: inventory-api-upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        type: http
+        http_path: "/health"
+        healthy:
+          interval: 10
+          successes: 2
+        unhealthy:
+          interval: 10
+          http_failures: 3
+          tcp_failures: 3
+          timeouts: 3
+    targets:
+      - target: inventory-api-1:8001
+        weight: 100
+      - target: inventory-api-2:8001
+        weight: 100
+      - target: inventory-api-3:8001
+        weight: 100
+
+# Configuration des consommateurs et clés API
+consumers:
+  - username: admin-user
+    keyauth_credentials:
+      - key: admin-api-key-12345
+  - username: frontend-app
+    keyauth_credentials:
+      - key: frontend-api-key-67890
+  - username: mobile-app
+    keyauth_credentials:
+      - key: mobile-api-key-abcde
+  - username: external-partner
+    keyauth_credentials:
+      - key: partner-api-key-fghij
+
+# Plugins globaux (optionnels)
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+  - name: file-log
+    config:
+      path: /tmp/access.log 

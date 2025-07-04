@@ -118,7 +118,7 @@ Ce document présente l'analyse des performances de l'API sous différentes conf
 
 **Observations post-test**:
 - **Load Balancer Status: DOWN** 
-- **Instance Health Status: 2 instances UP** ✅
+- **Instance Health Status: 2 instances UP**
 - Request Distribution: Distribution équilibrée maintenue
 - Trafic: Pic à 600 req/s
 - **Latence**: monte à 500ms

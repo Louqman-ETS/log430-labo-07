@@ -1,210 +1,232 @@
-# 🛍️ Ecommerce API
+# Ecommerce API
 
-Service unifié de gestion des clients, paniers et commandes pour une plateforme e-commerce.
+Service unifié pour la gestion des clients, paniers et commandes e-commerce.
 
-## 🏗️ Architecture
+## Architecture
 
-Cette API fusionne trois domaines métier principaux :
+Cette API unifie les fonctionnalités de gestion des clients, paniers et commandes dans un seul service cohérent, suivant les principes Domain-Driven Design (DDD).
 
-- **Customers** : Gestion des clients, authentification et adresses
+### Domaines
+- **Customers** : Gestion des clients et authentification
 - **Carts** : Gestion des paniers d'achat
 - **Orders** : Gestion des commandes et processus de checkout
 
-## 🚀 Fonctionnalités
+## Fonctionnalités
 
-### Customers
-- ✅ Inscription et connexion des clients
-- ✅ Gestion des profils clients
-- ✅ Gestion des adresses (livraison/facturation)
-- ✅ Authentification JWT
-- ✅ Changement de mot de passe
+### Customers (Clients)
+- Inscription et connexion des clients
+- Gestion des profils clients
+- Gestion des adresses (livraison/facturation)
+- Authentification JWT
+- Changement de mot de passe
 
-### Carts
-- ✅ Création et gestion des paniers
-- ✅ Ajout/suppression d'articles
-- ✅ Validation des paniers (stock, prix)
-- ✅ Paniers pour clients connectés et invités
-- ✅ Statistiques des paniers
+### Carts (Paniers)
+- Création et gestion des paniers
+- Ajout/suppression d'articles
+- Validation des paniers (stock, prix)
+- Paniers pour clients connectés et invités
+- Statistiques des paniers
 
-### Orders
-- ✅ Processus de checkout complet
-- ✅ Gestion des statuts de commande
-- ✅ Suivi des commandes
-- ✅ Gestion des paiements
-- ✅ Statistiques des commandes
+### Orders (Commandes)
+- Processus de checkout complet
+- Gestion des statuts de commande
+- Suivi des commandes
+- Gestion des paiements
+- Statistiques des commandes
 
-## 📋 Prérequis
+## Prérequis
 
 - Python 3.11+
-- PostgreSQL
-- Docker (optionnel)
+- PostgreSQL 13+
+- Docker & Docker Compose
 
-## 🛠️ Installation
+## Installation
 
-### Avec Docker
-
+### Option 1: Docker (Recommandé)
 ```bash
 # Construire l'image
 docker build -t ecommerce-api .
 
-# Lancer le conteneur
-docker run -p 8000:8000 \
-  -e DATABASE_URL=postgresql://user:password@host:port/db \
-  -e SECRET_KEY=your-secret-key \
-  ecommerce-api
+# Lancer avec docker-compose
+docker-compose up -d
 ```
 
-### Installation locale
-
+### Option 2: Installation locale
 ```bash
-# Cloner le projet
-cd services/ecommerce-api
-
 # Installer les dépendances
 pip install -r requirements.txt
 
-# Configurer les variables d'environnement
-export DATABASE_URL="postgresql://user:password@host:port/db"
-export SECRET_KEY="your-secret-key"
+# Variables d'environnement
+export DATABASE_URL="postgresql://user:password@localhost:5432/ecommerce"
+export JWT_SECRET_KEY="your-secret-key"
+export INVENTORY_API_URL="http://localhost:8001"
+
+# Initialiser la base de données
+python src/init_db.py
 
 # Lancer l'API
-uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+python src/main.py
 ```
 
-## 🔧 Configuration
+## Configuration
 
-### Variables d'environnement
+Variables d'environnement :
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/ecommerce
+JWT_SECRET_KEY=your-secret-key
+INVENTORY_API_URL=http://localhost:8001
+API_PORT=8000
+DEBUG=false
+```
 
-| Variable | Description | Défaut |
-|----------|-------------|---------|
-| `DATABASE_URL` | URL de connexion PostgreSQL | `postgresql://user:pass@localhost/ecommerce` |
-| `SECRET_KEY` | Clé secrète pour JWT | `your-secret-key-here` |
-| `PRODUCTS_API_URL` | URL de l'API Products | `http://products-api:8001` |
-| `STOCK_API_URL` | URL de l'API Stock | `http://stock-api:8004` |
+## API Documentation
 
-## 📚 API Documentation
-
-Une fois l'API lancée, la documentation est disponible à :
-
+L'API est documentée avec OpenAPI/Swagger :
 - **Swagger UI** : http://localhost:8000/docs
 - **ReDoc** : http://localhost:8000/redoc
+- **OpenAPI JSON** : http://localhost:8000/openapi.json
 
-## 🔌 Endpoints principaux
+### Endpoints principaux
 
-### Customers
-```
-POST   /api/v1/customers/register     # Inscription
-POST   /api/v1/customers/login        # Connexion
-GET    /api/v1/customers/             # Liste des clients
-GET    /api/v1/customers/{id}         # Détails d'un client
-PUT    /api/v1/customers/{id}         # Mise à jour client
-DELETE /api/v1/customers/{id}         # Suppression client
-```
+#### Customers
+- `POST /api/v1/customers/register` - Inscription
+- `POST /api/v1/customers/login` - Connexion
+- `GET /api/v1/customers/profile` - Profil client
+- `PUT /api/v1/customers/profile` - Modifier profil
+- `POST /api/v1/customers/addresses` - Ajouter adresse
+- `GET /api/v1/customers/addresses` - Lister adresses
 
-### Carts
-```
-GET    /api/v1/carts/                 # Liste des paniers
-POST   /api/v1/carts/                 # Créer un panier
-GET    /api/v1/carts/{id}             # Détails d'un panier
-POST   /api/v1/carts/{id}/items       # Ajouter un article
-PUT    /api/v1/carts/{id}/items/{item_id}  # Modifier un article
-DELETE /api/v1/carts/{id}/items/{item_id}  # Supprimer un article
-```
+#### Carts
+- `POST /api/v1/carts/` - Créer panier
+- `GET /api/v1/carts/{cart_id}` - Détails panier
+- `POST /api/v1/carts/{cart_id}/items` - Ajouter article
+- `PUT /api/v1/carts/{cart_id}/items/{item_id}` - Modifier quantité
+- `DELETE /api/v1/carts/{cart_id}/items/{item_id}` - Supprimer article
+- `GET /api/v1/carts/stats` - Statistiques paniers
 
-### Orders
-```
-GET    /api/v1/orders/                # Liste des commandes
-POST   /api/v1/orders/checkout        # Créer une commande
-GET    /api/v1/orders/{id}            # Détails d'une commande
-PUT    /api/v1/orders/{id}/status     # Mettre à jour le statut
-```
+#### Orders
+- `POST /api/v1/orders/` - Créer commande (checkout)
+- `GET /api/v1/orders/{order_id}` - Détails commande
+- `GET /api/v1/orders/` - Lister commandes client
+- `PUT /api/v1/orders/{order_id}/status` - Changer statut
+- `GET /api/v1/orders/stats` - Statistiques commandes
 
-## 🧪 Tests
+## Tests
 
+### Lancer les tests
 ```bash
-# Lancer tous les tests
-pytest
+# Tests unitaires
+python -m pytest tests/ -v
 
-# Lancer les tests avec couverture
-pytest --cov=src
+# Tests avec couverture
+python -m pytest tests/ --cov=src --cov-report=html
 
-# Lancer les tests en mode verbose
-pytest -v
+# Tests d'intégration
+python -m pytest tests/test_integration.py -v
 ```
 
-## 📊 Base de données
+### Tests manuels
+```bash
+# Inscription client
+curl -X POST http://localhost:8000/api/v1/customers/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123", "first_name": "Test", "last_name": "User"}'
 
-### Tables principales
+# Connexion
+curl -X POST http://localhost:8000/api/v1/customers/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
 
-- `customers` : Clients
-- `customer_auth` : Authentification des clients
-- `addresses` : Adresses des clients
-- `carts` : Paniers
-- `cart_items` : Articles dans les paniers
-- `orders` : Commandes
-- `order_items` : Articles dans les commandes
+# Créer panier
+curl -X POST http://localhost:8000/api/v1/carts/ \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json"
+```
 
-### Relations
+## Sécurité
 
-- Un client peut avoir plusieurs adresses
-- Un client peut avoir plusieurs paniers
-- Un client peut avoir plusieurs commandes
-- Un panier peut contenir plusieurs articles
-- Une commande peut contenir plusieurs articles
+### Authentification
+- JWT tokens avec expiration
+- Refresh tokens pour sessions longues
+- Validation des mots de passe (longueur, complexité)
 
-## 🔒 Sécurité
+### Autorisations
+- Clients ne peuvent accéder qu'à leurs propres données
+- Validation des permissions sur tous les endpoints
+- Logging des actions sensibles
 
-- Authentification JWT
-- Hachage des mots de passe avec bcrypt
-- Validation des données avec Pydantic
-- Gestion des erreurs standardisée
-- Logging structuré
+### Validation
+- Validation stricte des données d'entrée
+- Sanitisation des inputs
+- Protection contre les injections SQL
+- Rate limiting par IP
 
-## 📈 Monitoring
+### Données sensibles
+- Hachage des mots de passe (bcrypt)
+- Chiffrement des données PII
+- Logs sans données sensibles
 
-- Endpoint de santé : `GET /health`
-- Logging structuré avec Request-ID
-- Métriques de performance
-- Gestion d'erreurs centralisée
+## Déploiement
 
-## 🤝 Intégration
+### Docker
+```bash
+# Production
+docker build -t ecommerce-api:prod .
+docker run -d -p 8000:8000 \
+  -e DATABASE_URL="postgresql://..." \
+  -e JWT_SECRET_KEY="..." \
+  ecommerce-api:prod
+```
 
-L'API communique avec d'autres services :
-
-- **Products API** : Récupération des informations produits
-- **Stock API** : Vérification de la disponibilité
-
-## 🚀 Déploiement
-
-### Docker Compose
-
+### Kubernetes
 ```yaml
-version: '3.8'
-services:
-  ecommerce-api:
-    build: ./services/ecommerce-api
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/ecommerce
-      - SECRET_KEY=your-secret-key
-    depends_on:
-      - db
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ecommerce-api
+  template:
+    metadata:
+      labels:
+        app: ecommerce-api
+    spec:
+      containers:
+      - name: ecommerce-api
+        image: ecommerce-api:prod
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-secrets
+              key: database-url
 ```
 
-## 📝 Notes de développement
+## Migration depuis les micro-services
 
-- Architecture DDD (Domain-Driven Design)
-- Séparation claire des couches (API, Services, Modèles)
-- Code modulaire et réutilisable
-- Documentation complète
-- Tests automatisés
+Cette API unifie les fonctionnalités précédemment réparties dans plusieurs micro-services :
 
-## 🔄 Migration depuis les micro-services
+### Avant (micro-services séparés)
+- `customer-service` : Gestion des clients
+- `cart-service` : Gestion des paniers  
+- `order-service` : Gestion des commandes
 
-Cette API remplace les services suivants :
-- `cart-api`
-- `customers-api` 
-- `orders-api`
+### Après (service unifié)
+- `ecommerce-api` : Toutes les fonctionnalités e-commerce
 
-Tous les endpoints sont conservés avec les mêmes interfaces pour assurer la compatibilité. 
+### Avantages
+- **Performance** : Moins de communication inter-services
+- **Cohérence** : Transactions ACID entre domaines
+- **Simplicité** : Une seule API à maintenir
+- **Sécurité** : Authentification centralisée
+
+### Compatibilité
+- Tous les endpoints existants sont préservés
+- Schémas de données identiques
+- Migration transparente pour les clients
+- Pas de breaking changes 

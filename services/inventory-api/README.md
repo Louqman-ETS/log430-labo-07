@@ -1,185 +1,185 @@
 # Inventory API
 
-API RESTful unifiée pour la gestion des produits, catégories et stocks selon les principes Domain-Driven Design (DDD).
+Service unifié pour la gestion des produits et du stock.
 
-## 🎯 Fonctionnalités
+## Fonctionnalités
 
 ### Gestion des Produits
-- ✅ CRUD complet des produits
-- ✅ Recherche et filtrage
-- ✅ Pagination
-- ✅ Gestion des catégories
-- ✅ Statut actif/inactif
+- CRUD complet des produits
+- Recherche et filtrage
+- Pagination
+- Gestion des catégories
+- Statut actif/inactif
 
-### Gestion des Stocks
-- ✅ Suivi des mouvements de stock (entrées, sorties, ajustements)
-- ✅ Alertes automatiques (stock faible, rupture, surstock)
-- ✅ Historique des mouvements
-- ✅ Ajustements manuels
-- ✅ Réduction/augmentation de stock
+### Gestion du Stock
+- Suivi des mouvements de stock (entrées, sorties, ajustements)
+- Alertes automatiques (stock faible, rupture, surstock)
+- Historique des mouvements
+- Ajustements manuels
+- Réduction/augmentation de stock
 
-### Fonctionnalités Avancées
-- ✅ Logging structuré avec Request-ID
-- ✅ Gestion d'erreurs standardisée
-- ✅ Documentation OpenAPI/Swagger
-- ✅ Architecture DDD
-- ✅ Base de données PostgreSQL
+### Fonctionnalités Techniques
+- Logging structuré avec Request-ID
+- Gestion d'erreurs standardisée
+- Documentation OpenAPI/Swagger
+- Architecture DDD
+- Base de données PostgreSQL
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-inventory-api/
 ├── src/
 │   ├── api/v1/
 │   │   ├── products.py      # Endpoints produits
 │   │   ├── categories.py    # Endpoints catégories
 │   │   ├── stock.py         # Endpoints stock
-│   │   └── router.py        # Router principal
+│   │   └── router.py        # Routage principal
 │   ├── models.py            # Modèles SQLAlchemy
 │   ├── schemas.py           # Schémas Pydantic
-│   ├── services.py          # Services métier
+│   ├── services.py          # Logique métier
 │   ├── database.py          # Configuration DB
-│   ├── init_db.py           # Initialisation DB
-│   └── main.py              # Application FastAPI
-├── tests/                   # Tests unitaires
-├── requirements.txt         # Dépendances Python
-├── Dockerfile              # Configuration Docker
-└── README.md               # Documentation
+│   └── main.py              # Point d'entrée FastAPI
+├── tests/
+│   ├── test_products.py     # Tests produits
+│   ├── test_categories.py   # Tests catégories
+│   ├── test_stock.py        # Tests stock
+│   └── conftest.py          # Configuration tests
+└── requirements.txt         # Dépendances
 ```
 
-## 🚀 Installation et Démarrage
+## Installation et Démarrage
 
-### Avec Docker
+### Prérequis
+- Python 3.11+
+- PostgreSQL 13+
+- Docker & Docker Compose
+
+### Installation
 ```bash
-# Construire l'image
-docker build -t inventory-api .
-
-# Démarrer le service
-docker run -p 8001:8001 inventory-api
-```
-
-### En local
-```bash
-# Installer les dépendances
+# Installation des dépendances
 pip install -r requirements.txt
 
-# Démarrer l'API
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8001
+# Configuration de la base de données
+export DATABASE_URL="postgresql://user:password@localhost:5432/inventory"
+
+# Initialisation de la base de données
+python src/init_db.py
+
+# Démarrage de l'API
+python src/main.py
 ```
 
-## 📋 Endpoints
+## Endpoints
 
 ### Produits
-```
-GET    /api/v1/products/              - Liste des produits
-POST   /api/v1/products/              - Créer un produit
-GET    /api/v1/products/{id}          - Détails d'un produit
-PUT    /api/v1/products/{id}          - Modifier un produit
-DELETE /api/v1/products/{id}          - Supprimer un produit
-
-# Gestion du stock
-GET    /api/v1/products/{id}/stock    - Info stock d'un produit
-PUT    /api/v1/products/{id}/stock/adjust - Ajuster le stock
-GET    /api/v1/products/{id}/stock/status - Statut complet du stock
-```
+- `GET /api/v1/products/` - Liste des produits (avec pagination)
+- `POST /api/v1/products/` - Créer un produit
+- `GET /api/v1/products/{id}` - Détails d'un produit
+- `PUT /api/v1/products/{id}` - Modifier un produit
+- `DELETE /api/v1/products/{id}` - Supprimer un produit
+- `GET /api/v1/products/search` - Rechercher des produits
 
 ### Catégories
-```
-GET    /api/v1/categories/            - Liste des catégories
-POST   /api/v1/categories/            - Créer une catégorie
-GET    /api/v1/categories/{id}        - Détails d'une catégorie
-PUT    /api/v1/categories/{id}        - Modifier une catégorie
-DELETE /api/v1/categories/{id}        - Supprimer une catégorie
-```
+- `GET /api/v1/categories/` - Liste des catégories
+- `POST /api/v1/categories/` - Créer une catégorie
+- `GET /api/v1/categories/{id}` - Détails d'une catégorie
+- `PUT /api/v1/categories/{id}` - Modifier une catégorie
+- `DELETE /api/v1/categories/{id}` - Supprimer une catégorie
 
 ### Stock
-```
-# Mouvements de stock
-GET    /api/v1/stock/movements        - Historique des mouvements
-POST   /api/v1/stock/movements        - Créer un mouvement
+- `GET /api/v1/stock/` - État du stock
+- `POST /api/v1/stock/movement` - Enregistrer un mouvement
+- `GET /api/v1/stock/movements` - Historique des mouvements
+- `GET /api/v1/stock/alerts` - Alertes de stock
+- `POST /api/v1/stock/adjust` - Ajustement de stock
+- `GET /api/v1/stock/stats` - Statistiques de stock
 
-# Alertes de stock
-GET    /api/v1/stock/alerts           - Alertes actives
-PUT    /api/v1/stock/alerts/{id}      - Marquer une alerte comme résolue
-
-# Gestion du stock
-GET    /api/v1/stock/summary          - Résumé de l'inventaire
-PUT    /api/v1/stock/products/{id}/stock/reduce   - Réduire le stock
-PUT    /api/v1/stock/products/{id}/stock/increase - Augmenter le stock
-GET    /api/v1/stock/products/{id}/stock          - Info stock
-```
-
-## 🔧 Configuration
-
-### Variables d'environnement
+### Exemples d'utilisation
 ```bash
-DATABASE_URL=postgresql://postgres:password@inventory-db:5432/inventory_db
+# Créer un produit
+curl -X POST http://localhost:8001/api/v1/products/ \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Produit Test", "description": "Description", "price": 29.99, "category_id": 1}'
+
+# Rechercher des produits
+curl "http://localhost:8001/api/v1/products/search?q=test&category_id=1"
+
+# Ajouter du stock
+curl -X POST http://localhost:8001/api/v1/stock/movement \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": 1, "quantity": 100, "movement_type": "IN", "reason": "Initial stock"}'
 ```
 
-### Base de données
-L'API utilise PostgreSQL avec les tables suivantes :
-- `categories` - Catégories de produits
-- `products` - Produits avec stock intégré
-- `stock_movements` - Historique des mouvements
-- `stock_alerts` - Alertes de stock
+## Configuration
 
-## 📊 Données de Test
-
-L'API inclut des données de test automatiques :
-- 6 catégories (Alimentaire, Électronique, Vêtements, etc.)
-- 18 produits avec stocks variés
-- Mouvements de stock simulés
-- Alertes de stock automatiques
-
-## 🧪 Tests
-
+Variables d'environnement :
 ```bash
-# Exécuter les tests
+DATABASE_URL=postgresql://user:password@localhost:5432/inventory
+API_PORT=8001
+DEBUG=false
+LOG_LEVEL=INFO
+```
+
+## Tests
+
+### Lancer les tests
+```bash
 python -m pytest tests/ -v
+```
 
-# Tests avec couverture
+### Tests avec couverture
+```bash
 python -m pytest tests/ --cov=src --cov-report=html
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **Swagger UI** : http://localhost:8001/docs
 - **ReDoc** : http://localhost:8001/redoc
-- **Health Check** : http://localhost:8001/health
+- **OpenAPI JSON** : http://localhost:8001/openapi.json
 
-## 🔄 Migration depuis les APIs séparées
+## Migration depuis les APIs séparées
 
-Cette API remplace les anciennes `products-api` et `stock-api` avec les améliorations suivantes :
+Cette API unifie les fonctionnalités des anciennes APIs `products-api` et `stock-api`.
 
 ### Avantages
-- ✅ **Performance** : Moins de communication inter-services
-- ✅ **Cohérence** : Base de données unifiée
-- ✅ **Simplicité** : Une seule API à maintenir
-- ✅ **DDD** : Domaine inventory cohérent
-- ✅ **Fonctionnalités** : Alertes automatiques, historique complet
+- **Performance** : Moins de communication inter-services
+- **Cohérence** : Base de données unifiée
+- **Simplicité** : Une seule API à maintenir
+- **DDD** : Domaine inventory cohérent
+- **Fonctionnalités** : Alertes automatiques, historique complet
 
 ### Compatibilité
-- ✅ Tous les endpoints existants sont préservés
-- ✅ Logique métier identique
-- ✅ Schémas de données compatibles
-- ✅ Migration transparente
+- Tous les endpoints existants sont préservés
+- Logique métier identique
+- Schémas de données compatibles
+- Migration transparente
 
-## 🚀 Déploiement
+## Déploiement
+
+### Docker
+```bash
+docker build -t inventory-api .
+docker run -d -p 8001:8001 inventory-api
+```
 
 ### Docker Compose
 ```yaml
-inventory-api:
-  build: ./inventory-api
-  ports:
-    - "8001:8001"
-  environment:
-    DATABASE_URL: postgresql://postgres:password@inventory-db:5432/inventory_db
-  depends_on:
-    - inventory-db
-```
-
-### Production
-- Utiliser un reverse proxy (nginx)
-- Configurer SSL/TLS
-- Mettre en place la surveillance
-- Configurer les sauvegardes de base de données 
+version: '3.8'
+services:
+  inventory-api:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/inventory
+    depends_on:
+      - db
+  
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=inventory
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+``` 
