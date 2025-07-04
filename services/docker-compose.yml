@@ -1,16 +1,16 @@
 version: '3.8'
 
 services:
-  # Products Service (Port 8001)
-  products-db:
+  # Inventory Service (Port 8001) - Fusion de Products et Stock
+  inventory-db:
     image: postgres:15
-    container_name: products-db
+    container_name: inventory-db
     environment:
-      POSTGRES_DB: products_db
+      POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
-      - products_db_data:/var/lib/postgresql/data
+      - inventory_db_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     healthcheck:
@@ -19,15 +19,15 @@ services:
       timeout: 10s
       retries: 3
 
-  products-api:
-    build: ./products-api
-    container_name: products-api
+  inventory-api:
+    build: ./inventory-api
+    container_name: inventory-api
     environment:
-      PRODUCTS_DATABASE_URL: postgresql://postgres:password@products-db:5432/products_db
+      DATABASE_URL: postgresql://postgres:password@inventory-db:5432/inventory_db
     ports:
       - "8001:8001"
     depends_on:
-      - products-db
+      - inventory-db
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
       interval: 30s
@@ -35,16 +35,16 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Stores Service (Port 8002)
-  stores-db:
+  # Retail Service (Port 8002) - Fusion de Stores et Sales
+  retail-db:
     image: postgres:15
-    container_name: stores-db
+    container_name: retail-db
     environment:
-      POSTGRES_DB: stores_db
+      POSTGRES_DB: retail_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
-      - stores_db_data:/var/lib/postgresql/data
+      - retail_db_data:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     healthcheck:
@@ -53,15 +53,15 @@ services:
       timeout: 10s
       retries: 3
 
-  stores-api:
-    build: ./stores-api
-    container_name: stores-api
+  retail-api:
+    build: ./retail-api
+    container_name: retail-api
     environment:
-      STORES_DATABASE_URL: postgresql://postgres:password@stores-db:5432/stores_db
+      DATABASE_URL: postgresql://postgres:password@retail-db:5432/retail_db
     ports:
       - "8002:8002"
     depends_on:
-      - stores-db
+      - retail-db
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=5)"]
       interval: 30s
@@ -69,82 +69,7 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Sales Service (Port 8003) - NOUVEAU
-  sales-db:
-    image: postgres:15
-    container_name: sales-db
-    environment:
-      POSTGRES_DB: sales_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - sales_db_data:/var/lib/postgresql/data
-    ports:
-      - "5436:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  sales-api:
-    build: ./sales-api
-    container_name: sales-api
-    environment:
-      SALES_DATABASE_URL: postgresql://postgres:password@sales-db:5432/sales_db
-      PRODUCTS_API_URL: http://products-api:8001/api/v1
-      STORES_API_URL: http://stores-api:8002/api/v1
-      STOCK_API_URL: http://stock-api:8004/api/v1
-    ports:
-      - "8003:8003"
-    depends_on:
-      - sales-db
-      - products-api
-      - stores-api
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Stock Service (Port 8004) - NOUVEAU  
-  stock-db:
-    image: postgres:15
-    container_name: stock-db
-    environment:
-      POSTGRES_DB: stock_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - stock_db_data:/var/lib/postgresql/data
-    ports:
-      - "5437:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  stock-api:
-    build: ./stock-api
-    container_name: stock-api
-    environment:
-      STOCK_DATABASE_URL: postgresql://postgres:password@stock-db:5432/stock_db
-      PRODUCTS_API_URL: http://products-api:8001/api/v1
-      STORES_API_URL: http://stores-api:8002/api/v1
-    ports:
-      - "8004:8004"
-    depends_on:
-      - stock-db
-      - products-api
-      - stores-api
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
 
   # Reporting Service (Port 8005) - MODIFIÉ POUR ANALYTICS SEULEMENT
   reporting-db:
@@ -169,18 +94,16 @@ services:
     container_name: reporting-api
     environment:
       REPORTING_DATABASE_URL: postgresql://postgres:password@reporting-db:5432/reporting_db
-      PRODUCTS_API_URL: http://products-api:8001/api/v1
-      STORES_API_URL: http://stores-api:8002/api/v1
-      SALES_API_URL: http://sales-api:8003/api/v1
-      STOCK_API_URL: http://stock-api:8004/api/v1
+      INVENTORY_API_URL: http://inventory-api:8001/api/v1
+      RETAIL_API_URL: http://retail-api:8002/api/v1
+      ECOMMERCE_API_URL: http://ecommerce-api:8000/api/v1
     ports:
       - "8005:8005"
     depends_on:
       - reporting-db
-      - products-api
-      - stores-api
-      - sales-api
-      - stock-api
+      - inventory-api
+      - retail-api
+      - ecommerce-api
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health', timeout=5)"]
       interval: 30s
@@ -189,127 +112,45 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # SERVICES E-COMMERCE
+  # SERVICE E-COMMERCE UNIFIÉ
   # ============================================================================
 
-  # Service Customers API (Port 8006)
-  customers-db:
+  # Service Ecommerce API (Port 8000) - Fusion de Customers, Cart et Orders
+  ecommerce-db:
     image: postgres:15-alpine
-    container_name: customers-db
+    container_name: ecommerce-db
     environment:
-      POSTGRES_DB: customers_db
+      POSTGRES_DB: ecommerce_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
       - "5450:5432"
     volumes:
-      - customers_db_data:/var/lib/postgresql/data
+      - ecommerce_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  customers-api:
-    build: ./customers-api
-    container_name: customers-api
+  ecommerce-api:
+    build: ./ecommerce-api
+    container_name: ecommerce-api
     environment:
-      CUSTOMERS_DATABASE_URL: postgresql://postgres:password@customers-db:5432/customers_db
+      DATABASE_URL: postgresql://postgres:password@ecommerce-db:5432/ecommerce_db
       SECRET_KEY: your-super-secret-key-change-in-production
-    ports:
-      - "8006:8006"
-    depends_on:
-      - customers-db
-    volumes:
-      - ../logs:/app/logs
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Service Cart API (Port 8007)
-  cart-db:
-    image: postgres:15-alpine
-    container_name: cart-db
-    environment:
-      POSTGRES_DB: cart_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5451:5432"
-    volumes:
-      - cart_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  cart-api:
-    build: ./cart-api
-    container_name: cart-api
-    environment:
-      CART_DATABASE_URL: postgresql://postgres:password@cart-db:5432/cart_db
-      PRODUCTS_API_URL: http://products-api:8001
-      STOCK_API_URL: http://stock-api:8004
+      INVENTORY_API_URL: http://inventory-api:8001
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "8007:8007"
+      - "8000:8000"
     depends_on:
-      - cart-db
+      - ecommerce-db
       - redis
-      - products-api
-      - stock-api
+      - inventory-api
     volumes:
       - ../logs:/app/logs
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8007/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-  # Service Orders API (Port 8008)
-  orders-db:
-    image: postgres:15-alpine
-    container_name: orders-db
-    environment:
-      POSTGRES_DB: orders_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5452:5432"
-    volumes:
-      - orders_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  orders-api:
-    build: ./orders-api
-    container_name: orders-api
-    environment:
-      ORDERS_DATABASE_URL: postgresql://postgres:password@orders-db:5432/orders_db
-      CART_API_URL: http://cart-api:8007
-      PRODUCTS_API_URL: http://products-api:8001
-      STOCK_API_URL: http://stock-api:8004
-      SALES_API_URL: http://sales-api:8003
-    ports:
-      - "8008:8008"
-    depends_on:
-      - orders-db
-      - cart-api
-      - products-api
-      - stock-api
-      - sales-api
-    volumes:
-      - ../logs:/app/logs
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8008/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -331,14 +172,10 @@ services:
       retries: 3
 
 volumes:
-  products_db_data:
-  stores_db_data:
-  sales_db_data:
-  stock_db_data:
+  inventory_db_data:
+  retail_db_data:
   reporting_db_data:
-  customers_db_data:
-  cart_db_data:
-  orders_db_data:
+  ecommerce_db_data:
   redis_data:
 
 networks:

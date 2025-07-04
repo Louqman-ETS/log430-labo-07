@@ -1,4 +1,3 @@
-from src.api.v1.router import api_router
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -13,11 +12,15 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
-logger = logging.getLogger("reporting-api")
+logger = logging.getLogger("retail-api")
+
+from src.database import engine, Base, get_db
+from src.api.v1.router import api_router
+from src.init_db import init_database
 
 app = FastAPI(
-    title="Reporting API",
-    description="API RESTful de reporting et analytics - Architecture DDD",
+    title="Retail API",
+    description="API RESTful de gestion des magasins et ventes - Architecture DDD",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -65,7 +68,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "message": exc.detail,
                 "type": "http_error",
                 "request_id": request_id,
-                "service": "reporting",
+                "service": "retail",
             }
         },
     )
@@ -85,13 +88,13 @@ async def general_exception_handler(request: Request, exc: Exception):
                 "message": "Internal server error",
                 "type": "internal_error",
                 "request_id": request_id,
-                "service": "reporting",
+                "service": "retail",
             }
         },
     )
 
 
-# Configure CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -100,37 +103,69 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API routes
+# Inclure les routes
 app.include_router(api_router, prefix="/api/v1")
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize reporting API"""
-    logger.info("🚀 Starting Reporting API with enhanced logging and error handling")
-    logger.info("✅ Reporting API initialized - No local database required")
+    """Initialize database with sample data if empty"""
+    logger.info("🚀 Starting Retail API with enhanced logging and error handling")
+    max_retries = 30
+    retry_interval = 2
+
+    for attempt in range(max_retries):
+        try:
+            logger.info(
+                f"🏪 Attempting to connect to database (attempt {attempt + 1}/{max_retries})"
+            )
+            # Créer les tables
+            Base.metadata.create_all(bind=engine)
+            logger.info("✅ Database tables created successfully")
+
+            # Initialiser les données
+            init_database()
+            logger.info("✅ Retail database initialized with sample data")
+            break
+
+        except Exception as e:
+            logger.warning(
+                f"❌ Database connection failed (attempt {attempt + 1}/{max_retries}): {e}"
+            )
+            if attempt < max_retries - 1:
+                logger.info(f"⏳ Retrying in {retry_interval} seconds...")
+                time.sleep(retry_interval)
+            else:
+                logger.error("❌ Failed to initialize database after all retries")
+                raise
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    logger.info("🛑 Shutting down Reporting API")
+    logger.info("🛑 Shutting down Retail API")
 
 
 @app.get("/")
 async def root():
     logger.info("📋 Root endpoint accessed")
     return {
-        "message": "Reporting API is running",
-        "service": "reporting",
+        "message": "Retail API is running",
+        "service": "retail",
         "version": "1.0.0",
         "docs": "/docs",
         "features": [
             "RESTful API",
             "DDD Architecture",
-            "Analytics & Reporting",
+            "Store Management",
+            "Cash Register Management",
+            "Sales Management",
             "Structured Logging",
-            "External Data Integration",
         ],
+        "endpoints": {
+            "stores": "/api/v1/stores",
+            "cash_registers": "/api/v1/cash-registers",
+            "sales": "/api/v1/sales",
+        },
     }
 
 
@@ -139,13 +174,7 @@ async def health_check():
     logger.debug("💚 Health check requested")
     return {
         "status": "healthy",
-        "service": "reporting",
+        "service": "retail",
         "version": "1.0.0",
         "timestamp": time.time(),
     }
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8005)
