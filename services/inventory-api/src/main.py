@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 import uuid
+import os
 from src.database import engine, Base
 from src.api.v1.router import api_router
 from src.init_db import init_database
@@ -20,6 +21,9 @@ logging.basicConfig(
 
 logger = logging.getLogger("inventory-api")
 
+# ID de l'instance pour le load balancing
+INSTANCE_ID = os.getenv("INSTANCE_ID", "inventory-api-default")
+
 app = FastAPI(
     title="Inventory API",
     description="API RESTful de gestion des produits, catégories et stocks - Architecture DDD",
@@ -29,29 +33,30 @@ app = FastAPI(
 )
 
 
-# Middleware de logging avec traçage
+# Middleware de logging avec traçage et ID d'instance
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start_time = time.time()
 
-    logger.info(f"🔍 [{request_id}] {request.method} {request.url} - Started")
+    logger.info(f"🔍 [{INSTANCE_ID}][{request_id}] {request.method} {request.url} - Started")
 
     try:
         response = await call_next(request)
         process_time = round((time.time() - start_time) * 1000, 2)
 
         logger.info(
-            f"✅ [{request_id}] {response.status_code} - Completed in {process_time}ms"
+            f"✅ [{INSTANCE_ID}][{request_id}] {response.status_code} - Completed in {process_time}ms"
         )
 
-        # Ajouter l'ID de requête aux headers
+        # Ajouter l'ID de requête et l'instance aux headers
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Instance-ID"] = INSTANCE_ID
         return response
 
     except Exception as e:
         process_time = round((time.time() - start_time) * 1000, 2)
-        logger.error(f"❌ [{request_id}] Error after {process_time}ms: {str(e)}")
+        logger.error(f"❌ [{INSTANCE_ID}][{request_id}] Error after {process_time}ms: {str(e)}")
         raise
 
 
@@ -60,7 +65,7 @@ async def logging_middleware(request: Request, call_next):
 async def http_exception_handler(request: Request, exc: HTTPException):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4())[:8])
 
-    logger.warning(f"⚠️ [{request_id}] HTTP {exc.status_code}: {exc.detail}")
+    logger.warning(f"⚠️ [{INSTANCE_ID}][{request_id}] HTTP {exc.status_code}: {exc.detail}")
 
     return JSONResponse(
         status_code=exc.status_code,
@@ -70,6 +75,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "message": exc.detail,
                 "type": "http_error",
                 "service": "inventory",
+                "instance": INSTANCE_ID,
                 "request_id": request_id,
             }
         },
@@ -80,7 +86,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 async def general_exception_handler(request: Request, exc: Exception):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4())[:8])
 
-    logger.error(f"💥 [{request_id}] Unhandled error: {str(exc)}", exc_info=True)
+    logger.error(f"💥 [{INSTANCE_ID}][{request_id}] Unhandled error: {str(exc)}", exc_info=True)
 
     return JSONResponse(
         status_code=500,
@@ -90,6 +96,7 @@ async def general_exception_handler(request: Request, exc: Exception):
                 "message": "Internal server error",
                 "type": "internal_error",
                 "service": "inventory",
+                "instance": INSTANCE_ID,
                 "request_id": request_id,
             }
         },
@@ -112,35 +119,46 @@ app.include_router(api_router, prefix="/api/v1")
 @app.on_event("startup")
 async def startup_event():
     """Initialise la base de données avec des données d'exemple si vide"""
-    import os
 
-    logger.info("🚀 Starting Inventory API with enhanced logging and error handling")
+    logger.info(f"🚀 Starting Inventory API [{INSTANCE_ID}] with enhanced logging and error handling")
 
     # Créer les tables seulement si on n'est pas en mode test
     if not os.getenv("TESTING"):
-        Base.metadata.create_all(bind=engine)
-        logger.info("✅ Database tables created")
-
         try:
-            init_database()
-            logger.info("✅ Database initialized successfully")
+            # Créer les tables de manière idempotente
+            Base.metadata.create_all(bind=engine, checkfirst=True)
+            logger.info(f"✅ [{INSTANCE_ID}] Database tables verified/created")
+
+            # Seule la première instance initialise les données
+            if INSTANCE_ID == "inventory-api-1":
+                try:
+                    init_database()
+                    logger.info(f"✅ [{INSTANCE_ID}] Database initialized successfully (primary instance)")
+                except Exception as e:
+                    # Si l'initialisation échoue, ce n'est pas grave (données probablement déjà présentes)
+                    logger.warning(f"⚠️ [{INSTANCE_ID}] Database initialization skipped or failed: {e}")
+            else:
+                logger.info(f"✅ [{INSTANCE_ID}] Database initialization skipped (secondary instance)")
+                
         except Exception as e:
-            logger.error(f"❌ Failed to initialize database: {e}", exc_info=True)
-            raise
+            logger.error(f"❌ [{INSTANCE_ID}] Failed to setup database: {e}", exc_info=True)
+            # Ne pas faire échouer le démarrage pour les problèmes de DB concurrentiels
+            logger.warning(f"⚠️ [{INSTANCE_ID}] Continuing startup despite database setup issues")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Nettoyage lors de l'arrêt"""
-    logger.info("🛑 Shutting down Inventory API")
+    logger.info(f"🛑 [{INSTANCE_ID}] Shutting down Inventory API")
 
 
 @app.get("/")
 async def root():
-    logger.info("📋 Root endpoint accessed")
+    logger.info(f"📋 [{INSTANCE_ID}] Root endpoint accessed")
     return {
         "message": "Inventory API is running",
         "service": "inventory",
+        "instance": INSTANCE_ID,
         "version": "1.0.0",
         "docs": "/docs",
         "features": [
@@ -151,16 +169,18 @@ async def root():
             "Inventory Tracking",
             "Stock Alerts",
             "Structured Logging",
+            "Load Balancing Support",
         ],
     }
 
 
 @app.get("/health")
 async def health_check():
-    logger.debug("💚 Health check requested")
+    logger.debug(f"💚 [{INSTANCE_ID}] Health check requested")
     return {
         "status": "healthy",
         "service": "inventory",
+        "instance": INSTANCE_ID,
         "version": "1.0.0",
         "timestamp": time.time(),
     }

@@ -1,196 +1,121 @@
 version: '3.8'
 
 services:
-  # Nginx Load Balancer
-  nginx:
-    image: nginx:alpine
-    container_name: log430-nginx
-    restart: "no"
+  # Instance 1 du service inventory-api
+  inventory-api-1:
+    build: ./services/inventory-api
+    container_name: inventory-api-1
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
+      - INSTANCE_ID=inventory-api-1
+      - PORT=8001
     ports:
-      - "${API_PORT:-8000}:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - nginx-logs:/var/log/nginx
+      - "8011:8001"
     depends_on:
-      - api-1
-      - api-2
-      - api-3
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
+        condition: service_healthy
     networks:
-      - app-network
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: log430-redis
+  # Instance 2 du service inventory-api
+  inventory-api-2:
+    build: ./services/inventory-api
+    container_name: inventory-api-2
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
+      - INSTANCE_ID=inventory-api-2
+      - PORT=8001
     ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
+      - "8012:8001"
+    depends_on:
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
+        condition: service_healthy
     networks:
-      - app-network
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Instance 3 du service inventory-api
+  inventory-api-3:
+    build: ./services/inventory-api
+    container_name: inventory-api-3
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
+      - INSTANCE_ID=inventory-api-3
+      - PORT=8001
+    ports:
+      - "8013:8001"
+    depends_on:
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Base de données partagée
+  inventory-db-lb:
+    image: postgres:15
+    container_name: inventory-db-lb
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5443:5432"
+    networks:
+      - microservices-network
+    volumes:
+      - inventory_db_lb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis partagé
+  redis-lb:
+    image: redis:7-alpine
+    container_name: redis-lb
+    ports:
+      - "6389:6379"
+    networks:
+      - microservices-network
+    volumes:
+      - redis_lb_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 3s
-      retries: 3
+      retries: 5
 
-  # API FastAPI - Instance 1
-  api-1:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-      target: production
-    container_name: log430-api-1
-    restart: "no"
-    environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - API_TOKEN=${API_TOKEN:-9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84}
-      - ENVIRONMENT=production
-      - INSTANCE_ID=api-1
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src:ro
-      - ./requirements.txt:/app/requirements.txt
-    expose:
-      - "8000"
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - app-network
-
-  # API FastAPI - Instance 2
-  api-2:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-      target: production
-    container_name: log430-api-2
-    restart: "no"
-    environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - API_TOKEN=${API_TOKEN:-9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84}
-      - ENVIRONMENT=production
-      - INSTANCE_ID=api-2
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src:ro
-      - ./requirements.txt:/app/requirements.txt
-    expose:
-      - "8000"
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - app-network
-
-  # API FastAPI - Instance 3
-  api-3:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-      target: production
-    container_name: log430-api-3
-    restart: "no"
-    environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - API_TOKEN=${API_TOKEN:-9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84}
-      - ENVIRONMENT=production
-      - INSTANCE_ID=api-3
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src:ro
-      - ./requirements.txt:/app/requirements.txt
-    expose:
-      - "8000"
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - app-network
-
-  # Application Flask (Interface Web)
-  web:
-    build:
-      context: .
-      dockerfile: dockerfile.flask
-      target: production
-    container_name: log430-web
-    restart: "no"
-    environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - API_BASE_URL=http://nginx:80
-      - API_TOKEN=${API_TOKEN:-your-secret-api-token}
-      - FLASK_ENV=production
-      - POOL_SIZE=5
-      - MAX_OVERFLOW=10
-    volumes:
-      - ./src:/app/src:ro
-    ports:
-      - "${WEB_PORT:-8080}:8080"
-    depends_on:
-      - nginx
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - app-network
-
-# Volumes pour les logs
-volumes:
-  nginx-logs:
-  redis-data:
-
-# Réseau isolé pour l'application
 networks:
-  app-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16 
+  microservices-network:
+    external: true
+
+volumes:
+  inventory_db_lb_data:
+  redis_lb_data: 
