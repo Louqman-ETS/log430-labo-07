@@ -1,0 +1,128 @@
+# Makefile pour Kong API Gateway
+# Facilite la gestion de Kong avec les microservices DDD
+
+.PHONY: help kong-up kong-down kong-setup kong-test kong-logs kong-clean kong-status
+
+# Couleurs pour les messages
+GREEN = \033[32m
+YELLOW = \033[33m
+RED = \033[31m
+NC = \033[0m # No Color
+
+help: ## Affiche l'aide
+	@echo "$(GREEN)Kong API Gateway - Commandes disponibles:$(NC)"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)Utilisation typique:$(NC)"
+	@echo "  1. make services-up     # Démarrer les microservices"
+	@echo "  2. make kong-up         # Démarrer Kong"
+	@echo "  3. make kong-setup      # Configurer Kong"
+	@echo "  4. make kong-test       # Tester Kong"
+
+services-up: ## Démarre tous les microservices
+	@echo "$(GREEN)🚀 Démarrage des microservices...$(NC)"
+	cd services && docker-compose up -d
+	@echo "$(GREEN)✅ Microservices démarrés$(NC)"
+
+services-down: ## Arrête tous les microservices
+	@echo "$(YELLOW)⏹️  Arrêt des microservices...$(NC)"
+	cd services && docker-compose down
+	@echo "$(GREEN)✅ Microservices arrêtés$(NC)"
+
+kong-up: ## Démarre Kong et ses dépendances
+	@echo "$(GREEN)🚀 Démarrage de Kong...$(NC)"
+	docker-compose -f docker-compose.kong.yml up -d
+	@echo "$(GREEN)✅ Kong démarré$(NC)"
+	@echo "$(YELLOW)⏳ Attente que Kong soit prêt...$(NC)"
+	@sleep 10
+
+kong-down: ## Arrête Kong et ses dépendances
+	@echo "$(YELLOW)⏹️  Arrêt de Kong...$(NC)"
+	docker-compose -f docker-compose.kong.yml down
+	@echo "$(GREEN)✅ Kong arrêté$(NC)"
+
+kong-setup: ## Configure Kong avec les services et plugins
+	@echo "$(GREEN)🔧 Configuration de Kong...$(NC)"
+	@chmod +x kong/configure-kong.sh
+	@kong/configure-kong.sh
+	@echo "$(GREEN)✅ Kong configuré$(NC)"
+
+kong-test: ## Teste la configuration Kong
+	@echo "$(GREEN)🧪 Test de Kong...$(NC)"
+	@chmod +x kong/test-kong.sh
+	@kong/test-kong.sh
+
+kong-logs: ## Affiche les logs de Kong
+	@echo "$(GREEN)📋 Logs de Kong:$(NC)"
+	docker-compose -f docker-compose.kong.yml logs kong
+
+kong-status: ## Affiche le statut de Kong et des services
+	@echo "$(GREEN)📊 Statut des conteneurs:$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Kong:$(NC)"
+	@docker-compose -f docker-compose.kong.yml ps
+	@echo ""
+	@echo "$(YELLOW)Microservices:$(NC)"
+	@cd services && docker-compose ps
+	@echo ""
+	@echo "$(GREEN)🌐 Endpoints disponibles:$(NC)"
+	@echo "  - Kong Proxy: http://localhost:9000"
+	@echo "  - Kong Admin: http://localhost:9001"
+	@echo "  - Kong Manager: http://localhost:9002"
+	@echo "  - Konga GUI: http://localhost:1337"
+
+kong-clean: ## Nettoie complètement Kong (supprime volumes et données)
+	@echo "$(RED)🧹 Nettoyage complet de Kong...$(NC)"
+	@echo "$(YELLOW)⚠️  Cette action supprimera toutes les données Kong$(NC)"
+	@read -p "Êtes-vous sûr? [y/N] " -n 1 -r; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo ""; \
+		docker-compose -f docker-compose.kong.yml down -v; \
+		docker volume prune -f; \
+		echo "$(GREEN)✅ Nettoyage terminé$(NC)"; \
+	else \
+		echo ""; \
+		echo "$(YELLOW)❌ Nettoyage annulé$(NC)"; \
+	fi
+
+setup-all: ## Configuration complète (services + Kong)
+	@echo "$(GREEN)🚀 Configuration complète du système...$(NC)"
+	@make services-up
+	@sleep 10
+	@make kong-up
+	@sleep 10
+	@make kong-setup
+	@echo "$(GREEN)✅ Configuration complète terminée!$(NC)"
+	@echo ""
+	@echo "$(GREEN)🌐 Votre API Gateway est prêt:$(NC)"
+	@echo "  - Endpoint principal: http://localhost:9000"
+	@echo "  - Interface Kong: http://localhost:9002"
+	@echo "  - Interface Konga: http://localhost:1337"
+
+logs-follow: ## Suit les logs de Kong en temps réel
+	@echo "$(GREEN)📋 Suivi des logs Kong (Ctrl+C pour arrêter):$(NC)"
+	docker-compose -f docker-compose.kong.yml logs -f kong
+
+restart-all: ## Redémarre tout le système
+	@echo "$(YELLOW)🔄 Redémarrage du système...$(NC)"
+	@make services-down
+	@make kong-down
+	@sleep 5
+	@make setup-all
+
+# Commandes avancées pour le debugging
+kong-admin: ## Ouvre l'API Admin Kong dans le navigateur
+	@echo "$(GREEN)🌐 Ouverture de l'API Admin Kong...$(NC)"
+	@open http://localhost:9001 || xdg-open http://localhost:9001 || echo "Ouvrez http://localhost:9001 dans votre navigateur"
+
+kong-gui: ## Ouvre l'interface Kong Manager
+	@echo "$(GREEN)🌐 Ouverture de Kong Manager...$(NC)"
+	@open http://localhost:9002 || xdg-open http://localhost:9002 || echo "Ouvrez http://localhost:9002 dans votre navigateur"
+
+konga-gui: ## Ouvre l'interface Konga
+	@echo "$(GREEN)🌐 Ouverture de Konga...$(NC)"
+	@open http://localhost:1337 || xdg-open http://localhost:1337 || echo "Ouvrez http://localhost:1337 dans votre navigateur"
+
+# Configuration par défaut
+.DEFAULT_GOAL := help 

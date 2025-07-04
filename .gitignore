@@ -27,15 +27,82 @@ ENV/
 
 # Logs
 *.log
+logs/
 
 # OS specific files
 .DS_Store
 Thumbs.db
 
-logs/
-
-
-
 # Load testing results
 *-results.json
 k6-results/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Kong API Gateway
+kong/logs/
+kong/data/
+kong/*.pid
+kong/*.conf.tmp
+
+# Kubernetes
+*.yaml.bak
+k8s-secrets/
+
+# Monitoring & Prometheus
+prometheus/data/
+grafana/data/
+grafana/logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Environment files
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Backup files
+*.bak
+*.backup
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# pytest
+.pytest_cache/
+
+# Local development
+local/
+tmp/
+
+# Kong plugins development
+kong/plugins/*/dist/
+kong/plugins/*/*.rock
+
+# Service mesh & networking
+istio/
+consul/data/
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+ssl/
+certs/
+
+# Database dumps
+*.sql
+*.dump
+
+# Performance test results
+performance/
+benchmarks/
