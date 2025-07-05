@@ -69,7 +69,11 @@ jobs:
       - name: Initialize test database
         run: |
           cd services/${{ matrix.service }}
-          PYTHONPATH=./src python src/init_db.py
+          if [ "${{ matrix.service }}" != "reporting-api" ]; then
+            PYTHONPATH=./src python src/init_db.py
+          else
+            echo "Skipping database initialization for reporting-api (no database needed)"
+          fi
       - name: Run microservice tests
         run: |
           cd services/${{ matrix.service }}
