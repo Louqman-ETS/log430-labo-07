@@ -2,7 +2,7 @@ name: CI/CD - Microservices Architecture
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, test-charge ]
   pull_request:
     branches: [ main ]
 
