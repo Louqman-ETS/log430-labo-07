@@ -1,0 +1,79 @@
+@startuml scenarios
+!theme plain
+
+title Documentation 4+1 - Scenarios
+
+left to right direction
+
+' Acteurs principaux
+actor "Client Web" as WebClient
+actor "Employe Magasin" as StoreEmployee
+actor "Administrateur" as Admin
+
+' Scenarios principaux par domaine
+package "Domaine E-commerce" {
+    usecase "Consulter catalogue" as UC01
+    usecase "Ajouter au panier" as UC02
+    usecase "Finaliser commande" as UC03
+    
+    UC01 ..> UC02 : includes
+    UC02 ..> UC03 : includes
+}
+
+package "Domaine Inventaire" {
+    usecase "Gerer produits" as UC04
+    usecase "Ajuster stock" as UC05
+    usecase "Gerer alertes stock" as UC06
+    
+    UC04 ..> UC05 : includes
+    UC05 ..> UC06 : includes
+}
+
+package "Domaine Retail" {
+    usecase "Enregistrer vente" as UC07
+    usecase "Traiter paiement" as UC08
+    usecase "Gerer magasins" as UC09
+    
+    UC07 ..> UC08 : includes
+    UC09 ..> UC07 : includes
+}
+
+package "Domaine Reporting" {
+    usecase "Generer rapports" as UC10
+    usecase "Analyser performances" as UC11
+    
+    UC10 ..> UC11 : includes
+}
+
+' Relations acteurs - cas d'utilisation
+
+' Client Web
+WebClient --> UC01
+WebClient --> UC02
+WebClient --> UC03
+
+' Employe Magasin
+StoreEmployee --> UC07
+StoreEmployee --> UC08
+
+' Administrateur
+Admin --> UC04
+Admin --> UC05
+Admin --> UC06
+Admin --> UC09
+Admin --> UC10
+Admin --> UC11
+
+' Relations inter-domaines critiques
+UC03 ..> UC05 : "Reduction stock"
+UC07 ..> UC05 : "Reduction stock"
+UC10 ..> UC03 : "Donnees commandes"
+UC10 ..> UC07 : "Donnees ventes"
+UC10 ..> UC04 : "Donnees produits"
+
+' Scenarios critiques
+
+
+
+
+@enduml 

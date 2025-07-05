@@ -1,0 +1,252 @@
+@startuml vue-logique
+!define RECTANGLE class
+
+title Documentation 4+1 - Vue Logique
+
+package "Inventory Domain" {
+    RECTANGLE Product {
+        +id: Integer
+        +name: String
+        +description: String
+        +price: Decimal
+        +category_id: Integer
+        +is_active: Boolean
+        +created_at: DateTime
+        +updated_at: DateTime
+        --
+        +reduce_stock(quantity: Integer)
+        +increase_stock(quantity: Integer)
+        +calculate_total_value()
+    }
+    
+    RECTANGLE Category {
+        +id: Integer
+        +name: String
+        +description: String
+        +is_active: Boolean
+        +created_at: DateTime
+        --
+        +get_products()
+        +get_active_products()
+    }
+    
+    RECTANGLE StockMovement {
+        +id: Integer
+        +product_id: Integer
+        +movement_type: String
+        +quantity: Integer
+        +reason: String
+        +created_at: DateTime
+        +reference_id: Integer
+        --
+        +calculate_new_stock()
+        +validate_movement()
+    }
+    
+    RECTANGLE StockAlert {
+        +id: Integer
+        +product_id: Integer
+        +alert_type: String
+        +threshold: Integer
+        +current_stock: Integer
+        +is_resolved: Boolean
+        +created_at: DateTime
+        --
+        +check_conditions()
+        +resolve_alert()
+    }
+}
+
+package "Retail Domain" {
+    RECTANGLE Store {
+        +id: Integer
+        +name: String
+        +address: String
+        +phone: String
+        +email: String
+        +manager_name: String
+        +is_active: Boolean
+        +created_at: DateTime
+        --
+        +get_cash_registers()
+        +get_sales_summary()
+        +calculate_performance()
+    }
+    
+    RECTANGLE CashRegister {
+        +id: Integer
+        +store_id: Integer
+        +register_number: String
+        +is_active: Boolean
+        +created_at: DateTime
+        --
+        +process_sale()
+        +get_daily_sales()
+    }
+    
+    RECTANGLE Sale {
+        +id: Integer
+        +store_id: Integer
+        +cash_register_id: Integer
+        +total_amount: Decimal
+        +status: String
+        +created_at: DateTime
+        +updated_at: DateTime
+        --
+        +add_line_item()
+        +calculate_total()
+        +finalize_sale()
+    }
+    
+    RECTANGLE SaleLine {
+        +id: Integer
+        +sale_id: Integer
+        +product_id: Integer
+        +quantity: Integer
+        +unit_price: Decimal
+        +total_price: Decimal
+        --
+        +calculate_line_total()
+        +validate_stock()
+    }
+}
+
+package "Ecommerce Domain" {
+    RECTANGLE Customer {
+        +id: Integer
+        +first_name: String
+        +last_name: String
+        +email: String
+        +phone: String
+        +password_hash: String
+        +is_active: Boolean
+        +created_at: DateTime
+        --
+        +authenticate()
+        +create_cart()
+        +get_orders()
+    }
+    
+    RECTANGLE Address {
+        +id: Integer
+        +customer_id: Integer
+        +type: String
+        +street: String
+        +city: String
+        +postal_code: String
+        +country: String
+        +is_default: Boolean
+        --
+        +validate_address()
+        +format_full_address()
+    }
+    
+    RECTANGLE Cart {
+        +id: Integer
+        +customer_id: Integer
+        +session_id: String
+        +status: String
+        +created_at: DateTime
+        +updated_at: DateTime
+        --
+        +add_item()
+        +remove_item()
+        +calculate_total()
+        +checkout()
+    }
+    
+    RECTANGLE CartItem {
+        +id: Integer
+        +cart_id: Integer
+        +product_id: Integer
+        +quantity: Integer
+        +unit_price: Decimal
+        +total_price: Decimal
+        --
+        +update_quantity()
+        +validate_stock()
+    }
+    
+    RECTANGLE Order {
+        +id: Integer
+        +customer_id: Integer
+        +order_number: String
+        +status: String
+        +total_amount: Decimal
+        +shipping_address_id: Integer
+        +billing_address_id: Integer
+        +created_at: DateTime
+        --
+        +process_payment()
+        +update_status()
+        +calculate_total()
+    }
+    
+    RECTANGLE OrderLine {
+        +id: Integer
+        +order_id: Integer
+        +product_id: Integer
+        +quantity: Integer
+        +unit_price: Decimal
+        +total_price: Decimal
+        --
+        +validate_item()
+        +calculate_line_total()
+    }
+}
+
+package "Reporting Domain" {
+    RECTANGLE Report {
+        +id: Integer
+        +name: String
+        +type: String
+        +parameters: JSON
+        +generated_at: DateTime
+        +file_path: String
+        --
+        +generate()
+        +export_to_format()
+    }
+    
+    RECTANGLE Analytics {
+        +id: Integer
+        +metric_name: String
+        +value: Decimal
+        +period: String
+        +created_at: DateTime
+        --
+        +calculate_metric()
+        +compare_periods()
+    }
+}
+
+' Relations principales
+Category ||--o{ Product : contains
+Product ||--o{ StockMovement : tracks
+Product ||--o{ StockAlert : monitors
+Product ||--o{ SaleLine : includes
+Product ||--o{ CartItem : contains
+Product ||--o{ OrderLine : includes
+
+Store ||--o{ CashRegister : has
+Store ||--o{ Sale : processes
+CashRegister ||--o{ Sale : records
+Sale ||--o{ SaleLine : contains
+
+Customer ||--o{ Address : has
+Customer ||--o{ Cart : owns
+Customer ||--o{ Order : places
+Cart ||--o{ CartItem : contains
+Order ||--o{ OrderLine : contains
+
+' Relations inter-domaines (via API)
+SaleLine ..> Product : references
+CartItem ..> Product : references
+OrderLine ..> Product : references
+Sale ..> Store : belongs_to
+
+note top of Product : "Entité partagée\nréférencée par tous\nles microservices"
+
+note bottom of Report : "Agrège les données\nde tous les domaines\nvia API calls"
+
+@enduml 

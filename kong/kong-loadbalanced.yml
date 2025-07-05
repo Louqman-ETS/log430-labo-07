@@ -83,13 +83,6 @@ services:
         config:
           key_names:
             - apikey
-      # Plugin de rate limiting
-      - name: rate-limiting
-        config:
-          minute: 100
-          hour: 1000
-          policy: local
-
   - name: ecommerce-api
     url: http://ecommerce-api:8000
     connect_timeout: 60000
@@ -144,13 +137,6 @@ services:
         config:
           key_names:
             - apikey
-      # Plugin de rate limiting
-      - name: rate-limiting
-        config:
-          minute: 200
-          hour: 2000
-          policy: local
-
   - name: retail-api
     url: http://retail-api:8002
     connect_timeout: 60000
@@ -205,13 +191,6 @@ services:
         config:
           key_names:
             - apikey
-      # Plugin de rate limiting
-      - name: rate-limiting
-        config:
-          minute: 100
-          hour: 1000
-          policy: local
-
   - name: reporting-api
     url: http://reporting-api:8005
     connect_timeout: 60000
@@ -266,13 +245,6 @@ services:
         config:
           key_names:
             - apikey
-      # Plugin de rate limiting
-      - name: rate-limiting
-        config:
-          minute: 50
-          hour: 500
-          policy: local
-
 # Configuration des consommateurs et clés API
 consumers:
   - username: admin-user

@@ -1,0 +1,203 @@
+@startuml vue-developpement
+!theme plain
+
+title Documentation 4+1 - Vue Développement
+
+package "Kong Gateway" {
+    component "Kong Core" as Kong
+    component "Load Balancer" as LB
+    component "API Gateway" as Gateway
+    component "Service Discovery" as Discovery
+    component "Rate Limiting" as RateLimit
+    component "Authentication" as Auth
+    
+    Kong ..> LB
+    Kong ..> Gateway
+    Kong ..> Discovery
+    Kong ..> RateLimit
+    Kong ..> Auth
+}
+
+package "Monitoring & Observability" {
+    component "Prometheus" as Prometheus
+    component "Grafana" as Grafana
+    component "Metrics Collector" as Metrics
+    
+    Prometheus ..> Metrics
+    Grafana ..> Prometheus
+}
+
+package "Ecommerce API (Port 8000)" {
+    component "Customer Service" as CustomerService
+    component "Cart Service" as CartService
+    component "Order Service" as OrderService
+    component "Authentication Service" as AuthService
+    component "Address Service" as AddressService
+    
+    package "Ecommerce Infrastructure" {
+        component "FastAPI Framework" as EcommerceAPI
+        component "SQLAlchemy ORM" as EcommerceORM
+        component "Pydantic Schemas" as EcommerceSchemas
+        component "JWT Auth" as JWTAuth
+        component "Password Hashing" as PasswordHash
+        database "PostgreSQL" as EcommerceDB
+    }
+    
+    CustomerService ..> EcommerceORM
+    CartService ..> EcommerceORM
+    OrderService ..> EcommerceORM
+    AuthService ..> JWTAuth
+    AuthService ..> PasswordHash
+    AddressService ..> EcommerceORM
+    
+    EcommerceAPI ..> EcommerceSchemas
+    EcommerceORM ..> EcommerceDB
+}
+
+package "Inventory API (Port 8001)" {
+    component "Product Service" as ProductService
+    component "Category Service" as CategoryService
+    component "Stock Service" as StockService
+    component "Stock Alert Service" as StockAlertService
+    component "Stock Movement Service" as StockMovementService
+    
+    package "Inventory Infrastructure" {
+        component "FastAPI Framework" as InventoryAPI
+        component "SQLAlchemy ORM" as InventoryORM
+        component "Pydantic Schemas" as InventorySchemas
+        component "Logging Service" as InventoryLogging
+        database "PostgreSQL" as InventoryDB
+    }
+    
+    ProductService ..> InventoryORM
+    CategoryService ..> InventoryORM
+    StockService ..> InventoryORM
+    StockAlertService ..> InventoryORM
+    StockMovementService ..> InventoryORM
+    
+    InventoryAPI ..> InventorySchemas
+    InventoryORM ..> InventoryDB
+}
+
+package "Retail API (Port 8002)" {
+    component "Store Service" as StoreService
+    component "Cash Register Service" as CashRegisterService
+    component "Sale Service" as SaleService
+    component "Sale Line Service" as SaleLineService
+    component "Store Metrics Service" as StoreMetricsService
+    
+    package "Retail Infrastructure" {
+        component "FastAPI Framework" as RetailAPI
+        component "SQLAlchemy ORM" as RetailORM
+        component "Pydantic Schemas" as RetailSchemas
+        component "External Service Client" as RetailClient
+        database "PostgreSQL" as RetailDB
+    }
+    
+    StoreService ..> RetailORM
+    CashRegisterService ..> RetailORM
+    SaleService ..> RetailORM
+    SaleLineService ..> RetailORM
+    StoreMetricsService ..> RetailORM
+    
+    RetailAPI ..> RetailSchemas
+    RetailORM ..> RetailDB
+    SaleService ..> RetailClient
+}
+
+package "Reporting API (Port 8003)" {
+    component "Report Service" as ReportService
+    component "Analytics Service" as AnalyticsService
+    component "Data Aggregation Service" as DataAggregationService
+    component "Export Service" as ExportService
+    
+    package "Reporting Infrastructure" {
+        component "FastAPI Framework" as ReportingAPI
+        component "SQLAlchemy ORM" as ReportingORM
+        component "Pydantic Schemas" as ReportingSchemas
+        component "External Service Client" as ReportingClient
+        component "Data Synchronization" as DataSync
+        database "PostgreSQL" as ReportingDB
+    }
+    
+    ReportService ..> ReportingORM
+    AnalyticsService ..> ReportingORM
+    DataAggregationService ..> ReportingClient
+    ExportService ..> ReportingORM
+    
+    ReportingAPI ..> ReportingSchemas
+    ReportingORM ..> ReportingDB
+    DataAggregationService ..> DataSync
+}
+
+package "Cache Layer" {
+    component "Redis Cache" as Redis
+    component "Session Store" as SessionStore
+    component "Cache Manager" as CacheManager
+    
+    Redis ..> SessionStore
+    Redis ..> CacheManager
+}
+
+package "Message Queue" {
+    component "Event Bus" as EventBus
+    component "Message Broker" as MessageBroker
+    component "Event Handlers" as EventHandlers
+    
+    EventBus ..> MessageBroker
+    MessageBroker ..> EventHandlers
+}
+
+' Relations inter-services (via HTTP/REST)
+Kong ..> EcommerceAPI : routes
+Kong ..> InventoryAPI : routes
+Kong ..> RetailAPI : routes
+Kong ..> ReportingAPI : routes
+
+' Dependances externes des services
+OrderService ..> Kong : calls_inventory
+SaleService ..> Kong : calls_inventory
+ReportingClient ..> Kong : calls_all_apis
+
+' Monitoring
+EcommerceAPI ..> Metrics : exports
+InventoryAPI ..> Metrics : exports
+RetailAPI ..> Metrics : exports
+ReportingAPI ..> Metrics : exports
+
+' Cache usage
+EcommerceAPI ..> Redis : sessions
+InventoryAPI ..> Redis : product_cache
+RetailAPI ..> Redis : store_cache
+ReportingAPI ..> Redis : report_cache
+
+' Event-driven communication
+ProductService ..> EventBus : stock_changes
+OrderService ..> EventBus : order_events
+SaleService ..> EventBus : sale_events
+
+note top of Kong
+Point d'entree unique
+Load Balancing
+API Gateway
+end note
+
+note bottom of ReportingClient
+Agregge les donnees
+de tous les microservices
+via API REST
+end note
+
+note right of Redis
+Cache distribue
+Sessions utilisateur
+Donnees frequentes
+end note
+
+note left of EventBus
+Communication
+asynchrone
+Entre services
+end note
+
+@enduml 

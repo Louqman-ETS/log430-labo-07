@@ -1,0 +1,81 @@
+@startuml vue-processus
+!theme plain
+
+title Documentation 4+1 - Vue Processus
+
+actor "Client Web" as Client
+participant "Kong Gateway" as Kong
+participant "Ecommerce API" as Ecommerce
+participant "Inventory API" as Inventory
+participant "Retail API" as Retail
+database "Ecommerce DB" as EcommerceDB
+database "Inventory DB" as InventoryDB
+database "Retail DB" as RetailDB
+
+== Scenario 1: Commande Client E-commerce ==
+
+Client -> Kong: POST /api/v1/orders
+Kong -> Ecommerce: POST /api/v1/orders
+activate Ecommerce
+
+Ecommerce -> EcommerceDB: BEGIN TRANSACTION
+Ecommerce -> EcommerceDB: INSERT INTO orders
+Ecommerce -> EcommerceDB: INSERT INTO order_lines
+
+loop Pour chaque produit
+    Ecommerce -> Kong: GET /api/v1/products/{id}
+    Kong -> Inventory: GET /api/v1/products/{id}
+    activate Inventory
+    Inventory -> InventoryDB: SELECT product
+    Inventory --> Kong: Product details
+    Kong --> Ecommerce: Product details
+    deactivate Inventory
+    
+    Ecommerce -> Kong: POST /api/v1/products/{id}/reduce-stock
+    Kong -> Inventory: POST /api/v1/products/{id}/reduce-stock
+    activate Inventory
+    note over Inventory: Gestion interne du stock
+    Inventory --> Kong: Stock reduced successfully
+    Kong --> Ecommerce: Stock reduced successfully
+    deactivate Inventory
+end
+
+Ecommerce -> EcommerceDB: COMMIT TRANSACTION
+Ecommerce --> Kong: Order created
+Kong --> Client: 201 Created
+deactivate Ecommerce
+
+== Scenario 2: Vente en Magasin ==
+
+Client -> Kong: POST /api/v1/sales
+Kong -> Retail: POST /api/v1/sales
+activate Retail
+
+Retail -> RetailDB: BEGIN TRANSACTION
+Retail -> RetailDB: INSERT INTO sales
+Retail -> RetailDB: INSERT INTO sale_lines
+
+loop Pour chaque produit
+    Retail -> Kong: GET /api/v1/products/{id}
+    Kong -> Inventory: GET /api/v1/products/{id}
+    activate Inventory
+    Inventory -> InventoryDB: SELECT product
+    Inventory --> Kong: Product details
+    Kong --> Retail: Product details
+    deactivate Inventory
+    
+    Retail -> Kong: POST /api/v1/products/{id}/reduce-stock
+    Kong -> Inventory: POST /api/v1/products/{id}/reduce-stock
+    activate Inventory
+    note over Inventory: Gestion interne du stock
+    Inventory --> Kong: Stock reduced successfully
+    Kong --> Retail: Stock reduced successfully
+    deactivate Inventory
+end
+
+Retail -> RetailDB: COMMIT TRANSACTION
+Retail --> Kong: Sale created
+Kong --> Client: 201 Created
+deactivate Retail
+
+@enduml 

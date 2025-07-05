@@ -1,0 +1,138 @@
+@startuml vue-physique
+!theme plain
+
+title Documentation 4+1 - Vue Physique
+
+node "Kong Gateway" as Kong {
+    artifact "Kong Core" as KongCore
+    artifact "Load Balancer" as LB
+    artifact "Service Discovery" as Discovery
+    artifact "Rate Limiting" as RateLimit
+    
+    KongCore -- LB
+    KongCore -- Discovery
+    KongCore -- RateLimit
+}
+
+node "Microservices Cluster" {
+    node "Ecommerce Service Node" as EcommerceNode {
+        artifact "Ecommerce API" as EcommerceApp
+    }
+    
+    node "Inventory Service Cluster" {
+        node "Inventory Node 1" as InventoryNode1 {
+            artifact "Inventory API" as InventoryApp1
+        }
+        
+        node "Inventory Node 2" as InventoryNode2 {
+            artifact "Inventory API" as InventoryApp2
+        }
+        
+        node "Inventory Node 3" as InventoryNode3 {
+            artifact "Inventory API" as InventoryApp3
+        }
+    }
+    
+    node "Retail Service Node" as RetailNode {
+        artifact "Retail API" as RetailApp
+    }
+    
+    node "Reporting Service Node" as ReportingNode {
+        artifact "Reporting API" as ReportingApp
+    }
+}
+
+node "Database Cluster" {
+    database "Inventory PostgreSQL" as InventoryMainDB
+    database "Ecommerce PostgreSQL" as EcommerceMainDB
+    database "Retail PostgreSQL" as RetailMainDB
+    database "Reporting PostgreSQL" as ReportingMainDB
+}
+
+
+
+node "Monitoring & Observability" {
+    node "Prometheus Node" as PrometheusNode {
+        artifact "Prometheus Server" as PrometheusApp
+        artifact "Metrics Storage" as MetricsStorage
+        
+        PrometheusApp -- MetricsStorage
+    }
+    
+    node "Grafana Node" as GrafanaNode {
+        artifact "Grafana Dashboard" as GrafanaApp
+        artifact "Alert Manager" as AlertManager
+        
+        GrafanaApp -- AlertManager
+    }
+    
+
+}
+
+' Network connections
+Kong ..> EcommerceNode : HTTP/8000
+Kong ..> InventoryNode1 : HTTP/8001
+Kong ..> InventoryNode2 : HTTP/8001
+Kong ..> InventoryNode3 : HTTP/8001
+Kong ..> RetailNode : HTTP/8002
+Kong ..> ReportingNode : HTTP/8003
+
+' Database connections
+InventoryNode1 ..> InventoryMainDB : PostgreSQL/5433
+InventoryNode2 ..> InventoryMainDB : PostgreSQL/5433
+InventoryNode3 ..> InventoryMainDB : PostgreSQL/5433
+
+EcommerceNode ..> EcommerceMainDB : PostgreSQL/5450
+RetailNode ..> RetailMainDB : PostgreSQL/5434
+ReportingNode ..> ReportingMainDB : PostgreSQL/5435
+
+
+
+' Monitoring connections
+EcommerceNode ..> PrometheusNode : Metrics/9090
+InventoryNode1 ..> PrometheusNode : Metrics/9090
+InventoryNode2 ..> PrometheusNode : Metrics/9090
+InventoryNode3 ..> PrometheusNode : Metrics/9090
+RetailNode ..> PrometheusNode : Metrics/9090
+ReportingNode ..> PrometheusNode : Metrics/9090
+
+PrometheusNode ..> GrafanaNode : Dashboard/3000
+
+
+
+' Inter-service communication
+EcommerceNode ..> Kong : API Calls
+RetailNode ..> Kong : API Calls
+ReportingNode ..> Kong : API Calls
+
+cloud "Internet" {
+    actor "Web Clients" as WebClients
+    actor "Admin Panel" as AdminPanel
+}
+
+WebClients ..> Kong : HTTPS/443
+AdminPanel ..> Kong : HTTPS/443
+
+note top of Kong
+Load Balancing
+API Gateway
+Rate Limiting
+Authentication
+end note
+
+
+
+note left of PrometheusNode : "Metrics Collection\nAlert Management\nTime Series DB"
+
+note as DeploymentSpecs
+**Spécifications de Déploiement**
+- **Kong Gateway**: 1 instance (API Gateway + Load Balancer)
+- **Inventory API**: 3 instances (Load Balanced par Kong)
+- **Autres APIs**: 1 instance chacune (Scalable)
+- **Bases de données**: PostgreSQL dédiées par service
+- **Monitoring**: Prometheus + Grafana
+- **Réseau**: Docker Compose Network
+- **Ports**: 8000-8003 (APIs), 5433-5450 (DBs)
+end note
+
+@enduml 
