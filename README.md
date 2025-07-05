@@ -492,7 +492,7 @@ git clone <repository-url>
 cd log430-labo-05
 
 # Démarrage avec Kong Gateway et Load Balancing
-make kong-loadbalanced-up
+make -f Makefile.kong.loadbalanced up
 
 # Ou avec Docker Compose
 docker-compose -f docker-compose.kong.loadbalanced.yml up -d
@@ -513,10 +513,10 @@ open http://localhost:9090  # Prometheus
 
 ```bash
 # Gestion Kong Load Balancé
-make kong-loadbalanced-up           # Démarrage complet
-make kong-loadbalanced-down         # Arrêt complet
-make kong-loadbalanced-logs         # Logs des services
-make kong-loadbalanced-status       # État des services
+make -f Makefile.kong.loadbalanced up      # Démarrage complet
+make -f Makefile.kong.loadbalanced down    # Arrêt complet
+make -f Makefile.kong.loadbalanced logs    # Logs des services
+make -f Makefile.kong.loadbalanced status  # État des services
 
 # Tests et monitoring
 make test-loadbalancing             # Tests de load balancing
@@ -703,13 +703,13 @@ docker-compose exec reporting-1 python src/init_db.py
 #### Kong Gateway (API Principal)
 ```bash
 # Base URL
-http://localhost:8000
+http://localhost:9000
 
 # Exemples d'utilisation
-curl -X GET "http://localhost:8000/api/v1/products" \
+curl -X GET "http://localhost:9000/api/v1/products" \
   -H "X-API-Key: admin-key-12345"
 
-curl -X GET "http://localhost:8000/api/v1/stores" \
+curl -X GET "http://localhost:9000/api/v1/stores" \
   -H "X-API-Key: frontend-key-67890"
 ```
 

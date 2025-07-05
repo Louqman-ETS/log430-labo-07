@@ -2,7 +2,7 @@ name: Lint and Format
 
 on:
   push:
-    branches: [ main, test-charge ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
