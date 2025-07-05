@@ -1,0 +1,1233 @@
+{
+  "info": {
+    "name": "Kong API Gateway - Microservices Collection",
+    "description": "Collection complète des APIs via Kong Gateway avec authentification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "apikey",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "admin-api-key-12345",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "kong_gateway_url",
+      "value": "http://localhost:9000",
+      "type": "string"
+    },
+    {
+      "key": "admin_api_key",
+      "value": "admin-api-key-12345",
+      "type": "string"
+    },
+    {
+      "key": "frontend_api_key",
+      "value": "frontend-api-key-67890",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Inventory API",
+      "description": "Gestion des produits, catégories et stock",
+      "item": [
+        {
+          "name": "Products",
+          "item": [
+            {
+              "name": "Get All Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Product by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nouveau Produit\",\n  \"description\": \"Description du produit\",\n  \"price\": 29.99,\n  \"category_id\": 1,\n  \"is_active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", ""]
+                }
+              }
+            },
+            {
+              "name": "Update Product",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Produit Modifié\",\n  \"description\": \"Description mise à jour\",\n  \"price\": 39.99,\n  \"category_id\": 1,\n  \"is_active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", "1"]
+                }
+              }
+            },
+            {
+              "name": "Delete Product",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", "1"]
+                }
+              }
+            },
+            {
+              "name": "Search Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/search?q=test&category_id=1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", "search"],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "test"
+                    },
+                    {
+                      "key": "category_id",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Product Stock",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/products/1/stock",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "products", "1", "stock"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categories",
+          "item": [
+            {
+              "name": "Get All Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/categories/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "categories", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Category by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/categories/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "categories", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Category",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nouvelle Catégorie\",\n  \"description\": \"Description de la catégorie\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/categories/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "categories", ""]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock",
+          "item": [
+            {
+              "name": "Get Stock Movements",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/stock/movements?product_id=1&limit=50",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "stock", "movements"],
+                  "query": [
+                    {
+                      "key": "product_id",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Stock Movement",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 100,\n  \"movement_type\": \"IN\",\n  \"reason\": \"Réapprovisionnement\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/stock/movement",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "stock", "movement"]
+                }
+              }
+            },
+            {
+              "name": "Get Stock Alerts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/stock/alerts",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "stock", "alerts"]
+                }
+              }
+            },
+            {
+              "name": "Get Inventory Summary",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/inventory/api/v1/stock/summary",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["inventory", "api", "v1", "stock", "summary"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ecommerce API",
+      "description": "Gestion des clients, paniers et commandes",
+      "item": [
+        {
+          "name": "Customers",
+          "item": [
+            {
+              "name": "Register Customer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/register",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "register"]
+                }
+              }
+            },
+            {
+              "name": "Login Customer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/login",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "login"]
+                }
+              }
+            },
+            {
+              "name": "Get Customer Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/profile",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "profile"]
+                }
+              }
+            },
+            {
+              "name": "Update Customer Profile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Nouveau Nom\",\n  \"last_name\": \"Nouveau Prénom\",\n  \"phone\": \"+33123456789\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/profile",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "profile"]
+                }
+              }
+            },
+            {
+              "name": "Add Customer Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"shipping\",\n  \"street\": \"123 Rue de la Paix\",\n  \"city\": \"Paris\",\n  \"postal_code\": \"75001\",\n  \"country\": \"France\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/addresses",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "addresses"]
+                }
+              }
+            },
+            {
+              "name": "Get Customer Addresses",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/customers/addresses",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "customers", "addresses"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carts",
+          "item": [
+            {
+              "name": "Create Cart",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Cart",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", "1"]
+                }
+              }
+            },
+            {
+              "name": "Add Item to Cart",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/1/items",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", "1", "items"]
+                }
+              }
+            },
+            {
+              "name": "Update Cart Item",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"quantity\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/1/items/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", "1", "items", "1"]
+                }
+              }
+            },
+            {
+              "name": "Remove Item from Cart",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/1/items/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", "1", "items", "1"]
+                }
+              }
+            },
+            {
+              "name": "Get Cart Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/carts/stats",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "carts", "stats"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders",
+          "item": [
+            {
+              "name": "Create Order (Checkout)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cart_id\": 1,\n  \"shipping_address_id\": 1,\n  \"billing_address_id\": 1,\n  \"payment_method\": \"credit_card\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/orders/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "orders", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Order",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/orders/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "orders", "1"]
+                }
+              }
+            },
+            {
+              "name": "Get Customer Orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/orders/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "orders", ""]
+                }
+              }
+            },
+            {
+              "name": "Update Order Status",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"shipped\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/orders/1/status",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "orders", "1", "status"]
+                }
+              }
+            },
+            {
+              "name": "Get Order Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/ecommerce/api/v1/orders/stats",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["ecommerce", "api", "v1", "orders", "stats"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Retail API",
+      "description": "Gestion des magasins, caisses et ventes",
+      "item": [
+        {
+          "name": "Stores",
+          "item": [
+            {
+              "name": "Get All Stores",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Store by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Store",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Nouveau Magasin\",\n  \"address\": \"123 Rue du Commerce\",\n  \"city\": \"Paris\",\n  \"postal_code\": \"75001\",\n  \"phone\": \"+33123456789\",\n  \"email\": \"magasin@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", ""]
+                }
+              }
+            },
+            {
+              "name": "Update Store",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Magasin Modifié\",\n  \"address\": \"456 Avenue du Commerce\",\n  \"city\": \"Lyon\",\n  \"postal_code\": \"69001\",\n  \"phone\": \"+33987654321\",\n  \"email\": \"nouveau@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", "1"]
+                }
+              }
+            },
+            {
+              "name": "Delete Store",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", "1"]
+                }
+              }
+            },
+            {
+              "name": "Get Store Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/1/details",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", "1", "details"]
+                }
+              }
+            },
+            {
+              "name": "Get Store Performance",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/stores/1/performance",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "stores", "1", "performance"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cash Registers",
+          "item": [
+            {
+              "name": "Get All Cash Registers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/cash-registers/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "cash-registers", ""]
+                }
+              }
+            },
+            {
+              "name": "Get Cash Register by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/cash-registers/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "cash-registers", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Cash Register",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Caisse 1\",\n  \"store_id\": 1,\n  \"is_active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/cash-registers/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "cash-registers", ""]
+                }
+              }
+            },
+            {
+              "name": "Update Cash Register",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Caisse Modifiée\",\n  \"store_id\": 1,\n  \"is_active\": false\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/cash-registers/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "cash-registers", "1"]
+                }
+              }
+            },
+            {
+              "name": "Delete Cash Register",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/cash-registers/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "cash-registers", "1"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sales",
+          "item": [
+            {
+              "name": "Get All Sales",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/?page=1&size=20",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", ""],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Sale by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "1"]
+                }
+              }
+            },
+            {
+              "name": "Create Sale",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"store_id\": 1,\n  \"cash_register_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2,\n      \"unit_price\": 29.99\n    },\n    {\n      \"product_id\": 2,\n      \"quantity\": 1,\n      \"unit_price\": 49.99\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", ""]
+                }
+              }
+            },
+            {
+              "name": "Update Sale",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"completed\"\n}"
+                },
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "1"]
+                }
+              }
+            },
+            {
+              "name": "Delete Sale",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "1"]
+                }
+              }
+            },
+            {
+              "name": "Get Sales Summary",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/stats/summary?store_id=1",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "stats", "summary"],
+                  "query": [
+                    {
+                      "key": "store_id",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Sales by Store",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/stats/by-store",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "stats", "by-store"]
+                }
+              }
+            },
+            {
+              "name": "Get Sales by Date",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/retail/api/v1/sales/stats/by-date?date_debut=2024-01-01&date_fin=2024-12-31",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["retail", "api", "v1", "sales", "stats", "by-date"],
+                  "query": [
+                    {
+                      "key": "date_debut",
+                      "value": "2024-01-01"
+                    },
+                    {
+                      "key": "date_fin",
+                      "value": "2024-12-31"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reporting API",
+      "description": "Rapports et analytics",
+      "item": [
+        {
+          "name": "Reports",
+          "item": [
+            {
+              "name": "Get Global Summary",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/global-summary",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "global-summary"]
+                }
+              }
+            },
+            {
+              "name": "Get Store Performances",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/store-performances",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "store-performances"]
+                }
+              }
+            },
+            {
+              "name": "Get Top Products",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/top-products?limit=10",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "top-products"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Sales by Period",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/sales-by-period?period=monthly",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "sales-by-period"],
+                  "query": [
+                    {
+                      "key": "period",
+                      "value": "monthly"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Underperforming Stores",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/underperforming-stores?threshold=1000",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "underperforming-stores"],
+                  "query": [
+                    {
+                      "key": "threshold",
+                      "value": "1000"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Inventory Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/inventory-status",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "inventory-status"]
+                }
+              }
+            },
+            {
+              "name": "Get Revenue Trends",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{kong_gateway_url}}/reporting/api/v1/reports/revenue-trends?days=30",
+                  "host": ["{{kong_gateway_url}}"],
+                  "path": ["reporting", "api", "v1", "reports", "revenue-trends"],
+                  "query": [
+                    {
+                      "key": "days",
+                      "value": "30"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kong Admin API",
+      "description": "Administration de Kong Gateway",
+      "item": [
+        {
+          "name": "Get Kong Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/status",
+              "host": ["http://localhost:9001"],
+              "path": ["status"]
+            }
+          }
+        },
+        {
+          "name": "Get Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/services",
+              "host": ["http://localhost:9001"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "Get Routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/routes",
+              "host": ["http://localhost:9001"],
+              "path": ["routes"]
+            }
+          }
+        },
+        {
+          "name": "Get Consumers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/consumers",
+              "host": ["http://localhost:9001"],
+              "path": ["consumers"]
+            }
+          }
+        },
+        {
+          "name": "Get Plugins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/plugins",
+              "host": ["http://localhost:9001"],
+              "path": ["plugins"]
+            }
+          }
+        },
+        {
+          "name": "Get Kong Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:9001/metrics",
+              "host": ["http://localhost:9001"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CORS Tests",
+      "description": "Tests de configuration CORS",
+      "item": [
+        {
+          "name": "CORS Preflight - Inventory",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Access-Control-Request-Method",
+                "value": "GET"
+              },
+              {
+                "key": "Access-Control-Request-Headers",
+                "value": "apikey"
+              }
+            ],
+            "url": {
+              "raw": "{{kong_gateway_url}}/inventory/api/v1/products/",
+              "host": ["{{kong_gateway_url}}"],
+              "path": ["inventory", "api", "v1", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "CORS GET Request - Inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": {
+              "raw": "{{kong_gateway_url}}/inventory/api/v1/products/",
+              "host": ["{{kong_gateway_url}}"],
+              "path": ["inventory", "api", "v1", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "CORS Unauthorized Origin Test",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://unauthorized-domain.com"
+              }
+            ],
+            "url": {
+              "raw": "{{kong_gateway_url}}/inventory/api/v1/products/",
+              "host": ["{{kong_gateway_url}}"],
+              "path": ["inventory", "api", "v1", "products", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+} 
