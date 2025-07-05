@@ -208,237 +208,113 @@ Database: reporting_db (Port 5435)
 
 #### Diagramme Architecture - Vue Développement
 
-```plantuml
-@startuml vue-developpement
-!theme plain
+![Vue Développement](/out/docs/docs4+1/vue-developpement/vue-developpement.svg)
 
-title Documentation 4+1 - Vue Développement
+**Explication du diagramme Vue Développement :**
 
-package "Kong Gateway" {
-    component "Kong Core" as Kong
-    component "Load Balancer" as LB
-    component "API Gateway" as Gateway
-    component "Service Discovery" as Discovery
-    component "Rate Limiting" as RateLimit
-    component "Authentication" as Auth
-    
-    Kong ..> LB
-    Kong ..> Gateway
-    Kong ..> Discovery
-    Kong ..> RateLimit
-    Kong ..> Auth
-}
+Ce diagramme présente l'**architecture technique** des microservices avec leurs composants et infrastructure :
 
-package "Monitoring & Observability" {
-    component "Prometheus" as Prometheus
-    component "Grafana" as Grafana
-    component "Metrics Collector" as Metrics
-    
-    Prometheus ..> Metrics
-    Grafana ..> Prometheus
-}
+**Kong Gateway (Point d'entrée unique)**
+- **Kong Core** : Moteur principal de routage et proxy
+- **Load Balancer** : Répartition de charge entre instances
+- **API Gateway** : Gestion des routes et transformations
+- **Service Discovery** : Découverte automatique des services
+- **Rate Limiting** : Limitation de débit par consommateur
+- **Authentication** : Validation des clés API
 
-package "Ecommerce API (Port 8000)" {
-    component "Customer Service" as CustomerService
-    component "Cart Service" as CartService
-    component "Order Service" as OrderService
-    component "Authentication Service" as AuthService
-    component "Address Service" as AddressService
-    
-    package "Ecommerce Infrastructure" {
-        component "FastAPI Framework" as EcommerceAPI
-        component "SQLAlchemy ORM" as EcommerceORM
-        component "Pydantic Schemas" as EcommerceSchemas
-        component "JWT Auth" as JWTAuth
-        component "Password Hashing" as PasswordHash
-        database "PostgreSQL" as EcommerceDB
-    }
-    
-    CustomerService ..> EcommerceORM
-    CartService ..> EcommerceORM
-    OrderService ..> EcommerceORM
-    AuthService ..> JWTAuth
-    AuthService ..> PasswordHash
-    AddressService ..> EcommerceORM
-    
-    EcommerceAPI ..> EcommerceSchemas
-    EcommerceORM ..> EcommerceDB
-}
+**Microservices (FastAPI + PostgreSQL)**
 
-package "Inventory API (Port 8001)" {
-    component "Product Service" as ProductService
-    component "Category Service" as CategoryService
-    component "Stock Service" as StockService
-    component "Stock Alert Service" as StockAlertService
-    component "Stock Movement Service" as StockMovementService
-    
-    package "Inventory Infrastructure" {
-        component "FastAPI Framework" as InventoryAPI
-        component "SQLAlchemy ORM" as InventoryORM
-        component "Pydantic Schemas" as InventorySchemas
-        component "Logging Service" as InventoryLogging
-        database "PostgreSQL" as InventoryDB
-    }
-    
-    ProductService ..> InventoryORM
-    CategoryService ..> InventoryORM
-    StockService ..> InventoryORM
-    StockAlertService ..> InventoryORM
-    StockMovementService ..> InventoryORM
-    
-    InventoryAPI ..> InventorySchemas
-    InventoryORM ..> InventoryDB
-}
+**1. Ecommerce API (Port 8000)**
+- **Services métier** : Customer, Cart, Order, Authentication, Address
+- **Infrastructure** : FastAPI + SQLAlchemy + Pydantic + JWT + bcrypt
+- **Base dédiée** : PostgreSQL ecommerce_db
 
-package "Retail API (Port 8002)" {
-    component "Store Service" as StoreService
-    component "Cash Register Service" as CashRegisterService
-    component "Sale Service" as SaleService
-    component "Sale Line Service" as SaleLineService
-    component "Store Metrics Service" as StoreMetricsService
-    
-    package "Retail Infrastructure" {
-        component "FastAPI Framework" as RetailAPI
-        component "SQLAlchemy ORM" as RetailORM
-        component "Pydantic Schemas" as RetailSchemas
-        component "External Service Client" as RetailClient
-        database "PostgreSQL" as RetailDB
-    }
-    
-    StoreService ..> RetailORM
-    CashRegisterService ..> RetailORM
-    SaleService ..> RetailORM
-    SaleLineService ..> RetailORM
-    StoreMetricsService ..> RetailORM
-    
-    RetailAPI ..> RetailSchemas
-    RetailORM ..> RetailDB
-    SaleService ..> RetailClient
-}
+**2. Inventory API (Port 8001)**
+- **Services métier** : Product, Category, Stock, StockAlert, StockMovement
+- **Infrastructure** : FastAPI + SQLAlchemy + Pydantic + Logging
+- **Base dédiée** : PostgreSQL inventory_db
 
-package "Reporting API (Port 8003)" {
-    component "Report Service" as ReportService
-    component "Analytics Service" as AnalyticsService
-    component "Data Aggregation Service" as DataAggregationService
-    component "Export Service" as ExportService
-    
-    package "Reporting Infrastructure" {
-        component "FastAPI Framework" as ReportingAPI
-        component "SQLAlchemy ORM" as ReportingORM
-        component "Pydantic Schemas" as ReportingSchemas
-        component "External Service Client" as ReportingClient
-        component "Data Synchronization" as DataSync
-        database "PostgreSQL" as ReportingDB
-    }
-    
-    ReportService ..> ReportingORM
-    AnalyticsService ..> ReportingORM
-    DataAggregationService ..> ReportingClient
-    ExportService ..> ReportingORM
-    
-    ReportingAPI ..> ReportingSchemas
-    ReportingORM ..> ReportingDB
-    DataAggregationService ..> DataSync
-}
+**3. Retail API (Port 8002)**
+- **Services métier** : Store, CashRegister, Sale, SaleLine, StoreMetrics
+- **Infrastructure** : FastAPI + SQLAlchemy + External Service Client
+- **Base dédiée** : PostgreSQL retail_db
 
-' Relations inter-services (via HTTP/REST)
-Kong ..> EcommerceAPI : routes
-Kong ..> InventoryAPI : routes
-Kong ..> RetailAPI : routes
-Kong ..> ReportingAPI : routes
+**4. Reporting API (Port 8003)**
+- **Services métier** : Report, Analytics, DataAggregation, Export
+- **Infrastructure** : FastAPI + External Service Client + DataSync
+- **Base dédiée** : PostgreSQL reporting_db
 
-' Dependances externes des services
-OrderService ..> Kong : calls_inventory
-SaleService ..> Kong : calls_inventory
-ReportingClient ..> Kong : calls_all_apis
+**Monitoring & Observabilité**
+- **Prometheus** : Collecte des métriques
+- **Grafana** : Visualisation et dashboards
+- **Metrics Collector** : Agrégation des métriques de tous les services
 
-' Monitoring
-EcommerceAPI ..> Metrics : exports
-InventoryAPI ..> Metrics : exports
-RetailAPI ..> Metrics : exports
-ReportingAPI ..> Metrics : exports
+**Communications Inter-Services**
+- **Route principale** : Kong Gateway → Microservices
+- **Appels API** : OrderService → Inventory, SaleService → Inventory
+- **Reporting** : ReportingClient → All APIs via Kong
+- **Monitoring** : Tous les services exportent vers Prometheus
 
-note top of Kong
-Point d'entree unique
-Load Balancing
-API Gateway
-end note
+**Architecture Patterns**
+- **API Gateway Pattern** : Kong comme point d'entrée unique
+- **Database per Service** : Base PostgreSQL dédiée par microservice
+- **External Service Client** : Communication REST entre services
+- **Centralized Monitoring** : Observabilité centralisée
 
-note bottom of ReportingClient
-Agregge les donnees
-de tous les microservices
-via API REST
-end note
+### 5.2 Vue Physique détaillée
 
-@enduml
-```
+![Vue Physique](/out/docs/docs4+1/vue-physique/vue-physique.svg)
 
-**Infrastructure Layer**
-- **Kong Gateway** : API Gateway avec load balancing
-- **PostgreSQL Cluster** : 4 bases dédiées (inventory, ecommerce, retail, reporting)
-- **Monitoring Stack** : Prometheus (métriques) + Grafana (dashboards)
+**Explication du diagramme Vue Physique :**
 
-**Application Layer**
-- **4 Microservices** : Services métier indépendants
-- **FastAPI Framework** : APIs REST standardisées
-- **SQLAlchemy ORM** : Mapping objet-relationnel
-- **Pydantic Schemas** : Validation et sérialisation
+Ce diagramme présente l'**infrastructure de déploiement** avec la topologie réseau et les composants physiques :
 
-**Domain Layer**
-- **Entities** : Modèles métier par domaine
-- **Services** : Logique métier encapsulée
-- **Repositories** : Abstraction accès données
+**Kong Gateway (Point d'entrée unique)**
+- **Port 8000** : Point d'accès unique pour tous les clients
+- **Load Balancing** : Répartition automatique de charge
+- **API Gateway** : Routage et transformation des requêtes
 
-### 5.2 Vue Composants détaillée
+**Microservices Déployés**
 
-#### Inventory API (Service le plus critique - 3 instances)
-```
-├── Products Service
-│   ├── Product Entity
-│   ├── Product Repository
-│   └── Product Endpoints
-├── Categories Service
-│   ├── Category Entity
-│   ├── Category Repository
-│   └── Category Endpoints
-├── Stock Service
-│   ├── StockMovement Entity
-│   ├── Stock Repository
-│   └── Stock Management Endpoints
-├── Alerts Service
-│   ├── StockAlert Entity
-│   └── Alert Logic
-└── Infrastructure
-    ├── FastAPI Application
-    ├── SQLAlchemy Models
-    ├── Prometheus Metrics
-    └── PostgreSQL Connection
-```
+**1. Inventory API (Load Balancé)**
+- **3 instances** : inventory-api-1, inventory-api-2, inventory-api-3
+- **Port interne** : 8001 pour chaque instance
+- **Base dédiée** : PostgreSQL inventory_db (Port 5433)
 
-#### Ecommerce API
-```
-├── Customer Service
-├── Cart Service
-├── Order Service
-├── Authentication Service
-└── Infrastructure (FastAPI + SQLAlchemy + PostgreSQL)
-```
+**2. Ecommerce API**
+- **1 instance** : ecommerce-api
+- **Port interne** : 8000
+- **Base dédiée** : PostgreSQL ecommerce_db (Port 5450)
 
-#### Retail API
-```
-├── Store Service
-├── CashRegister Service
-├── Sale Service
-└── Infrastructure (FastAPI + SQLAlchemy + PostgreSQL)
-```
+**3. Retail API**
+- **1 instance** : retail-api
+- **Port interne** : 8002
+- **Base dédiée** : PostgreSQL retail_db (Port 5434)
 
-#### Reporting API
-```
-├── Report Service
-├── Analytics Service
-├── Data Aggregation Service
-└── Infrastructure (FastAPI + SQLAlchemy + PostgreSQL)
-```
+**4. Reporting API**
+- **1 instance** : reporting-api
+- **Port interne** : 8003
+- **Base dédiée** : PostgreSQL reporting_db (Port 5435)
+
+**Infrastructure de Monitoring**
+- **Prometheus** : Collecte métriques (Port 9090)
+- **Grafana** : Visualisation (Port 3000)
+- **Connexions** : Tous les services exportent vers Prometheus
+
+**Communications Réseau**
+- **Kong ↔ Microservices** : Communication interne Docker
+- **Microservices ↔ Databases** : Connexions PostgreSQL dédiées
+- **Monitoring** : Scraping des métriques via HTTP
+
+**Déploiement Docker**
+- **Docker Compose** : Orchestration de tous les conteneurs
+- **Réseaux isolés** : Communication sécurisée entre services
+- **Volumes persistants** : Données PostgreSQL et logs
+
+**Load Balancing Strategy**
+- **Inventory API** : 3 instances pour haute disponibilité
+- **Autres APIs** : 1 instance par service (selon les besoins)
+- **Kong Gateway** : Répartition round-robin automatique
 
 ### 5.3 Vue Logique - Modèle de Domaine
 
@@ -446,279 +322,130 @@ end note
 
 #### Diagramme Entités Métier par Domaine
 
-```plantuml
-@startuml vue-logique
-!define RECTANGLE class
+![Vue Logique](/out/docs/docs4+1/vue-logique/vue-logique.svg)
 
-title Documentation 4+1 - Vue Logique
+**Explication du diagramme Vue Logique :**
 
-package "Inventory Domain" {
-    RECTANGLE Product {
-        +id: Integer
-        +name: String
-        +description: String
-        +price: Decimal
-        +category_id: Integer
-        +is_active: Boolean
-        +created_at: DateTime
-        +updated_at: DateTime
-        --
-        +reduce_stock(quantity: Integer)
-        +increase_stock(quantity: Integer)
-        +calculate_total_value()
-    }
-    
-    RECTANGLE Category {
-        +id: Integer
-        +name: String
-        +description: String
-        +is_active: Boolean
-        +created_at: DateTime
-        --
-        +get_products()
-        +get_active_products()
-    }
-    
-    RECTANGLE StockMovement {
-        +id: Integer
-        +product_id: Integer
-        +movement_type: String
-        +quantity: Integer
-        +reason: String
-        +created_at: DateTime
-        +reference_id: Integer
-        --
-        +calculate_new_stock()
-        +validate_movement()
-    }
-    
-    RECTANGLE StockAlert {
-        +id: Integer
-        +product_id: Integer
-        +alert_type: String
-        +threshold: Integer
-        +current_stock: Integer
-        +is_resolved: Boolean
-        +created_at: DateTime
-        --
-        +check_conditions()
-        +resolve_alert()
-    }
-}
+Ce diagramme présente le **modèle du domaine métier** découpé en 4 bounded contexts selon les principes du Domain-Driven Design :
 
-package "Retail Domain" {
-    RECTANGLE Store {
-        +id: Integer
-        +name: String
-        +address: String
-        +phone: String
-        +email: String
-        +manager_name: String
-        +is_active: Boolean
-        +created_at: DateTime
-        --
-        +get_cash_registers()
-        +get_sales_summary()
-        +calculate_performance()
-    }
-    
-    RECTANGLE CashRegister {
-        +id: Integer
-        +store_id: Integer
-        +register_number: String
-        +is_active: Boolean
-        +created_at: DateTime
-        --
-        +process_sale()
-        +get_daily_sales()
-    }
-    
-    RECTANGLE Sale {
-        +id: Integer
-        +store_id: Integer
-        +cash_register_id: Integer
-        +total_amount: Decimal
-        +status: String
-        +created_at: DateTime
-        +updated_at: DateTime
-        --
-        +add_line_item()
-        +calculate_total()
-        +finalize_sale()
-    }
-    
-    RECTANGLE SaleLine {
-        +id: Integer
-        +sale_id: Integer
-        +product_id: Integer
-        +quantity: Integer
-        +unit_price: Decimal
-        +total_price: Decimal
-        --
-        +calculate_line_total()
-        +validate_stock()
-    }
-}
+**1. Inventory Domain (Gestion Inventaire)**
+- **Product** : Entité centrale avec gestion des prix, stocks et états
+- **Category** : Classification hiérarchique des produits
+- **StockMovement** : Traçabilité des mouvements de stock (entrées/sorties)
+- **StockAlert** : Système d'alertes automatiques pour les seuils critiques
 
-package "Ecommerce Domain" {
-    RECTANGLE Customer {
-        +id: Integer
-        +first_name: String
-        +last_name: String
-        +email: String
-        +phone: String
-        +password_hash: String
-        +is_active: Boolean
-        +created_at: DateTime
-        --
-        +authenticate()
-        +create_cart()
-        +get_orders()
-    }
-    
-    RECTANGLE Address {
-        +id: Integer
-        +customer_id: Integer
-        +type: String
-        +street: String
-        +city: String
-        +postal_code: String
-        +country: String
-        +is_default: Boolean
-        --
-        +validate_address()
-        +format_full_address()
-    }
-    
-    RECTANGLE Cart {
-        +id: Integer
-        +customer_id: Integer
-        +session_id: String
-        +status: String
-        +created_at: DateTime
-        +updated_at: DateTime
-        --
-        +add_item()
-        +remove_item()
-        +calculate_total()
-        +checkout()
-    }
-    
-    RECTANGLE Order {
-        +id: Integer
-        +customer_id: Integer
-        +order_number: String
-        +status: String
-        +total_amount: Decimal
-        +shipping_address_id: Integer
-        +billing_address_id: Integer
-        +created_at: DateTime
-        --
-        +process_payment()
-        +update_status()
-        +calculate_total()
-    }
-}
+**2. Retail Domain (Opérations Magasins)**
+- **Store** : Entité magasin avec informations géographiques et commerciales
+- **CashRegister** : Caisses enregistreuses par magasin
+- **Sale** : Transactions de vente avec statuts et totaux
+- **SaleLine** : Lignes de vente détaillées par produit
 
-package "Reporting Domain" {
-    RECTANGLE Report {
-        +id: Integer
-        +report_type: String
-        +title: String
-        +description: String
-        +generated_at: DateTime
-        +parameters: JSON
-        +data: JSON
-        +status: String
-        --
-        +generate_report()
-        +export_to_pdf()
-        +schedule_generation()
-    }
-    
-    RECTANGLE Analytics {
-        +id: Integer
-        +metric_name: String
-        +metric_value: Decimal
-        +period_start: DateTime
-        +period_end: DateTime
-        +category: String
-        +created_at: DateTime
-        --
-        +calculate_metrics()
-        +compare_periods()
-    }
-}
+**3. Ecommerce Domain (Commerce Électronique)**
+- **Customer** : Clients avec authentification et profils
+- **Address** : Adresses de livraison et facturation multiples
+- **Cart** : Paniers d'achat avec sessions et états
+- **Order** : Commandes avec workflow complet de traitement
 
-' Relations intra-domaine
-Product ||--o{ Category : belongs_to
-Product ||--o{ StockMovement : has_many
-Product ||--o{ StockAlert : has_many
+**4. Reporting Domain (Analyses et Rapports)**
+- **Report** : Rapports personnalisés avec paramètres et exports
+- **Analytics** : Métriques calculées par périodes et catégories
 
-Store ||--o{ CashRegister : has_many
-Store ||--o{ Sale : has_many
-Sale ||--o{ SaleLine : has_many
+**Relations Inter-Domaines :**
+- **SaleLine → Product** : Validation des produits vendus via API
+- **Order → Product** : Vérification stock lors des commandes via API
+- **Report → All Domains** : Agrégation des données via API REST
 
-Customer ||--o{ Address : has_many
-Customer ||--o{ Cart : has_many
-Customer ||--o{ Order : has_many
-
-Report ||--o{ Analytics : contains
-
-' Relations inter-domaines (API calls)
-SaleLine ..> Product : "calls via API"
-Order ..> Product : "calls via API"
-Report ..> Order : "aggregates via API"
-Report ..> Sale : "aggregates via API"
-Report ..> Product : "aggregates via API"
-
-@enduml
-```
+**Principe clé :** Aucune relation SQL directe entre domaines - toutes les communications passent par les APIs REST pour maintenir l'autonomie des microservices.
 
 ---
 
 ## 6. Vue d'Exécution
 
-### 6.1 Scénarios Principaux
+### 6.1 Vue Processus - Diagramme de Séquence
 
-**Référence** : Vue Processus `docs/docs4+1/vue-processus.puml`
+![Vue Processus](/out/docs/docs4+1/vue-processus/vue-processus.svg)
 
-#### Scénario 1 : Commande E-commerce
-```
-Client → Kong Gateway → Ecommerce API : POST /orders
-Ecommerce API → Kong Gateway → Inventory API : GET /products/{id}
-Inventory API → Kong Gateway → Ecommerce API : Product details
-Ecommerce API → Kong Gateway → Inventory API : POST /products/{id}/reduce-stock
-Inventory API → Ecommerce Database : Update stock
-Ecommerce API → Ecommerce Database : Create order
-Ecommerce API → Kong Gateway → Client : Order confirmation
-```
+**Explication du diagramme Vue Processus :**
 
-#### Scénario 2 : Vente en Magasin
-```
-Employé → Kong Gateway → Retail API : POST /sales
-Retail API → Kong Gateway → Inventory API : GET /products/{id}
-Inventory API → Kong Gateway → Retail API : Product details
-Retail API → Kong Gateway → Inventory API : POST /products/{id}/reduce-stock
-Inventory API → Inventory Database : Update stock
-Retail API → Retail Database : Create sale
-Retail API → Kong Gateway → Employé : Sale confirmation
-```
+Ce diagramme présente les **scénarios d'interaction dynamique** entre les microservices pour 2 cas d'usage principaux :
+
+**Scénario 1 : Commande E-commerce**
+1. **Client** envoie une commande → **Kong Gateway**
+2. **Kong** route vers **Ecommerce API**
+3. **Ecommerce API** valide le produit :
+   - Appel **Kong** → **Inventory API** : GET /products/{id}
+   - **Inventory API** retourne les détails produit
+4. **Ecommerce API** réduit le stock :
+   - Appel **Kong** → **Inventory API** : POST /products/{id}/reduce-stock
+   - **Inventory API** met à jour la base inventory_db
+5. **Ecommerce API** créé la commande dans ecommerce_db
+6. **Kong** retourne la confirmation au **Client**
+
+**Scénario 2 : Vente en Magasin**
+1. **Employé** enregistre une vente → **Kong Gateway**
+2. **Kong** route vers **Retail API**
+3. **Retail API** valide le produit :
+   - Appel **Kong** → **Inventory API** : GET /products/{id}
+   - **Inventory API** retourne les détails produit
+4. **Retail API** réduit le stock :
+   - Appel **Kong** → **Inventory API** : POST /products/{id}/reduce-stock
+   - **Inventory API** met à jour la base inventory_db
+5. **Retail API** créé la vente dans retail_db
+6. **Kong** retourne la confirmation à l'**Employé**
+
+**Patterns d'Architecture**
+- **API Gateway Pattern** : Kong comme point d'entrée unique
+- **Inter-Service Communication** : Appels REST synchrones
+- **Consistency Pattern** : Validation et réduction de stock atomique
+- **Database per Service** : Chaque service gère sa propre base
+
+**Flux de Données**
+- **Validation** : Toujours vérifier l'existence du produit avant transaction
+- **Stock Management** : Centralisation via Inventory API
+- **Traceability** : Toutes les transactions passent par Kong (logging)
 
 ### 6.2 Cas d'Utilisation Métier
 
-**Référence** : Vue Scénarios `docs/docs4+1/scenarios.puml`
+![Vue Scénarios](/out/docs/docs4+1/scenarios/scenarios.svg)
 
-**3 Acteurs principaux :**
-- **Client Web** : Commandes e-commerce, consultation catalogue
-- **Employé Magasin** : Ventes, gestion stock local
-- **Administrateur** : Configuration, monitoring, rapports
+**Explication du diagramme Vue Scénarios :**
 
-**4 Domaines métier :**
-- **E-commerce** : Gestion commandes clients
-- **Inventaire** : Gestion produits et stocks
-- **Retail** : Opérations magasins
-- **Reporting** : Analyses et rapports
+Ce diagramme présente les **cas d'utilisation métier** avec les interactions entre acteurs et domaines :
+
+**Acteurs du Système**
+- **Client Web** : Utilisateur final pour les commandes e-commerce
+- **Employé Magasin** : Personnel de vente pour les opérations en magasin
+- **Administrateur** : Gestionnaire du système pour configuration et monitoring
+
+**Domaines Métier**
+
+**1. E-commerce (Commerce Électronique)**
+- **Client Web** → Consulter Catalogue, Gérer Panier, Passer Commande
+- **Administrateur** → Gérer Clients, Configurer Système
+
+**2. Inventaire (Gestion Stock)**
+- **Employé Magasin** → Consulter Stock, Gérer Produits
+- **Administrateur** → Gérer Catégories, Configurer Alertes
+- **Tous les acteurs** → Consulter Disponibilité Produits
+
+**3. Retail (Opérations Magasins)**
+- **Employé Magasin** → Enregistrer Ventes, Gérer Caisses
+- **Administrateur** → Gérer Magasins, Configurer Caisses
+
+**4. Reporting (Analyses et Rapports)**
+- **Administrateur** → Générer Rapports, Consulter Analytics
+- **Employé Magasin** → Consulter Performances Magasin
+
+**Relations Inter-Domaines Critiques**
+- **E-commerce ↔ Inventaire** : Validation stock lors des commandes
+- **Retail ↔ Inventaire** : Réduction stock lors des ventes
+- **Reporting ↔ Tous** : Agrégation des données pour analyses
+
+**Patterns d'Usage**
+- **Customer Journey** : Catalogue → Panier → Commande → Livraison
+- **Sales Process** : Produit → Vente → Paiement → Stock Update
+- **Analytics Flow** : Données → Agrégation → Rapport → Décision
+
 
 ---
 
@@ -726,7 +453,7 @@ Retail API → Kong Gateway → Employé : Sale confirmation
 
 ### 7.1 Architecture de Déploiement
 
-**Référence** : Vue Physique `docs/docs4+1/vue-physique.puml`
+**Référence** : Vue Physique (cf. Section 5.2)
 
 **Infrastructure Docker Compose**
 ```yaml
@@ -1155,7 +882,6 @@ async def error_handling_middleware(request: Request, call_next):
 **Taux d'erreur** : Pourcentage de requêtes en erreur  
 **Throughput** : Nombre de requêtes par seconde  
 **Uptime** : Pourcentage de temps de fonctionnement  
-**MTTR** : Mean Time To Recovery (temps moyen de récupération)  
 
 ---
 
