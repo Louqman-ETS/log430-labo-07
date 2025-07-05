@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
@@ -9,6 +9,8 @@ import os
 from src.database import engine, Base
 from src.api.v1.router import api_router
 from src.init_db import init_database
+from src.metrics_service import metrics_service, CONTENT_TYPE_LATEST
+from src.metrics_middleware import MetricsMiddleware
 
 # Configuration du logging structuré
 logging.basicConfig(
@@ -112,6 +114,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ajouter le middleware de métriques
+app.add_middleware(MetricsMiddleware)
+
 # Inclure les routes API
 app.include_router(api_router, prefix="/api/v1")
 
@@ -184,6 +189,14 @@ async def health_check():
         "version": "1.0.0",
         "timestamp": time.time(),
     }
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """Endpoint pour les métriques Prometheus"""
+    logger.debug(f"📊 [{INSTANCE_ID}] Metrics requested")
+    metrics_data = metrics_service.get_metrics()
+    return Response(content=metrics_data, media_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":

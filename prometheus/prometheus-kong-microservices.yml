@@ -1,0 +1,107 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  # Kong Gateway metrics
+  - job_name: 'kong-gateway'
+    static_configs:
+      - targets: ['kong:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+    
+  # Kong status metrics
+  - job_name: 'kong-status'
+    static_configs:
+      - targets: ['kong:8001']
+    scrape_interval: 30s
+    metrics_path: /status
+    scheme: http
+
+  # Direct microservice metrics (for comparison)
+  - job_name: 'inventory-api-direct'
+    static_configs:
+      - targets: ['inventory-api:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  - job_name: 'retail-api-direct'
+    static_configs:
+      - targets: ['retail-api:8002']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  - job_name: 'ecommerce-api-direct'
+    static_configs:
+      - targets: ['ecommerce-api:8000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  - job_name: 'reporting-api-direct'
+    static_configs:
+      - targets: ['reporting-api:8005']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  # Kong proxy metrics for microservices
+  - job_name: 'kong-proxy-inventory'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 15s
+    metrics_path: /inventory/metrics
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  - job_name: 'kong-proxy-retail'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 15s
+    metrics_path: /retail/metrics
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  - job_name: 'kong-proxy-ecommerce'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 15s
+    metrics_path: /ecommerce/metrics
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  - job_name: 'kong-proxy-reporting'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 15s
+    metrics_path: /reporting/metrics
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  # Health checks via Kong
+  - job_name: 'kong-health-checks'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 30s
+    metrics_path: /health
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http 
