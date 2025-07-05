@@ -208,7 +208,7 @@ Database: reporting_db (Port 5435)
 
 #### Diagramme Architecture - Vue Développement
 
-![Vue Développement](/out/docs/docs4+1/vue-developpement/vue-developpement.svg)
+![Vue Développement](/out/docs/docs4+1/vue-developpement/vue-developpement.png)
 
 **Explication du diagramme Vue Développement :**
 
@@ -263,7 +263,7 @@ Ce diagramme présente l'**architecture technique** des microservices avec leurs
 
 ### 5.2 Vue Physique détaillée
 
-![Vue Physique](/out/docs/docs4+1/vue-physique/vue-physique.svg)
+![Vue Physique](/out/docs/docs4+1/vue-physique/vue-physique.png)
 
 **Explication du diagramme Vue Physique :**
 
@@ -322,7 +322,7 @@ Ce diagramme présente l'**infrastructure de déploiement** avec la topologie r�
 
 #### Diagramme Entités Métier par Domaine
 
-![Vue Logique](/out/docs/docs4+1/vue-logique/vue-logique.svg)
+![Vue Logique](/out/docs/docs4+1/vue-logique/vue-logique.png)
 
 **Explication du diagramme Vue Logique :**
 
@@ -363,7 +363,7 @@ Ce diagramme présente le **modèle du domaine métier** découpé en 4 bounded 
 
 ### 6.1 Vue Processus - Diagramme de Séquence
 
-![Vue Processus](/out/docs/docs4+1/vue-processus/vue-processus.svg)
+![Vue Processus](/out/docs/docs4+1/vue-processus/vue-processus.png)
 
 **Explication du diagramme Vue Processus :**
 
@@ -406,7 +406,7 @@ Ce diagramme présente les **scénarios d'interaction dynamique** entre les micr
 
 ### 6.2 Cas d'Utilisation Métier
 
-![Vue Scénarios](/out/docs/docs4+1/scenarios/scenarios.svg)
+![Vue Scénarios](/out/docs/docs4+1/scenarios/scenarios.png)
 
 **Explication du diagramme Vue Scénarios :**
 
