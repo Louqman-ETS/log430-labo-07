@@ -1,6 +1,7 @@
 import pytest
 from fastapi import status
 
+
 class TestCarts:
     def test_get_carts_success(self, client):
         response = client.get("/api/v1/carts/")
@@ -23,11 +24,7 @@ class TestCarts:
             assert "customer_id" in data
 
     def test_create_cart_success(self, client):
-        cart_data = {
-            "customer_id": 1,
-            "session_id": None,
-            "is_active": True
-        }
+        cart_data = {"customer_id": 1, "session_id": None, "is_active": True}
         response = client.post("/api/v1/carts/", json=cart_data)
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
@@ -36,11 +33,7 @@ class TestCarts:
 
     def test_create_cart_invalid_data(self, client):
         # Test avec des données invalides - customer_id inexistant
-        cart_data = {
-            "customer_id": 999,
-            "session_id": None,
-            "is_active": True
-        }
+        cart_data = {"customer_id": 999, "session_id": None, "is_active": True}
         response = client.post("/api/v1/carts/", json=cart_data)
         # L'API accepte les données même si customer_id n'existe pas
         assert response.status_code == status.HTTP_201_CREATED
@@ -50,12 +43,15 @@ class TestCarts:
         cart_data = {"customer_id": 1, "is_active": True}
         cart_response = client.post("/api/v1/carts/", json=cart_data)
         cart_id = cart_response.json()["id"]
-        
+
         # Ajouter un item
         item_data = {"product_id": 1, "quantity": 2}
         response = client.post(f"/api/v1/carts/{cart_id}/items", json=item_data)
         # Peut échouer à cause de la communication externe, mais c'est normal
-        assert response.status_code in [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST]
+        assert response.status_code in [
+            status.HTTP_201_CREATED,
+            status.HTTP_400_BAD_REQUEST,
+        ]
 
     def test_add_item_to_cart_not_found(self, client):
         item_data = {"product_id": 1, "quantity": 1}
@@ -68,10 +64,10 @@ class TestCarts:
         cart_data = {"customer_id": 1, "is_active": True}
         cart_response = client.post("/api/v1/carts/", json=cart_data)
         cart_id = cart_response.json()["id"]
-        
+
         item_data = {"product_id": 1, "quantity": 1}
         item_response = client.post(f"/api/v1/carts/{cart_id}/items", json=item_data)
-        
+
         if item_response.status_code == status.HTTP_201_CREATED:
             item_id = item_response.json()["id"]
             # Supprimer l'item
@@ -87,10 +83,10 @@ class TestCarts:
         cart_data = {"customer_id": 1, "is_active": True}
         cart_response = client.post("/api/v1/carts/", json=cart_data)
         cart_id = cart_response.json()["id"]
-        
+
         item_data = {"product_id": 1, "quantity": 1}
         client.post(f"/api/v1/carts/{cart_id}/items", json=item_data)
-        
+
         # Vider le panier
         response = client.delete(f"/api/v1/carts/{cart_id}/items")
         assert response.status_code == status.HTTP_200_OK
@@ -100,7 +96,7 @@ class TestCarts:
         cart_data = {"customer_id": 1, "is_active": True}
         cart_response = client.post("/api/v1/carts/", json=cart_data)
         cart_id = cart_response.json()["id"]
-        
+
         # Supprimer le panier
         response = client.delete(f"/api/v1/carts/{cart_id}")
-        assert response.status_code == status.HTTP_200_OK 
+        assert response.status_code == status.HTTP_200_OK

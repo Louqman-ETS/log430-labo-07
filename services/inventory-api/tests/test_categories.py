@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch
 from fastapi import status
 
+
 class TestCategories:
     def test_get_categories_success(self, client):
         response = client.get("/api/v1/categories/")
@@ -27,7 +28,7 @@ class TestCategories:
         # Utiliser un nom unique pour éviter la contrainte UNIQUE
         category_data = {
             "nom": "TestCatUnique",
-            "description": "Catégorie de test unique"
+            "description": "Catégorie de test unique",
         }
         response = client.post("/api/v1/categories/", json=category_data)
         assert response.status_code == status.HTTP_201_CREATED
@@ -62,4 +63,4 @@ class TestCategories:
 
     def test_delete_category_not_found(self, client):
         response = client.delete("/api/v1/categories/999")
-        assert response.status_code == status.HTTP_404_NOT_FOUND 
+        assert response.status_code == status.HTTP_404_NOT_FOUND

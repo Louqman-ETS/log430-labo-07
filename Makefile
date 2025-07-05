@@ -150,6 +150,33 @@ dev-ecommerce: ## 🔧 Mode développement Ecommerce API
 	cd services/ecommerce-api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # ================================
+# LINTING ET FORMATAGE
+# ================================
+
+format: ## 🎨 Formater le code avec black
+	@echo "$(CYAN)🎨 Formatage du code avec black...$(NC)"
+	python -m black --line-length 88 .
+	@echo "$(GREEN)✅ Code formaté!$(NC)"
+
+lint: ## 🔍 Vérifier le code avec flake8
+	@echo "$(CYAN)🔍 Vérification du code avec flake8...$(NC)"
+	python -m flake8 .
+	@echo "$(GREEN)✅ Code vérifié!$(NC)"
+
+sort-imports: ## 📋 Trier les imports avec isort
+	@echo "$(CYAN)📋 Tri des imports avec isort...$(NC)"
+	python -m isort .
+	@echo "$(GREEN)✅ Imports triés!$(NC)"
+
+check-format: ## 🔎 Vérifier le formatage sans modification
+	@echo "$(CYAN)🔎 Vérification du formatage...$(NC)"
+	python -m black --check --line-length 88 .
+	python -m isort --check-only .
+	@echo "$(GREEN)✅ Formatage vérifié!$(NC)"
+
+lint-all: sort-imports format lint ## 🚀 Formatage complet (isort + black + flake8)
+
+# ================================
 # DOCUMENTATION
 # ================================
 

@@ -41,7 +41,9 @@ async def logging_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start_time = time.time()
 
-    logger.info(f"🔍 [{INSTANCE_ID}][{request_id}] {request.method} {request.url} - Started")
+    logger.info(
+        f"🔍 [{INSTANCE_ID}][{request_id}] {request.method} {request.url} - Started"
+    )
 
     try:
         response = await call_next(request)
@@ -58,7 +60,9 @@ async def logging_middleware(request: Request, call_next):
 
     except Exception as e:
         process_time = round((time.time() - start_time) * 1000, 2)
-        logger.error(f"❌ [{INSTANCE_ID}][{request_id}] Error after {process_time}ms: {str(e)}")
+        logger.error(
+            f"❌ [{INSTANCE_ID}][{request_id}] Error after {process_time}ms: {str(e)}"
+        )
         raise
 
 
@@ -67,7 +71,9 @@ async def logging_middleware(request: Request, call_next):
 async def http_exception_handler(request: Request, exc: HTTPException):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4())[:8])
 
-    logger.warning(f"⚠️ [{INSTANCE_ID}][{request_id}] HTTP {exc.status_code}: {exc.detail}")
+    logger.warning(
+        f"⚠️ [{INSTANCE_ID}][{request_id}] HTTP {exc.status_code}: {exc.detail}"
+    )
 
     return JSONResponse(
         status_code=exc.status_code,
@@ -88,7 +94,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 async def general_exception_handler(request: Request, exc: Exception):
     request_id = getattr(request.state, "request_id", str(uuid.uuid4())[:8])
 
-    logger.error(f"💥 [{INSTANCE_ID}][{request_id}] Unhandled error: {str(exc)}", exc_info=True)
+    logger.error(
+        f"💥 [{INSTANCE_ID}][{request_id}] Unhandled error: {str(exc)}", exc_info=True
+    )
 
     return JSONResponse(
         status_code=500,
@@ -125,7 +133,9 @@ app.include_router(api_router, prefix="/api/v1")
 async def startup_event():
     """Initialise la base de données avec des données d'exemple si vide"""
 
-    logger.info(f"🚀 Starting Inventory API [{INSTANCE_ID}] with enhanced logging and error handling")
+    logger.info(
+        f"🚀 Starting Inventory API [{INSTANCE_ID}] with enhanced logging and error handling"
+    )
 
     # Créer les tables seulement si on n'est pas en mode test
     if not os.getenv("TESTING"):
@@ -138,17 +148,27 @@ async def startup_event():
             if INSTANCE_ID == "inventory-api-1":
                 try:
                     init_database()
-                    logger.info(f"✅ [{INSTANCE_ID}] Database initialized successfully (primary instance)")
+                    logger.info(
+                        f"✅ [{INSTANCE_ID}] Database initialized successfully (primary instance)"
+                    )
                 except Exception as e:
                     # Si l'initialisation échoue, ce n'est pas grave (données probablement déjà présentes)
-                    logger.warning(f"⚠️ [{INSTANCE_ID}] Database initialization skipped or failed: {e}")
+                    logger.warning(
+                        f"⚠️ [{INSTANCE_ID}] Database initialization skipped or failed: {e}"
+                    )
             else:
-                logger.info(f"✅ [{INSTANCE_ID}] Database initialization skipped (secondary instance)")
-                
+                logger.info(
+                    f"✅ [{INSTANCE_ID}] Database initialization skipped (secondary instance)"
+                )
+
         except Exception as e:
-            logger.error(f"❌ [{INSTANCE_ID}] Failed to setup database: {e}", exc_info=True)
+            logger.error(
+                f"❌ [{INSTANCE_ID}] Failed to setup database: {e}", exc_info=True
+            )
             # Ne pas faire échouer le démarrage pour les problèmes de DB concurrentiels
-            logger.warning(f"⚠️ [{INSTANCE_ID}] Continuing startup despite database setup issues")
+            logger.warning(
+                f"⚠️ [{INSTANCE_ID}] Continuing startup despite database setup issues"
+            )
 
 
 @app.on_event("shutdown")

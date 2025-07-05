@@ -14,32 +14,32 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         # Démarrer le timer et incrémenter les requêtes actives
         start_time = time.time()
         metrics_service.increment_active_requests()
-        
+
         # Normaliser le chemin pour éviter trop de cardinalité
         endpoint = self._normalize_endpoint(request.url.path)
-        
+
         try:
             # Traiter la requête
             response = await call_next(request)
-            
+
             # Calculer la durée
             duration = time.time() - start_time
-            
+
             # Enregistrer la requête
             metrics_service.record_request(
                 method=request.method,
                 endpoint=endpoint,
                 status_code=response.status_code,
-                duration=duration
+                duration=duration,
             )
-            
+
             # Enregistrer les erreurs si nécessaire
             if response.status_code >= 400:
                 error_type = self._get_error_type(response.status_code)
                 metrics_service.record_error(error_type, endpoint)
-            
+
             return response
-            
+
         except Exception as e:
             # Enregistrer l'erreur
             duration = time.time() - start_time
@@ -47,11 +47,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 endpoint=endpoint,
                 status_code=500,
-                duration=duration
+                duration=duration,
             )
             metrics_service.record_error("internal_error", endpoint)
             raise
-            
+
         finally:
             # Décrémenter les requêtes actives
             metrics_service.decrement_active_requests()
@@ -60,16 +60,16 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         """Normalise le chemin pour éviter trop de cardinalité dans les métriques"""
         # Remplacer les IDs par des placeholders
         import re
-        
+
         # Patterns courants pour les IDs
-        path = re.sub(r'/\d+', '/{id}', path)
-        path = re.sub(r'/[a-f0-9-]{36}', '/{uuid}', path)  # UUID
-        path = re.sub(r'/[a-f0-9]{24}', '/{objectid}', path)  # MongoDB ObjectId
-        
+        path = re.sub(r"/\d+", "/{id}", path)
+        path = re.sub(r"/[a-f0-9-]{36}", "/{uuid}", path)  # UUID
+        path = re.sub(r"/[a-f0-9]{24}", "/{objectid}", path)  # MongoDB ObjectId
+
         # Limiter la longueur
         if len(path) > 50:
             path = path[:47] + "..."
-            
+
         return path
 
     def _get_error_type(self, status_code: int) -> str:
@@ -91,4 +91,4 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         elif 500 <= status_code < 600:
             return "server_error"
         else:
-            return "unknown_error" 
+            return "unknown_error"

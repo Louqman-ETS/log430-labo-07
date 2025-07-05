@@ -1,280 +1,325 @@
-# Système Multi-Magasins - LOG430
+# Système Multi-Magasins - Architecture Microservices - LOG430
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)](https://fastapi.tiangolo.com)
-[![Flask](https://img.shields.io/badge/Flask-3.0.0-lightgrey.svg)](https://flask.palletsprojects.com)
+[![Kong Gateway](https://img.shields.io/badge/Kong-Gateway-orange.svg)](https://konghq.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7.0-red.svg)](https://redis.io)
 
-Application web Flask pour la gestion de points de vente multi-magasins, API RESTful pour application externe, système de logging et déploiement Docker containerisé.
+Architecture microservices complète pour la gestion multi-magasins avec API Gateway Kong, load balancing, monitoring et haute disponibilité.
 
 ## Table des Matières
 
-- [Fonctionnalités Principales](#fonctionnalités-principales)
-- [Architecture](#architecture)
-- [Logging et Monitoring](#logging-et-monitoring)
+- [Vue d'Ensemble](#vue-densemble)
+- [Architecture Microservices](#architecture-microservices)
+- [Évolution du Projet](#évolution-du-projet)
+- [Microservices](#microservices)
+- [Kong API Gateway](#kong-api-gateway)
 - [Load Balancing et Haute Disponibilité](#load-balancing-et-haute-disponibilité)
-- [Cache Redis et Optimisation des Performances](#cache-redis-et-optimisation-des-performances)
-- [Monitoring et Tests de Performance](#monitoring-et-tests-de-performance)
-- [API RESTful](#api-restful)
-- [Déploiement Docker](#déploiement-docker)
-- [Structure du Projet](#structure-du-projet)
+- [Monitoring et Métriques](#monitoring-et-métriques)
+- [Documentation](#documentation)
+- [Déploiement](#déploiement)
+- [Tests de Performance](#tests-de-performance)
 - [Installation et Configuration](#installation-et-configuration)
-- [Tests](#tests)
 - [Utilisation](#utilisation)
 - [Technologies Utilisées](#technologies-utilisées)
 
-## Fonctionnalités Principales
+## Vue d'Ensemble
 
-### Interface Web (Flask)
-- **Dashboard multi-magasins** : Vue d'ensemble de 5 magasins avec navigation intuitive
-- **Rapports stratégiques** : KPIs globaux, performance par magasin, top produits, tendances
-- **Point de vente complet** : Recherche produits, gestion panier, reçus, retours
-- **Gestion stocks** : Stocks par magasin, alertes automatiques, réapprovisionnement
-- **Interface responsive** : Bootstrap, design moderne et adaptatif
+Système complet de gestion multi-magasins évoluant d'une architecture monolithique vers une architecture microservices haute performance avec API Gateway Kong.
 
-### API RESTful (FastAPI)
-- **Architecture DDD** : Domain-Driven Design avec 3 domaines métier
-- **Documentation automatique** : Swagger UI et ReDoc intégrés
-- **Authentification** : Système de tokens sécurisé
-- **Validation** : Pydantic pour la validation des données
-- **Performance** : Optimisations asynchrones et mise en cache
+### Objectifs de Performance
+- **Charge** : 100+ utilisateurs simultanés
+- **Latence** : p95 < 105ms
+- **Disponibilité** : 99.9% uptime
+- **Scalabilité** : Horizontale avec Kong Gateway
 
-### Système de Logging
-- **Logging multi-niveaux** : API, Business, Erreurs
-- **Rotation automatique** : Gestion intelligente des fichiers de logs
-- **Formats multiples** : JSON structuré et texte lisible
-- **Monitoring** : Métriques de performance et suivi des erreurs
+### Fonctionnalités Principales
+- **4 Microservices** : Inventory, Ecommerce, Retail, Reporting
+- **API Gateway** : Kong avec load balancing intelligent
+- **Interface Web** : Application Flask responsive
+- **Monitoring** : Prometheus + Grafana
+- **Cache distribué** : Redis avec stratégies TTL
+- **Logs centralisés** : Kong Gateway + structured logging
 
-## Architecture
+## Architecture Microservices
 
-### Architecture Multi-Applications Containerisée
+### Vue d'Ensemble de l'Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE MULTI-APPLICATIONS                n │
-├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   PRESENTATION  │   APPLICATION   │   API SÉPARÉE   │    DONNÉES    │
-│    (Frontend)   │   (Backend)     │  (Indépendante) │  (Database)   │
-│                 │                 │                 │               │
-│ • Navigateur    │ • Flask Web     │ • FastAPI       │ • PostgreSQL  │
-│ • Templates     │ • Controllers   │ • DDD Domains   │ • External DB │
-│ • Bootstrap     │ • Models        │ • Repositories  │ • Persistent  │
-│ • JavaScript    │ • Services      │ • Services      │ • Volume      │
-│                 │                 │ • Schemas       │               │
-└─────────────────┴─────────────────┴─────────────────┴───────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ARCHITECTURE MICROSERVICES                           │
+├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
+│   API GATEWAY   │   MICROSERVICES │   DONNÉES       │   MONITORING      │
+│                 │                 │                 │                   │
+│ • Kong Gateway  │ • Inventory API │ • PostgreSQL    │ • Prometheus      │
+│ • Load Balancer │ • Ecommerce API │ • Redis Cache   │ • Grafana         │
+│ • Rate Limiting │ • Retail API    │ • Logs Files    │ • Alerting        │
+│ • Auth/Keys     │ • Reporting API │ • Volumes       │ • Dashboards      │
+│ • Logging       │ • Auto Scale    │ • Clustering    │ • Metrics         │
+│ • Port 8000     │ • Ports 8001-4  │ • Port 5432     │ • Port 3000       │
+└─────────────────┴─────────────────┴─────────────────┴───────────────────┘
          ↑                   ↑               ↑               ↑
-    HTTP/HTTPS          Docker:8080    Docker:8000     External:5432
-     Port 8080           Container      Container         Server
+    Client Requests     Domain Services  Persistent Data   Observability
+      (HTTP/HTTPS)      (Independent)    (Shared/Isolated)  (Real-time)
 ```
 
-### Composants Principaux
-
-#### 1. Application Web (Flask) - Port 8080
-- **MVC Pattern** : Séparation claire des responsabilités
-- **7 Contrôleurs** : Gestion modulaire des fonctionnalités
-- **Templates Jinja2** : Interface utilisateur dynamique
-- **Bootstrap 5** : Design responsive et moderne
-- **Application indépendante** : Fonctionne de manière autonome
-
-#### 2. API RESTful (FastAPI) - Port 8000
-- **Domain-Driven Design** : Architecture en domaines métier
-- **3 Domaines** : Products, Stores, Reporting
-- **Repositories Pattern** : Abstraction de la couche de données
-- **Services Layer** : Logique métier centralisée
-- **Application séparée** : API indépendante de l'interface web
-
-#### 3. Base de Données (PostgreSQL) - Port 5432
-- **Connexions poolées** : Optimisation des performances
-- **Partagée** : Utilisée par les deux applications
-- **Migrations** : Gestion des schémas de données
-
-### Caractéristiques de l'Architecture
-
-- **Applications indépendantes** : Flask et FastAPI sont des applications séparées
-- **Déploiement containerisé** : Chaque application dans son propre container
-- **Base de données partagée** : Les deux applications accèdent à la même base PostgreSQL
-- **Ports distincts** : Chaque application expose ses services sur des ports différents
-- **Développement parallèle** : Les équipes peuvent travailler indépendamment sur chaque application
-
-## Logging et Monitoring
-
-### Architecture du Logging
-
-Le système de logging est conçu pour fournir une visibilité complète sur le fonctionnement de l'application avec une séparation claire des types de logs.
+### Microservices Domain Map
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    SYSTÈME DE LOGGING                       │
-├─────────────────┬─────────────────┬─────────────────────────┤
-│   API LOGS      │  BUSINESS LOGS  │     ERROR LOGS          │
-│                 │                 │                         │
-│ • Requêtes HTTP │ • Opérations    │ • Exceptions            │
-│ • Réponses      │   métier        │ • Stack traces          │
-│ • Temps de      │ • Transactions  │ • Contexte d'erreur     │
-│   réponse       │ • Validations   │ • Alertes critiques     │
-│ • Headers       │ • Résultats     │                         │
-└─────────────────┴─────────────────┴─────────────────────────┘
-         ↓               ↓                       ↓
-   api_YYYY-MM-DD.log  business_YYYY-MM-DD.log  errors_YYYY-MM-DD.log
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        DOMAINES MÉTIER                                  │
+├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
+│   INVENTORY     │   ECOMMERCE     │    RETAIL       │   REPORTING       │
+│                 │                 │                 │                   │
+│ • Products      │ • Customers     │ • Stores        │ • Analytics       │
+│ • Categories    │ • Orders        │ • Cash Registers│ • KPIs            │
+│ • Stock Levels  │ • Carts         │ • Sales Trans.  │ • Dashboards      │
+│ • Suppliers     │ • Payments      │ • Returns       │ • Trends          │
+│ • Warehouses    │ • Shipping      │ • Inventory     │ • Forecasting     │
+│                 │                 │                 │                   │
+│ Port: 8001      │ Port: 8002      │ Port: 8003      │ Port: 8004        │
+│ DB: inventory   │ DB: ecommerce   │ DB: retail      │ DB: reporting     │
+└─────────────────┴─────────────────┴─────────────────┴───────────────────┘
+         ↑                   ↑               ↑               ↑
+    Product Catalog     Customer Journey   POS Operations   Business Intel
 ```
 
-### Configuration des Logs
+## Évolution du Projet
 
-#### Types de Logs
-- **API Logs** : Toutes les requêtes HTTP avec métriques de performance
-- **Business Logs** : Opérations métier en format JSON structuré
-- **Error Logs** : Erreurs avec contexte complet et stack traces
+### Phase 1 - Lab 3 : Architecture Monolithique
+- **Flask Web App** : Interface utilisateur complète
+- **FastAPI** : API RESTful avec DDD
+- **PostgreSQL** : Base de données partagée
+- **Docker** : Containerisation de base
 
-#### Rotation et Archivage
-- **Taille maximale** : 10MB par fichier
-- **Rétention** : 5-10 fichiers de sauvegarde
-- **Nommage** : `{type}_YYYY-MM-DD.log`
-- **Formats** : JSON pour le business, texte pour les API
+### Phase 2 - Lab 4 : Load Balancing et Cache
+- **Nginx Load Balancer** : Distribution de charge
+- **Redis Cache** : Optimisation des performances
+- **Multiple Instances** : Scalabilité horizontale
+- **Monitoring** : Métriques de base
 
-#### Fonctionnalités Avancées
-```python
-# Logging automatique des requêtes HTTP
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    # Logging avec métriques de performance
-    
-# Logging des opérations métier
-log_business_operation(
-    operation="create_store",
-    entity_type="Store",
-    entity_id=store.id,
-    user_id=current_user.id,
-    details={"name": store.name, "location": store.location}
-)
+### Phase 3 - Lab 5 : Microservices avec Kong Gateway
+- **Kong Gateway** : API Gateway centralisé
+- **4 Microservices** : Séparation par domaine
+- **Prometheus + Grafana** : Monitoring avancé
+- **Logging centralisé** : Traçabilité complète
+- **API Key Management** : Sécurité et rate limiting
 
-# Logging des erreurs avec contexte
-log_error_with_context(
-    error=exception,
-    context={
-        "endpoint": "/api/v1/stores",
-        "method": "POST",
-        "user_id": user_id,
-        "request_data": request_data
-    }
-)
+## Microservices
+
+### 1. Inventory API (Port 8001)
+**Domaine** : Gestion des produits et stocks
+```yaml
+Endpoints:
+  - GET /api/v1/products
+  - GET /api/v1/categories
+  - GET /api/v1/stock
+  - POST /api/v1/products
+  - PUT /api/v1/stock/{product_id}
+
+Responsabilités:
+  - Catalogue produits
+  - Gestion des catégories
+  - Niveaux de stock
+  - Réapprovisionnement
+```
+
+### 2. Ecommerce API (Port 8002)
+**Domaine** : Gestion des clients et commandes
+```yaml
+Endpoints:
+  - GET /api/v1/customers
+  - GET /api/v1/orders
+  - GET /api/v1/carts
+  - POST /api/v1/orders
+  - PUT /api/v1/carts/{cart_id}
+
+Responsabilités:
+  - Gestion clients
+  - Commandes en ligne
+  - Paniers d'achats
+  - Processus de paiement
+```
+
+### 3. Retail API (Port 8003)
+**Domaine** : Gestion des magasins et ventes
+```yaml
+Endpoints:
+  - GET /api/v1/stores
+  - GET /api/v1/cash-registers
+  - GET /api/v1/sales
+  - POST /api/v1/sales
+  - POST /api/v1/returns
+
+Responsabilités:
+  - Gestion magasins
+  - Caisses enregistreuses
+  - Transactions de vente
+  - Retours produits
+```
+
+### 4. Reporting API (Port 8004)
+**Domaine** : Rapports et analytics
+```yaml
+Endpoints:
+  - GET /api/v1/reports/sales
+  - GET /api/v1/reports/inventory
+  - GET /api/v1/reports/performance
+  - GET /api/v1/analytics/trends
+  - GET /api/v1/dashboards
+
+Responsabilités:
+  - Rapports métier
+  - Analyses de performance
+  - Tableaux de bord
+  - Prévisions
+```
+
+## Kong API Gateway
+
+### Configuration Load Balancée
+
+Kong Gateway distribue intelligemment le trafic entre les instances des microservices avec load balancing avancé.
+
+```yaml
+# kong/kong-loadbalanced.yml
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: inventory-service
+    url: http://inventory-1:8001
+    tags: ["inventory"]
+    routes:
+      - name: inventory-route
+        paths: ["/api/v1/products", "/api/v1/categories", "/api/v1/stock"]
+        
+  - name: ecommerce-service
+    url: http://ecommerce-1:8002
+    tags: ["ecommerce"]
+    routes:
+      - name: ecommerce-route
+        paths: ["/api/v1/customers", "/api/v1/orders", "/api/v1/carts"]
+
+upstreams:
+  - name: inventory-upstream
+    targets:
+      - target: inventory-1:8001
+        weight: 100
+      - target: inventory-2:8001
+        weight: 100
+    healthchecks:
+      active:
+        http_path: "/health"
+        healthy:
+          interval: 30
+          successes: 2
+        unhealthy:
+          interval: 10
+          http_failures: 3
+```
+
+### Plugins Kong Configurés
+
+#### 1. Rate Limiting
+```yaml
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 100
+      hour: 1000
+      policy: local
+      fault_tolerant: true
+```
+
+#### 2. Logging
+```yaml
+plugins:
+  - name: file-log
+    config:
+      path: /var/log/kong/access.log
+      reopen: true
+```
+
+#### 3. Prometheus Metrics
+```yaml
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+```
+
+#### 4. Key Authentication
+```yaml
+plugins:
+  - name: key-auth
+    config:
+      key_names: ["X-API-Key"]
+      key_in_body: false
+      key_in_header: true
+      key_in_query: false
+```
+
+### Consumers et API Keys
+
+```yaml
+consumers:
+  - username: admin-user
+    keyauth_credentials:
+      - key: "admin-key-12345"
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 1000
+          
+  - username: frontend-app
+    keyauth_credentials:
+      - key: "frontend-key-67890"
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 500
 ```
 
 ## Load Balancing et Haute Disponibilité
 
-### Architecture Load Balancée
+### Stratégies de Load Balancing
 
-Le système utilise Nginx comme load balancer pour distribuer les requêtes entre plusieurs instances API, garantissant haute disponibilité et performance optimale.
+#### 1. Kong Gateway Level
+- **Weighted Round Robin** : Distribution intelligente basée sur les poids
+- **Health Checks** : Vérification automatique de la santé des instances
+- **Circuit Breaker** : Protection contre les défaillances en cascade
+- **Failover** : Basculement automatique vers instances saines
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE LOAD BALANCÉE                      │
-├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   LOAD BALANCER │   API INSTANCES │   CACHE LAYER   │    DATABASE   │
-│                 │                 │                 │               │
-│ • Nginx Proxy   │ • API Instance 1│ • Redis Cache   │ • PostgreSQL  │
-│ • Round Robin   │ • API Instance 2│ • TTL Config    │ • Connection  │
-│ • Health Checks │ • API Instance 3│ • Hit/Miss      │   Pool        │
-│ • Failover      │ • Auto Scaling │   Metrics       │ • Transactions│
-│ • Port 8000     │ • Port 8000     │ • Port 6379     │ • Port 5432   │
-└─────────────────┴─────────────────┴─────────────────┴───────────────┘
-         ↑                   ↑               ↑               ↑
-    Client Requests     Docker Swarm     Redis Cluster   External DB
-      (HTTP/HTTPS)      Load Distribution  In-Memory Store  Persistent
-```
+#### 2. Service Level
+- **Multiple Instances** : 2-3 instances par microservice
+- **Auto Scaling** : Ajustement automatique basé sur la charge
+- **Resource Limits** : Isolation des ressources par container
+- **Graceful Shutdown** : Arrêt propre avec drain des connexions
 
-### Configuration Nginx
+### Configuration Haute Disponibilité
 
-#### Équilibrage de Charge
-```nginx
-upstream api_backend {
-    server api-1:8000 max_fails=5 fail_timeout=10s;
-    server api-2:8000 max_fails=5 fail_timeout=10s;
-    server api-3:8000 max_fails=5 fail_timeout=10s;
-    keepalive 32;
-}
-
-server {
-    listen 80;
-    
-    # Timeouts optimisés
-    proxy_connect_timeout 10s;
-    proxy_send_timeout 30s;
-    proxy_read_timeout 30s;
-    
-    # Load balancing avec failover
-    location / {
-        proxy_pass http://api_backend;
-        proxy_next_upstream error timeout http_500 http_502 http_503;
-        proxy_next_upstream_tries 3;
-    }
-    
-    # Health checks spécialisés
-    location /health {
-        proxy_pass http://api_backend/health;
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 10s;
-    }
-}
-```
-
-### Stratégies de Distribution
-
-#### 1. Round Robin (par défaut)
-- Distribution séquentielle des requêtes
-- Équilibre automatique de la charge
-- Adapté pour instances homogènes
-
-#### 2. Health Checks Intelligents
-```
-• max_fails=5 : Marquer un serveur comme indisponible après 5 échecs
-• fail_timeout=10s : Réessayer après 10 secondes
-• Vérification continue de la santé des instances
-• Basculement automatique en cas de panne
-```
-
-#### 3. Connection Pooling
-```
-• keepalive 32 : Maintenir 32 connexions persistantes
-• Réduction de la latence de connexion
-• Optimisation des performances réseau
-```
-
-### Déploiement Load Balancé
-
-#### Docker Compose Configuration
 ```yaml
-# docker-compose.loadbalanced.yml
+# docker-compose.kong.loadbalanced.yml
 version: '3.8'
 
 services:
-  # Load Balancer Nginx
-  nginx:
-    image: nginx:alpine
-    container_name: log430-nginx
-    ports:
-      - "8000:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api-1
-      - api-2
-      - api-3
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  # API Instance 1
-  api-1:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-    container_name: log430-api-1
+  kong:
+    image: kong:3.4.0
     environment:
-      - INSTANCE_ID=api-1
-      - REDIS_URL=redis://redis:6379
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
     deploy:
+      replicas: 2
       resources:
         limits:
           memory: 1G
@@ -282,1380 +327,541 @@ services:
         reservations:
           memory: 512M
           cpus: '0.5'
-
-  # API Instance 2
-  api-2:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-    container_name: log430-api-2
-    environment:
-      - INSTANCE_ID=api-2
-      - REDIS_URL=redis://redis:6379
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-
-  # API Instance 3
-  api-3:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-    container_name: log430-api-3
-    environment:
-      - INSTANCE_ID=api-3
-      - REDIS_URL=redis://redis:6379
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: log430-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
+      test: ["CMD", "kong", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Microservices avec multiple instances
+  inventory-1:
+    build: ./services/inventory-api
+    environment:
+      - INSTANCE_ID=inventory-1
+      - DATABASE_URL=postgresql://user:pass@db:5432/inventory
+      - REDIS_URL=redis://redis:6379
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  inventory-2:
+    build: ./services/inventory-api
+    environment:
+      - INSTANCE_ID=inventory-2
+      - DATABASE_URL=postgresql://user:pass@db:5432/inventory
+      - REDIS_URL=redis://redis:6379
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
       retries: 3
 ```
 
-### Avantages du Load Balancing
+## Monitoring et Métriques
 
-#### Performance
-- **Distribution de charge** : Répartition équitable entre instances
-- **Réduction latence** : Routage vers instance la plus disponible
-- **Scalabilité horizontale** : Ajout facile d'instances
-- **Optimisation ressources** : Utilisation efficace du CPU/RAM
-
-#### Disponibilité
-- **Haute disponibilité** : 99.9% uptime avec redondance
-- **Tolérance aux pannes** : Continuation de service si une instance échoue
-- **Maintenance sans interruption** : Mise à jour rolling des instances
-- **Récupération automatique** : Réintégration d'instances réparées
-
-#### Monitoring
-- **Métriques par instance** : Surveillance individuelle
-- **Distribution du trafic** : Analyse de la répartition
-- **Health status** : État en temps réel de chaque instance
-- **Performance comparative** : Comparaison entre instances
-
-## Cache Redis et Optimisation des Performances
-
-### Architecture de Cache
-
-Le système utilise Redis comme couche de cache distribué pour optimiser les performances des endpoints critiques.
+### Stack de Monitoring
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     ARCHITECTURE DE CACHE                          │
-├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   APPLICATION   │   REDIS CACHE   │   CACHE LOGIC   │   DATABASE    │
-│                 │                 │                 │               │
-│ • FastAPI App   │ • Redis Server  │ • TTL Strategy  │ • PostgreSQL  │
-│ • Cache Service │ • Memory Store  │ • Invalidation  │ • Fallback    │
-│ • Hit/Miss      │ • LRU Policy    │ • Serialization │ • Source of   │
-│   Logic         │ • Persistence   │ • Key Naming    │   Truth       │
-│ • Multiple      │ • Port 6379     │ • Monitoring    │ • Port 5432   │
-│   Instances     │                 │                 │               │
-└─────────────────┴─────────────────┴─────────────────┴───────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      MONITORING STACK                                   │
+├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
+│   COLLECTION    │   STORAGE       │   VISUALIZATION │   ALERTING        │
+│                 │                 │                 │                   │
+│ • Kong Metrics  │ • Prometheus    │ • Grafana       │ • Alert Manager  │
+│ • App Metrics   │ • Time Series   │ • Dashboards    │ • Slack/Email    │
+│ • Logs          │ • Retention     │ • Real-time     │ • PagerDuty      │
+│ • Health Checks │ • Clustering    │ • Custom Views  │ • Webhooks       │
+│ • Custom        │ • Backup        │ • Mobile        │ • Escalation     │
+│                 │                 │                 │                   │
+│ Port: 9090      │ Port: 9090      │ Port: 3000      │ Port: 9093        │
+└─────────────────┴─────────────────┴─────────────────┴───────────────────┘
          ↑                   ↑               ↑               ↑
-   Cache Requests      In-Memory Data    Smart Caching   Persistent Data
-    (Sub-ms)           (Milliseconds)     (Seconds)       (Seconds)
+    Scraping Endpoints   Metrics Storage   User Interface   Notifications
+      (Every 15s)        (15 day retention) (Dashboard)    (Critical Events)
 ```
 
-### Implémentation du Cache
+### Métriques Clés
 
-#### Service de Cache
-```python
-# src/api/v1/services/cache_service.py
-import redis
-import json
-import logging
-from typing import Optional, Any
-from datetime import timedelta
-
-class CacheService:
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
-        try:
-            self.redis_client = redis.from_url(
-                redis_url,
-                decode_responses=True,
-                socket_timeout=5,
-                socket_connect_timeout=5,
-                retry_on_timeout=True
-            )
-            # Test de connexion
-            self.redis_client.ping()
-            self.enabled = True
-            logging.info("Redis cache connecté avec succès")
-        except Exception as e:
-            logging.error(f"Erreur connexion Redis: {e}")
-            self.enabled = False
-
-    def get(self, key: str) -> Optional[Any]:
-        """Récupère une valeur du cache"""
-        if not self.enabled:
-            return None
-        
-        try:
-            value = self.redis_client.get(key)
-            if value:
-                return json.loads(value)
-            return None
-        except Exception as e:
-            logging.error(f"Erreur lecture cache: {e}")
-            return None
-
-    def set(self, key: str, value: Any, ttl_seconds: int = 300) -> bool:
-        """Stocke une valeur dans le cache avec TTL"""
-        if not self.enabled:
-            return False
-        
-        try:
-            # Sérialisation spéciale pour les objets Pydantic
-            if hasattr(value, 'model_dump'):
-                serialized_value = json.dumps(value.model_dump(), default=str)
-            elif hasattr(value, 'dict'):
-                serialized_value = json.dumps(value.dict(), default=str)
-            else:
-                serialized_value = json.dumps(value, default=str)
-            
-            self.redis_client.setex(key, ttl_seconds, serialized_value)
-            return True
-        except Exception as e:
-            logging.error(f"Erreur écriture cache: {e}")
-            return False
-
-    def delete(self, key: str) -> bool:
-        """Supprime une clé du cache"""
-        if not self.enabled:
-            return False
-        
-        try:
-            return bool(self.redis_client.delete(key))
-        except Exception as e:
-            logging.error(f"Erreur suppression cache: {e}")
-            return False
-
-    def get_stats(self) -> dict:
-        """Récupère les statistiques du cache"""
-        if not self.enabled:
-            return {"enabled": False, "error": "Redis non disponible"}
-        
-        try:
-            info = self.redis_client.info()
-            return {
-                "enabled": True,
-                "hits": info.get("keyspace_hits", 0),
-                "misses": info.get("keyspace_misses", 0),
-                "keys": self.redis_client.dbsize(),
-                "memory_used": info.get("used_memory_human", "0B"),
-                "connected_clients": info.get("connected_clients", 0)
-            }
-        except Exception as e:
-            return {"enabled": False, "error": str(e)}
-```
-
-### Stratégies de Cache
-
-#### 1. Cache par Endpoint
-```python
-# Endpoints avec cache personnalisé
-CACHE_STRATEGIES = {
-    "products_list": {
-        "ttl": 300,  # 5 minutes
-        "key_pattern": "products:list:{page}:{size}:{filters_hash}"
-    },
-    "product_detail": {
-        "ttl": 600,  # 10 minutes
-        "key_pattern": "product:{product_id}"
-    },
-    "stores_list": {
-        "ttl": 1800,  # 30 minutes
-        "key_pattern": "stores:list"
-    },
-    "reports_summary": {
-        "ttl": 120,  # 2 minutes
-        "key_pattern": "report:summary:{date_range_hash}"
-    }
-}
-```
-
-#### 2. Invalidation Intelligente
-```python
-def invalidate_product_cache(product_id: int):
-    """Invalide le cache d'un produit spécifique"""
-    cache_service.delete(f"product:{product_id}")
-    # Invalider aussi les listes qui pourraient contenir ce produit
-    cache_service.delete_pattern("products:list:*")
-
-def invalidate_all_cache():
-    """Vide tout le cache pour maintenance"""
-    cache_service.redis_client.flushdb()
-```
-
-#### 3. Cache Conditionnel
-```python
-@router.get("/products/")
-async def get_products(
-    page: int = 1,
-    size: int = 10,
-    cache_service: CacheService = Depends(get_cache_service)
-):
-    # Génération de clé de cache
-    cache_key = f"products:list:{page}:{size}"
-    
-    # Tentative de récupération depuis le cache
-    cached_result = cache_service.get(cache_key)
-    if cached_result:
-        return cached_result
-    
-    # Si pas en cache, récupération depuis la DB
-    result = await product_service.get_products(page, size)
-    
-    # Mise en cache du résultat
-    cache_service.set(cache_key, result, ttl_seconds=300)
-    
-    return result
-```
-
-### Configuration Redis
-
-#### Optimisations Mémoire
-```redis
-# Configuration Redis pour production
-maxmemory 256mb
-maxmemory-policy allkeys-lru
-
-# Persistance optimisée
-save 900 1
-save 300 10
-save 60 10000
-
-# Performance
-tcp-keepalive 300
-timeout 300
-```
-
-#### Monitoring du Cache
-```python
-# Métriques de cache avec Prometheus
-CACHE_OPERATIONS = Counter(
-    'cache_operations_total',
-    'Total cache operations',
-    ['operation', 'result', 'instance_id']
-)
-
-CACHE_HIT_RATIO = Gauge(
-    'cache_hit_ratio',
-    'Cache hit ratio percentage',
-    ['instance_id']
-)
-
-def record_cache_hit():
-    CACHE_OPERATIONS.labels(
-        operation='get',
-        result='hit',
-        instance_id=INSTANCE_ID
-    ).inc()
-
-def record_cache_miss():
-    CACHE_OPERATIONS.labels(
-        operation='get',
-        result='miss',
-        instance_id=INSTANCE_ID
-    ).inc()
-```
-
-### Avantages du Cache Redis
-
-#### Performance
-- **Réduction latence** : 90%+ d'amélioration sur endpoints cachés
-- **Débit augmenté** : Capacité de traiter plus de requêtes simultanées
-- **Réduction charge DB** : Moins de requêtes vers PostgreSQL
-- **Réponse sub-milliseconde** : Cache en mémoire ultra-rapide
-
-#### Scalabilité
-- **Cache distribué** : Partagé entre toutes les instances API
-- **Éviction intelligente** : Politique LRU pour optimiser l'utilisation mémoire
-- **TTL flexible** : Différents temps d'expiration selon les données
-- **Invalidation sélective** : Mise à jour ciblée du cache
-
-#### Monitoring
-- **Hit ratio** : Pourcentage de succès du cache
-- **Métriques détaillées** : Hits, misses, évictions, mémoire utilisée
-- **Alertes** : Notification si performance du cache se dégrade
-- **Dashboards** : Visualisation en temps réel des performances
-
-## Monitoring et Tests de Performance
-
-### Infrastructure de Monitoring
-
-Le système utilise Prometheus et Grafana pour un monitoring complet des performances, avec des dashboards spécialisés pour l'architecture load balancée.
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                  MONITORING ARCHITECTURE                           │
-├─────────────────┬─────────────────┬─────────────────┬───────────────┤
-│   COLLECTORS    │   METRICS DB    │   DASHBOARDS    │   ALERTING    │
-│                 │                 │                 │               │
-│ • API Metrics   │ • Prometheus    │ • Grafana       │ • Alertmanager│
-│ • Nginx Stats   │ • Time Series   │ • Load Balancer │ • Email/Slack │
-│ • Redis Metrics │ • Port 9090     │   Dashboard     │ • PagerDuty   │
-│ • System Metrics│ • Retention     │ • Cache Perf    │ • Custom Rules│
-│ • Custom KPIs   │ • Scraping      │ • Port 3000     │               │
-└─────────────────┴─────────────────┴─────────────────┴───────────────┘
-         ↑                   ↑               ↑               ↑
-   Real-time Data      Storage Engine    Visualization     Notifications
-    (Every 15s)        (Multi-TB)        (Real-time)       (Incidents)
-```
-
-### Configuration Prometheus
-
-#### Scraping Configuration
+#### Kong Gateway Metrics
 ```yaml
-# prometheus/prometheus-loadbalanced.yml
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+# Performances
+- kong_request_duration_ms
+- kong_request_count
+- kong_response_size_bytes
+- kong_upstream_latency_ms
 
-rule_files:
-  - "rules/*.yml"
+# Santé
+- kong_upstream_health_checks_total
+- kong_upstream_health_check_failures_total
+- kong_upstream_target_health
 
-scrape_configs:
-  # Load Balancer Nginx
-  - job_name: 'nginx-loadbalancer'
-    static_configs:
-      - targets: ['nginx:80']
-    metrics_path: '/nginx_status'
-    scrape_interval: 15s
+# Trafic
+- kong_requests_per_second
+- kong_bandwidth_bytes
+- kong_rate_limiting_triggered_total
+```
 
-  # API Instances via Load Balancer
-  - job_name: 'api-loadbalanced'
-    static_configs:
-      - targets: ['nginx:80']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
+#### Application Metrics
+```yaml
+# FastAPI
+- fastapi_requests_total
+- fastapi_request_duration_seconds
+- fastapi_requests_exceptions_total
+- fastapi_requests_processing_time_seconds
 
-  # API Instances Direct
-  - job_name: 'api-instances'
-    static_configs:
-      - targets: ['api-1:8000', 'api-2:8000', 'api-3:8000']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
-
-  # Redis Cache
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis:6379']
-    scrape_interval: 30s
-
-  # Prometheus Self-Monitoring
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
+# Business
+- total_orders_created
+- total_products_sold
+- inventory_low_stock_alerts
+- average_order_value
 ```
 
 ### Dashboards Grafana
 
-#### Dashboard Load Balancer
-```json
-{
-  "dashboard": {
-    "title": "API Load Balancer Performance",
-    "panels": [
-      {
-        "title": "Load Balancer Status",
-        "type": "stat",
-        "targets": [{
-          "expr": "up{job=\"nginx-loadbalancer\"}"
-        }]
-      },
-      {
-        "title": "Instance Health Status",
-        "type": "stat",
-        "targets": [{
-          "expr": "up{job=\"api-instances\"}"
-        }]
-      },
-      {
-        "title": "Request Distribution",
-        "type": "piechart",
-        "targets": [{
-          "expr": "rate(http_requests_total[1m])"
-        }]
-      },
-      {
-        "title": "Response Time by Instance",
-        "type": "timeseries",
-        "targets": [{
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[1m]))"
-        }]
-      },
-      {
-        "title": "Error Rate by Instance",
-        "type": "timeseries",
-        "targets": [{
-          "expr": "rate(http_requests_total{status=~\"5..\"}[1m])"
-        }]
-      },
-      {
-        "title": "Cache Performance",
-        "type": "timeseries",
-        "targets": [{
-          "expr": "cache_hit_ratio"
-        }]
-      }
-    ]
-  }
-}
-```
+#### 1. Kong Gateway Overview
+- **Request Rate** : Requêtes par seconde
+- **Latency Distribution** : P50, P95, P99
+- **Error Rate** : Taux d'erreurs 4xx/5xx
+- **Upstream Health** : État des services backend
 
-#### Dashboard Cache Performance
-```json
-{
-  "dashboard": {
-    "title": "Redis Cache Performance",
-    "panels": [
-      {
-        "title": "Cache Hit Ratio",
-        "type": "gauge",
-        "targets": [{
-          "expr": "(redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)) * 100"
-        }]
-      },
-      {
-        "title": "Cache Operations Rate",
-        "type": "timeseries",
-        "targets": [{
-          "expr": "rate(cache_operations_total[1m])"
-        }]
-      },
-      {
-        "title": "Memory Usage",
-        "type": "timeseries",
-        "targets": [{
-          "expr": "redis_memory_used_bytes"
-        }]
-      }
-    ]
-  }
-}
-```
+#### 2. Microservices Performance
+- **Response Times** : Temps de réponse par service
+- **Throughput** : Débit par endpoint
+- **Resource Usage** : CPU, Memory, Network
+- **Database Connections** : Pool de connexions
 
-### Tests de Performance avec K6
+#### 3. Business Metrics
+- **Sales Performance** : Ventes temps réel
+- **Inventory Levels** : Niveaux de stock
+- **Customer Activity** : Activité client
+- **System Health** : Santé globale du système
 
-#### Script de Test Load Balancé
-```javascript
-// k6-tests/loadbalanced-stress-test.js
-import http from 'k6/http';
-import { check } from 'k6';
+## Documentation
 
-export let options = {
-  stages: [
-    { duration: '2m', target: 100 },   // Montée progressive
-    { duration: '3m', target: 500 },   // Charge moyenne
-    { duration: '2m', target: 1000 },  // Pic de charge
-    { duration: '3m', target: 1000 },  // Maintien du pic
-    { duration: '2m', target: 0 },     // Descente
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<500'],
-    http_req_failed: ['rate<0.1'],
-    http_reqs: ['rate>100'],
-  }
-};
+### Documentation Technique
 
-const BASE_URL = 'http://localhost:8000';
-const API_TOKEN = '9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84';
+#### 1. Architecture Documentation
+- **[Rapport Arc42](docs/rapport-arc42/rapport-arc42-microservices.md)** : Architecture complète
+- **[Vues 4+1](docs/docs4+1/)** : Diagrammes PlantUML
+- **[ADR](docs/ADR/)** : Décisions architecturales
 
-export default function() {
-  const headers = {
-    'X-API-Token': API_TOKEN,
-    'Content-Type': 'application/json'
-  };
+#### 2. Documentation API
+- **OpenAPI Specs** : Documentation automatique par service
+- **Postman Collection** : Tests et exemples d'utilisation
+- **Kong Admin API** : Configuration et gestion
 
-  // Test des endpoints critiques
-  let endpoints = [
-    '/api/v1/products/',
-    '/api/v1/stores/',
-    '/api/v1/products/1',
-    '/health'
-  ];
+#### 3. Guides Opérationnels
+- **[Performance Analysis](docs/monitoring/PERFORMANCE_ANALYSIS.md)** : Analyses de performance
+- **[Load Balancer Guide](docs/monitoring/kong-load-balancer-test-report.md)** : Guide du load balancer
+- **[Monitoring Guide](docs/monitoring/)** : Configuration monitoring
 
-  let endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
-  let response = http.get(`${BASE_URL}${endpoint}`, { headers });
-
-  check(response, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 500ms': (r) => r.timings.duration < 500,
-    'has instance header': (r) => r.headers['X-Instance-Id'] !== undefined,
-  });
-}
-```
-
-### Métriques Personnalisées
-
-#### API Metrics
-```python
-from prometheus_client import Counter, Histogram, Gauge
-
-# Compteurs de requêtes
-HTTP_REQUESTS = Counter(
-    'http_requests_total',
-    'Total HTTP requests',
-    ['method', 'endpoint', 'status', 'instance_id']
-)
-
-# Latence des requêtes
-REQUEST_DURATION = Histogram(
-    'http_request_duration_seconds',
-    'HTTP request duration',
-    ['method', 'endpoint', 'instance_id'],
-    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
-)
-
-# RPS en temps réel
-CURRENT_RPS = Gauge(
-    'current_requests_per_second',
-    'Current requests per second',
-    ['instance_id']
-)
-
-# Métriques de cache
-CACHE_HIT_RATIO = Gauge(
-    'cache_hit_ratio',
-    'Cache hit ratio percentage',
-    ['instance_id']
-)
-```
-
-### Alerts et Notifications
-
-#### Règles d'Alerte
-```yaml
-# prometheus/rules/api_alerts.yml
-groups:
-  - name: api_alerts
-    rules:
-      - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High error rate detected"
-          description: "Error rate is {{ $value }} errors per second"
-
-      - alert: HighResponseTime
-        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High response time detected"
-
-      - alert: InstanceDown
-        expr: up{job="api-instances"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "API instance is down"
-
-      - alert: LowCacheHitRatio
-        expr: cache_hit_ratio < 0.7
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Cache hit ratio is low"
-```
-
-### Commandes de Monitoring
+### Documentation Générée
 
 ```bash
-# Démarrer le monitoring complet
-docker-compose -f docker-compose.loadbalanced.yml -f docker-compose.monitoring.yml up -d
+# Génération OpenAPI
+python scripts/generate_openapi_spec.py
 
-# Tests de performance
-k6 run k6-tests/loadbalanced-stress-test.js
+# Documentation PlantUML
+plantuml docs/docs4+1/*.puml
 
-# Vérifier les métriques
-curl http://localhost:9090/api/v1/query?query=up
-
-# Accès aux dashboards
-# Grafana: http://localhost:3000
-# Prometheus: http://localhost:9090
+# Rapport Arc42
+# Voir docs/rapport-arc42/rapport-arc42-microservices.md
 ```
 
-### Analyse des Résultats
+## Déploiement
 
-#### Métriques Clés
-- **Throughput** : Requêtes traitées par seconde
-- **Latence P95** : 95% des requêtes sous X millisecondes
-- **Taux d'erreur** : Pourcentage de requêtes échouées
-- **Disponibilité** : Pourcentage d'uptime
-- **Efficiency du cache** : Ratio hit/miss du cache Redis
+### Déploiement Local
 
-#### Optimisations Basées sur les Métriques
-- **Scale horizontale** : Ajouter des instances si CPU > 80%
-- **Optimisation cache** : Ajuster TTL si hit ratio < 70%
-- **Tuning load balancer** : Modifier les timeouts selon la latence
-- **Database optimization** : Index si requêtes lentes détectées
+#### 1. Setup complet avec Kong Gateway
+```bash
+# Clone du projet
+git clone <repository-url>
+cd log430-labo-05
 
-## API RESTful
+# Démarrage avec Kong Gateway et Load Balancing
+make kong-loadbalanced-up
 
-### Architecture DDD (Domain-Driven Design)
-
-L'API est structurée selon les principes du Domain-Driven Design avec une séparation claire des responsabilités.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     API ARCHITECTURE                       │
-├─────────────────┬─────────────────┬─────────────────────────┤
-│   ENDPOINTS     │    DOMAINS      │      INFRASTRUCTURE     │
-│                 │                 │                         │
-│ • products.py   │ • Products      │ • Dependencies          │
-│ • stores.py     │   - entities    │ • Database              │
-│ • reports.py    │   - services    │ • Authentication        │
-│                 │   - repositories│ • Error Handling        │
-│                 │   - schemas     │ • Logging               │
-│                 │                 │                         │
-│                 │ • Stores        │                         │
-│                 │ • Reporting     │                         │
-└─────────────────┴─────────────────┴─────────────────────────┘
+# Ou avec Docker Compose
+docker-compose -f docker-compose.kong.loadbalanced.yml up -d
 ```
 
-### Domaines Métier
+#### 2. Vérification des Services
+```bash
+# Kong Gateway
+curl -X GET http://localhost:8000/api/v1/products \
+  -H "X-API-Key: admin-key-12345"
 
-#### 1. Products Domain
-```
-/api/v1/products/
-├── GET    /           # Liste des produits avec filtres
-├── POST   /           # Créer un produit
-├── GET    /{id}       # Détails d'un produit
-├── PUT    /{id}       # Modifier un produit
-└── DELETE /{id}       # Supprimer un produit
-```
-
-#### 2. Stores Domain
-```
-/api/v1/stores/
-├── GET    /           # Liste des magasins
-├── POST   /           # Créer un magasin
-├── GET    /{id}       # Détails d'un magasin
-├── PUT    /{id}       # Modifier un magasin
-├── DELETE /{id}       # Supprimer un magasin
-└── GET    /{id}/stock # Stock du magasin
+# Monitoring
+open http://localhost:3000  # Grafana
+open http://localhost:9090  # Prometheus
 ```
 
-#### 3. Reporting Domain
-```
-/api/v1/reports/
-├── GET    /sales      # Rapports de ventes
-├── GET    /inventory  # Rapports d'inventaire
-├── GET    /kpis       # Indicateurs clés
-└── POST   /custom     # Rapports personnalisés
-```
+### Commandes Makefile
 
-### Authentification et Sécurité
+```bash
+# Gestion Kong Load Balancé
+make kong-loadbalanced-up           # Démarrage complet
+make kong-loadbalanced-down         # Arrêt complet
+make kong-loadbalanced-logs         # Logs des services
+make kong-loadbalanced-status       # État des services
 
-```python
-# Token-based authentication
-headers = {
-    "Authorization": "Bearer your-api-token",
-    "Content-Type": "application/json"
-}
-
-# Exemple d'utilisation
-response = requests.get(
-    "http://localhost:8000/api/v1/stores",
-    headers=headers
-)
+# Tests et monitoring
+make test-loadbalancing             # Tests de load balancing
+make test-performance               # Tests de performance
+make monitoring-up                  # Démarrage monitoring
 ```
 
-### Documentation Interactive
+### Configuration Environnements
 
-- **Swagger UI** : http://localhost:8000/docs
-- **ReDoc** : http://localhost:8000/redoc
-- **OpenAPI Schema** : http://localhost:8000/openapi.json
-
-## Déploiement Docker
-
-### Architecture Containerisée
-
-Le projet utilise une architecture Docker avec des containers séparés pour chaque service.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  DOCKER ARCHITECTURE                        │
-├─────────────────┬─────────────────┬─────────────────────────┤
-│   WEB CONTAINER │  API CONTAINER  │   EXTERNAL DATABASE     │
-│                 │                 │                         │
-│ • Flask App     │ • FastAPI       │ • PostgreSQL Server     │
-│ • Gunicorn      │ • Gunicorn      │ • External Host         │
-│ • Port 8080     │ • Port 8000     │ • Port 5432             │
-│ • Health Checks │ • Health Checks │ • Persistent Data       │
-│ • Logging       │ • Logging       │                         │
-└─────────────────┴─────────────────┴─────────────────────────┘
-         ↓                ↓                       ↓
-app-multi-magasin-web    api          10.194.32.219:5432 (VM ETS)
-```
-
-### Configuration Docker
-
-#### docker-compose.yml
+#### Production
 ```yaml
+# docker-compose.prod.yml
 version: '3.8'
 
 services:
-  # API FastAPI
-  api:
-    build:
-      context: .
-      dockerfile: dockerfile.api
-      target: production
-    container_name: log430-api
+  kong:
+    image: kong:3.4.0
     environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - LOG_LEVEL=INFO
-      - API_TOKEN=your-secret-api-token
-    ports:
-      - "8000:8000"
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=postgres
+      - KONG_PG_DATABASE=kong
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=${KONG_DB_PASSWORD}
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+```
+
+#### Development
+```yaml
+# docker-compose.dev.yml
+version: '3.8'
+
+services:
+  kong:
+    image: kong:3.4.0
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+      - KONG_LOG_LEVEL=debug
     volumes:
-      - ./logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Application Flask
-  web:
-    build:
-      context: .
-      dockerfile: dockerfile.flask
-      target: production
-    container_name: log430-web
-    environment:
-      - DATABASE_URL=postgresql://user:password@10.194.32.219:5432/store_db
-      - API_BASE_URL=http://api:8000
+      - ./logs:/var/log/kong
     ports:
-      - "8080:8080"
-    depends_on:
-      - api
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - "8001:8001"  # Admin API
 ```
 
-### Dockerfiles Multi-Stage
+## Tests de Performance
 
-#### dockerfile.api (FastAPI)
-```dockerfile
-# Stage de développement
-FROM python:3.9-slim as development
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+### Suite de Tests K6
 
-# Stage de production
-FROM python:3.9-slim as production
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY src/ src/
-RUN mkdir -p logs && chown -R appuser:appuser /app
-USER appuser
-EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
-CMD ["gunicorn", "src.api.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+#### 1. Test de Charge Standard
+```javascript
+// k6-tests/medium-load-test.js
+import { check, sleep } from 'k6';
+import http from 'k6/http';
+
+export let options = {
+  stages: [
+    { duration: '2m', target: 50 },   // Montée progressive
+    { duration: '5m', target: 100 },  // Maintien charge
+    { duration: '2m', target: 0 },    // Descente
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<105'],  // 95% < 105ms
+    http_req_failed: ['rate<0.1'],     // <10% d'erreurs
+  },
+};
+
+export default function() {
+  const response = http.get('http://localhost:8000/api/v1/products', {
+    headers: { 'X-API-Key': 'admin-key-12345' },
+  });
+  
+  check(response, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 105ms': (r) => r.timings.duration < 105,
+  });
+  
+  sleep(1);
+}
 ```
 
-#### dockerfile.flask (Web App)
-```dockerfile
-# Stage de production
-FROM python:3.9-slim as production
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY src/ src/
-RUN chown -R appuser:appuser /app
-USER appuser
-EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "src.app.run:app"]
+#### 2. Test de Stress
+```javascript
+// k6-tests/loadbalanced-stress-test.js
+export let options = {
+  stages: [
+    { duration: '5m', target: 100 },
+    { duration: '10m', target: 300 },  // Stress test
+    { duration: '5m', target: 0 },
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<200'],
+    http_req_failed: ['rate<0.05'],
+  },
+};
 ```
 
-### Commandes de Gestion (Makefile)
+### Résultats de Performance
 
-```bash
-# Initialisation
-make init          # Créer les répertoires nécessaires
+#### Benchmarks Atteints
+```
+Configuration: Kong Gateway + 3 instances par service
+Charge: 300 utilisateurs simultanés
+Durée: 20 minutes
 
-# Gestion des services
-make build         # Construire les images Docker
-make up            # Démarrer tous les services
-make down          # Arrêter tous les services
-make restart       # Redémarrer tous les services
-
-# Monitoring
-make status        # Voir le statut des services
-make logs          # Voir tous les logs
-make logs-api      # Logs de l'API uniquement
-make logs-web      # Logs de l'app web uniquement
-
-# Maintenance
-make clean         # Nettoyer les containers
-make test          # Exécuter les tests
-make shell-api     # Shell dans le container API
-make shell-web     # Shell dans le container Web
+Résultats:
+✓ Latence P95: 95ms (objectif: <105ms)
+✓ Taux d'erreur: 0.02% (objectif: <1%)
+✓ Throughput: 1,200 req/s
+✓ Disponibilité: 99.98%
 ```
 
-### Sécurité et Bonnes Pratiques
-
-- **Images multi-stage** : Optimisation de la taille et sécurité
-- **Health checks** : Surveillance automatique de la santé des services
-- **Volumes read-only** : Code source en lecture seule en production
-- **Variables d'environnement** : Configuration externalisée
-
-## Structure du Projet
-
+#### Comparaison des Configurations
 ```
-log430-labo-03/
-├── Docker & Déploiement
-│   ├── docker-compose.yml          # Configuration principale
-│   ├── dockerfile.api              # Image FastAPI
-│   ├── dockerfile.flask            # Image Flask
-│   ├── Makefile                    # Commandes de gestion
-│   └── DOCKER_README.md            # Documentation Docker
-│
-├── API RESTful (FastAPI)
-│   └── src/api/
-│       ├── main.py                 # Point d'entrée API
-│       ├── logging_config.py       # Configuration logging
-│       └── v1/
-│           ├── api.py              # Router principal
-│           ├── dependencies.py     # Dépendances communes
-│           ├── errors.py           # Gestion d'erreurs
-│           ├── endpoints/          # Endpoints REST
-│           │   ├── products.py     # CRUD Produits
-│           │   ├── stores.py       # CRUD Magasins
-│           │   └── reports.py      # Rapports
-│           └── domain/             # Architecture DDD
-│               ├── products/       # Domaine Produits
-│               │   ├── entities/
-│               │   ├── repositories/
-│               │   ├── services/
-│               │   └── schemas/
-│               ├── stores/         # Domaine Magasins
-│               └── reporting/      # Domaine Rapports
-│
-├── Application Web (Flask)
-│   └── src/app/
-│       ├── __init__.py             # Factory Flask
-│       ├── run.py                  # Point d'entrée
-│       ├── config.py               # Configuration
-│       ├── models/
-│       │   └── models.py           # Modèles SQLAlchemy
-│       ├── controllers/            # Contrôleurs MVC
-│       │   ├── home_controller.py
-│       │   ├── magasin_controller.py
-│       │   ├── caisse_controller.py
-│       │   ├── produit_controller.py
-│       │   ├── vente_controller.py
-│       │   ├── rapport_controller.py
-│       │   └── stock_central_controller.py
-│       ├── templates/              # Templates Jinja2
-│       │   ├── base.html
-│       │   ├── home.html
-│       │   ├── rapport/
-│       │   ├── magasin/
-│       │   ├── caisse/
-│       │   ├── produit/
-│       │   └── vente/
-│       └── static/
-│           └── css/
-│               └── style.css
-│
-├── Logging & Monitoring
-│   ├── logs/                       # Fichiers de logs
-│   │   ├── api_YYYY-MM-DD.log      # Logs API
-│   │   ├── business_YYYY-MM-DD.log # Logs métier
-│   │   └── errors_YYYY-MM-DD.log   # Logs d'erreurs
-│   └── README_LOGGING.md           # Documentation logging
-│
-├── Tests
-│   ├── test_app.py                 # Tests structure
-│   ├── test_functionality.py       # Tests fonctionnels
-│   └── api/v1/                     # Tests API
-│       ├── test_products.py
-│       ├── test_stores.py
-│       └── test_reports.py
-│
-├── Documentation
-│   ├── docs/
-│   │   ├── adr-003-flask.md        # Décision architecture
-│   │   ├── adr-004-architecture-mvc.md
-│   │   ├── docker-deployment.md    # Guide déploiement
-│   │   ├── logging.md              # Documentation logging
-│   │   ├── openapi.json            # Spécification API
-│   │   └── UML/                    # Diagrammes UML
-│   └── README.md                   # Ce fichier
-│
-└── Configuration
-    ├── requirements.txt            # Dépendances Python
-    ├── scripts/
-    │   └── init-db.sql            # Initialisation DB
-    └── src/
-        ├── db.py                   # Configuration DB
-        └── create_db.py            # Données de démo
+Single Instance:
+- P95 Latency: 150ms
+- Max Throughput: 400 req/s
+- Memory Usage: 1.2GB
+
+Load Balanced (3 instances):
+- P95 Latency: 95ms
+- Max Throughput: 1,200 req/s
+- Memory Usage: 3.6GB (distributed)
 ```
 
 ## Installation et Configuration
 
-### Déploiement Rapide (Docker)
+### Prérequis
 
 ```bash
-# 1. Cloner le projet
-git clone <repository-url>
-cd log430-labo-03
+# Système requis
+- Docker 24.0+
+- Docker Compose 2.0+
+- Python 3.11+
+- Node.js 18+ (pour les tests)
+- Make (pour les commandes)
 
-# 2. Initialiser l'environnement
-make init
-
-# 3. Démarrer tous les services
-make up
-
-# 4. Vérifier le statut
-make status
+# Installation des outils
+npm install -g k6              # Tests de performance
+pip install -r requirements.txt # Dépendances Python
 ```
 
-**Services disponibles :**
-- **Application Web** : http://localhost:8080
-- **API REST** : http://localhost:8000
-- **Documentation API** : http://localhost:8000/docs
+### Configuration Initiale
 
-### Développement Local
-
-#### 1. Prérequis
-- Python 3.9+
-- PostgreSQL 15+
-- Docker & Docker Compose (optionnel)
-
-#### 2. Installation
+#### 1. Variables d'Environnement
 ```bash
-# Créer l'environnement virtuel
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou venv\Scripts\activate  # Windows
-
-# Installer les dépendances
-pip install -r requirements.txt
+# .env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres123
+POSTGRES_DB=multi_stores
+REDIS_URL=redis://localhost:6379
+KONG_ADMIN_URL=http://localhost:8001
 ```
 
-#### 3. Configuration
-Créer le fichier `.env` :
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/store_db
-SECRET_KEY=your-secret-key-here
-API_TOKEN=your-api-token-here
-LOG_LEVEL=INFO
-POOL_SIZE=5
-MAX_OVERFLOW=10
-```
-
-#### 4. Base de données
+#### 2. Configuration Kong
 ```bash
-# Initialiser la base avec des données de démo
-python -m src.create_db
+# Configuration initiale Kong
+./kong/configure-kong.sh
+
+# Application de la configuration
+./kong/apply-config.sh
 ```
 
-#### 5. Lancement
+#### 3. Initialisation des Données
 ```bash
-# Terminal 1 : API FastAPI
-uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+# Génération des données de test
+python services/generate_test_data.py
 
-# Terminal 2 : Application Flask
-python -m src.app.run
-```
-
-### Configuration Avancée
-
-#### Variables d'Environnement
-```bash
-# Base de données
-DATABASE_URL=postgresql://user:password@host:port/database
-POOL_SIZE=5
-MAX_OVERFLOW=10
-
-# Sécurité
-SECRET_KEY=your-secret-key
-API_TOKEN=your-api-token
-
-# Logging
-LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-# Serveur
-HOST=0.0.0.0
-API_PORT=8000
-WEB_PORT=8080
-FLASK_ENV=production
-```
-
-#### Configuration de Production
-```bash
-# Optimisations de performance
-POOL_SIZE=20
-MAX_OVERFLOW=30
-WORKERS=4
-
-# Sécurité renforcée
-FLASK_ENV=production
-DEBUG=False
-TESTING=False
-```
-
-## Tests
-
-### Tests Automatisés
-
-Le projet inclut une suite complète de tests automatisés couvrant tous les composants.
-
-```bash
-# Exécuter tous les tests
-make test
-
-# Tests spécifiques
-python -m pytest tests/test_app.py -v
-python -m pytest tests/api/v1/ -v
-
-# Tests avec couverture
-python -m pytest --cov=src tests/
-```
-
-### Types de Tests
-
-#### 1. Tests Unitaires
-- **Models** : Validation des modèles SQLAlchemy
-- **Services** : Logique métier des domaines
-- **Repositories** : Accès aux données
-
-#### 2. Tests d'Intégration
-- **API Endpoints** : Tests complets des endpoints REST
-- **Database** : Tests de persistance
-- **Authentication** : Tests de sécurité
-
-#### 3. Tests Fonctionnels
-- **Workflows** : Scénarios utilisateur complets
-- **Business Logic** : Règles métier
-- **Error Handling** : Gestion d'erreurs
-
-### Coverage Report
-```
-Name                                    Stmts   Miss  Cover
------------------------------------------------------------
-src/api/main.py                           45      2    96%
-src/api/v1/domain/products/services.py   78      5    94%
-src/api/v1/domain/stores/services.py     82      6    93%
-src/api/v1/domain/reporting/services.py  65      4    94%
-src/app/controllers/                     234     12    95%
------------------------------------------------------------
-TOTAL                                   1247     67    95%
+# Initialisation des bases de données
+docker-compose exec inventory-1 python src/init_db.py
+docker-compose exec ecommerce-1 python src/init_db.py
+docker-compose exec retail-1 python src/init_db.py
+docker-compose exec reporting-1 python src/init_db.py
 ```
 
 ## Utilisation
 
-### Interface Web (Flask)
+### Accès aux Services
 
-#### Dashboard Principal
-- **Vue d'ensemble** : KPIs globaux, alertes, tendances
-- **Navigation** : Accès rapide aux 5 magasins
-- **Monitoring** : Statut en temps réel des caisses
-
-#### Gestion des Ventes
-```
-1. Sélectionner un magasin
-2. Choisir une caisse disponible
-3. Rechercher et ajouter des produits
-4. Finaliser la vente
-5. Imprimer le reçu
-```
-
-#### Rapports Stratégiques
-- **Performance par magasin** : CA, marge, rotation stock
-- **Top produits** : Ventes, popularité, rentabilité
-- **Analyse temporelle** : Tendances, saisonnalité
-- **Alertes stock** : Ruptures, surstocks, réapprovisionnement
-
-### API RESTful (FastAPI)
-
-#### Authentification
-```python
-import requests
-
-headers = {
-    "Authorization": "Bearer your-api-token",
-    "Content-Type": "application/json"
-}
-```
-
-#### Exemples d'Utilisation
-
-##### Gestion des Produits
-```python
-# Créer un produit
-product_data = {
-    "nom": "Nouveau Produit",
-    "prix": 29.99,
-    "categorie_id": 1,
-    "description": "Description du produit"
-}
-response = requests.post(
-    "http://localhost:8000/api/v1/products",
-    json=product_data,
-    headers=headers
-)
-
-# Lister les produits avec filtres
-params = {
-    "categorie_id": 1,
-    "prix_min": 10.0,
-    "prix_max": 50.0,
-    "limit": 20
-}
-response = requests.get(
-    "http://localhost:8000/api/v1/products",
-    params=params,
-    headers=headers
-)
-```
-
-##### Gestion des Magasins
-```python
-# Obtenir les détails d'un magasin
-response = requests.get(
-    "http://localhost:8000/api/v1/stores/1",
-    headers=headers
-)
-
-# Consulter le stock d'un magasin
-response = requests.get(
-    "http://localhost:8000/api/v1/stores/1/stock",
-    headers=headers
-)
-```
-
-##### Rapports
-```python
-# Générer un rapport de ventes
-params = {
-    "date_debut": "2024-01-01",
-    "date_fin": "2024-12-31",
-    "magasin_id": 1
-}
-response = requests.get(
-    "http://localhost:8000/api/v1/reports/sales",
-    params=params,
-    headers=headers
-)
-```
-
-### Architecture Load Balancée
-
-#### Démarrage avec Load Balancer
+#### Kong Gateway (API Principal)
 ```bash
-# Démarrer l'architecture 3 instances + cache + monitoring
-docker-compose -f docker-compose.loadbalanced.yml -f docker-compose.monitoring.yml up -d
+# Base URL
+http://localhost:8000
 
-# Vérifier l'état des services
-docker ps
+# Exemples d'utilisation
+curl -X GET "http://localhost:8000/api/v1/products" \
+  -H "X-API-Key: admin-key-12345"
 
-# Vérifier la santé du load balancer
-curl http://localhost:8000/health
+curl -X GET "http://localhost:8000/api/v1/stores" \
+  -H "X-API-Key: frontend-key-67890"
 ```
 
-#### Tests de Performance
+#### Interface Web Flask
 ```bash
-# Test de charge progressive (recommandé)
-k6 run k6-tests/loadbalanced-stress-test.js
+# URL
+http://localhost:8080
 
-# Test simple pour vérifier le fonctionnement
-k6 run --vus 10 --duration 30s k6-tests/simple-stress-test.js
-
-# Monitoring en temps réel pendant les tests
-# Grafana: http://localhost:3000
-# Prometheus: http://localhost:9090
+# Fonctionnalités
+- Dashboard multi-magasins
+- Gestion des ventes
+- Rapports et analytics
+- Gestion des stocks
 ```
 
-#### Gestion du Cache Redis
+#### Monitoring
 ```bash
-# Statistiques du cache
-curl -H "X-API-Token: 9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84" \
-     http://localhost:8000/api/v1/cache/stats
+# Grafana
+http://localhost:3000
+User: admin / Password: admin
 
-# Vider le cache
-curl -X DELETE -H "X-API-Token: 9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84" \
-     http://localhost:8000/api/v1/cache/clear
-
-# Test de performance du cache
-time curl -H "X-API-Token: 9645524dac794691257cb44d61ebc8c3d5876363031ec6f66fbd31e4bf85cd84" \
-          http://localhost:8000/api/v1/products/
+# Prometheus
+http://localhost:9090
 ```
 
-### Monitoring et Logs
+### API Endpoints Principaux
 
-#### Dashboards Grafana
-- **API Load Balancer Performance** : Vue d'ensemble load balancing
-- **Instance Health Status** : État de santé de chaque instance
-- **Cache Performance** : Métriques Redis et hit ratio
-- **System Performance** : CPU, mémoire, réseau
-
-#### Métriques Clés à Surveiller
+#### Inventory Service
 ```bash
-# Status des instances
-curl http://localhost:9090/api/v1/query?query=up{job="api-instances"}
-
-# Hit ratio du cache
-curl http://localhost:9090/api/v1/query?query=cache_hit_ratio
-
-# Latence P95
-curl http://localhost:9090/api/v1/query?query=histogram_quantile(0.95,rate(http_request_duration_seconds_bucket[5m]))
-
-# Taux d'erreur
-curl http://localhost:9090/api/v1/query?query=rate(http_requests_total{status=~"5.."}[5m])
+GET    /api/v1/products         # Liste des produits
+POST   /api/v1/products         # Créer un produit
+GET    /api/v1/categories       # Liste des catégories
+GET    /api/v1/stock           # Niveaux de stock
+PUT    /api/v1/stock/{id}      # Mise à jour stock
 ```
 
-#### Consultation des Logs
+#### Ecommerce Service
 ```bash
-# Logs en temps réel
-make logs
-
-# Logs spécifiques
-make logs-api    # API FastAPI
-make logs-web    # Application Flask
-
-# Logs par fichier
-tail -f logs/api_2024-06-21.log
-tail -f logs/business_2024-06-21.log
-tail -f logs/errors_2024-06-21.log
-
-# Logs des instances individuelles
-docker logs log430-api-1 --tail 50
-docker logs log430-api-2 --tail 50
-docker logs log430-api-3 --tail 50
-docker logs log430-nginx --tail 50
+GET    /api/v1/customers        # Liste des clients
+POST   /api/v1/customers        # Créer un client
+GET    /api/v1/orders          # Liste des commandes
+POST   /api/v1/orders          # Créer une commande
+GET    /api/v1/carts           # Paniers d'achats
 ```
 
-#### Métriques de Performance
-- **Temps de réponse** : Automatiquement ajouté aux headers HTTP
-- **Throughput** : Requêtes traitées par seconde
-- **Distribution de charge** : Répartition entre instances
-- **Cache hit ratio** : Efficacité du cache Redis
-- **Erreurs** : Taux d'erreur et types d'exceptions
-- **Ressources** : Utilisation CPU/Mémoire des containers
+#### Retail Service
+```bash
+GET    /api/v1/stores           # Liste des magasins
+POST   /api/v1/stores           # Créer un magasin
+GET    /api/v1/cash-registers   # Caisses enregistreuses
+GET    /api/v1/sales            # Transactions de vente
+POST   /api/v1/sales            # Nouvelle vente
+```
+
+#### Reporting Service
+```bash
+GET    /api/v1/reports/sales    # Rapports de ventes
+GET    /api/v1/reports/inventory # Rapports d'inventaire
+GET    /api/v1/analytics/trends # Analyses de tendances
+GET    /api/v1/dashboards       # Tableaux de bord
+```
 
 ## Technologies Utilisées
 
 ### Backend
-- **Python 3.9+** : Langage principal
-- **Flask 3.0.0** : Framework web pour l'interface utilisateur
 - **FastAPI 0.104.1** : Framework API moderne et performant
-- **SQLAlchemy 2.0** : ORM pour la gestion des données
-- **Pydantic** : Validation et sérialisation des données
-- **Gunicorn** : Serveur WSGI/ASGI de production
+- **Python 3.11** : Langage principal
+- **PostgreSQL 15** : Base de données relationnelle
+- **Redis 7.0** : Cache distribué et sessions
+- **SQLAlchemy 2.0** : ORM moderne avec async support
+
+### API Gateway et Load Balancing
+- **Kong Gateway 3.4.0** : API Gateway et load balancer
+- **Nginx** : Proxy inverse et load balancing
+- **Docker Compose** : Orchestration des services
+- **Kong Plugins** : Rate limiting, logging, metrics
+
+### Monitoring et Observabilité
+- **Prometheus** : Collecte de métriques
+- **Grafana** : Visualisation et dashboards
+- **Structured Logging** : Logs JSON structurés
+- **Health Checks** : Monitoring de santé des services
+
+### Tests et Qualité
+- **K6** : Tests de performance et charge
+- **Pytest** : Tests unitaires et d'intégration
+- **Coverage** : Couverture de tests
+- **Postman** : Tests API et documentation
 
 ### Frontend
+- **Flask 3.0.0** : Framework web Python
 - **Jinja2** : Moteur de templates
 - **Bootstrap 5** : Framework CSS responsive
-- **JavaScript ES6+** : Interactions côté client
-- **Chart.js** : Graphiques et visualisations
+- **JavaScript ES6** : Interactivité côté client
 
-### Base de Données
-- **PostgreSQL 15** : Base de données relationnelle
-- **psycopg2** : Adaptateur PostgreSQL pour Python
-- **Connection Pooling** : Optimisation des connexions
-
-### DevOps & Déploiement
+### DevOps et Infrastructure
 - **Docker** : Containerisation
-- **Docker Compose** : Orchestration multi-containers
-- **Gunicorn** : Serveur de production
-- **Health Checks** : Surveillance des services
-
-### Load Balancing & High Availability
-- **Nginx** : Load balancer et reverse proxy
-- **Round Robin** : Distribution équitable des requêtes
-- **Health Checks** : Surveillance automatique des instances
-- **Failover** : Basculement automatique en cas de panne
-- **Connection Pooling** : Optimisation des connexions réseau
-
-### Cache & Performance
-- **Redis 7** : Cache distribué en mémoire
-- **LRU Eviction** : Politique d'éviction intelligente
-- **TTL Strategy** : Temps d'expiration flexibles
-- **Cache Metrics** : Monitoring hit/miss ratio
-- **Serialization** : Support objets Pydantic et JSON
-
-### Logging & Monitoring
-- **Python Logging** : Système de logs natif
-- **Rotating File Handler** : Rotation automatique
-- **JSON Logging** : Format structuré pour les logs métier
-- **Custom Formatters** : Formatage personnalisé
-- **Prometheus** : Collecte et stockage de métriques
-- **Grafana** : Dashboards et visualisation
-- **Custom Metrics** : Métriques applicatives personnalisées
-- **Alerting** : Notifications automatiques d'incidents
-
-### Testing & Qualité
-- **pytest** : Framework de tests
-- **pytest-cov** : Couverture de code
-- **Black** : Formatage de code
-- **Flake8** : Analyse statique
-- **K6** : Tests de performance et charge
-- **Load Testing** : Tests de montée en charge progressive
-- **Stress Testing** : Tests de résistance haute charge
-- **Performance Metrics** : Analyse latence et throughput
-
-### Sécurité
-- **Token-based Auth** : Authentification par tokens
-- **Environment Variables** : Configuration sécurisée
-- **Non-root Containers** : Containers sécurisés
-- **Input Validation** : Validation stricte des entrées
-
----
-
-## Support et Contribution
-
-### Issues et Bugs
-Pour signaler un bug ou demander une fonctionnalité, veuillez utiliser le système d'issues du projet.
+- **Docker Compose** : Orchestration locale
+- **Makefile** : Automatisation des tâches
+- **Git** : Gestion de versions
 
 ### Documentation
-- **API Documentation** : http://localhost:8000/docs
-- **Docker Guide** : [DOCKER_README.md](DOCKER_README.md)
-
-### Licence
-Ce projet est développé dans le cadre du cours LOG430 à l'ÉTS.
+- **OpenAPI/Swagger** : Documentation API automatique
+- **PlantUML** : Diagrammes d'architecture
+- **Arc42** : Template de documentation architecturale
+- **Markdown** : Documentation technique
 
 ---
 
-**Version** : 3.0.0  
-**Dernière mise à jour** : Juin 2025
-**Auteur** : Louqman Masbahi
+## Qualité de Code
+
+### Outils de Développement
+
+Ce projet utilise des outils de qualité de code pour maintenir un style cohérent :
+
+- **Black 24.4.2** : Formatage automatique du code Python
+- **isort** : Tri et organisation des imports  
+- **flake8** : Linting et vérification du style
+- **bandit** : Analyse de sécurité
+- **safety** : Vérification des vulnérabilités
+
+### Commandes Makefile
+
+```bash
+# Formatage complet
+make lint-all
+
+# Commandes individuelles
+make format        # Formater avec black
+make sort-imports  # Trier les imports
+make lint          # Vérifier avec flake8
+make check-format  # Vérifier sans modifier
+```
+
+### Utilisation Manuelle
+
+```bash
+# Formatage du code
+python -m black --line-length 88 .
+
+# Tri des imports
+python -m isort --profile=black .
+
+# Vérification du style
+python -m flake8 --max-line-length=88 --extend-ignore=E203,W503 .
+```
+
+## Contributeurs
+
+- **Louqman Masbahi** : Architecture et développement
+- **Instructeurs** : Guidance et reviews architecturales
+
+## Licence
+
+Ce projet est développé dans le cadre du cours LOG430 - Architecture et Conception de Logiciels.

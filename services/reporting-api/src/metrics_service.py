@@ -38,11 +38,15 @@ CURRENT_RPS = Gauge(
 )
 
 ERROR_COUNT = Counter(
-    "reporting_api_errors_total", "Total API errors", ["error_type", "endpoint", "instance_id"]
+    "reporting_api_errors_total",
+    "Total API errors",
+    ["error_type", "endpoint", "instance_id"],
 )
 
 HEALTH_STATUS = Gauge(
-    "reporting_api_health_status", "API health status (1=healthy, 0=unhealthy)", ["instance_id"]
+    "reporting_api_health_status",
+    "API health status (1=healthy, 0=unhealthy)",
+    ["instance_id"],
 )
 
 CPU_USAGE = Gauge(
@@ -59,7 +63,9 @@ MEMORY_USAGE_PERCENT = Gauge(
 
 # Métriques spécifiques au reporting
 REPORT_GENERATION_COUNT = Counter(
-    "reporting_api_reports_generated_total", "Total number of reports generated", ["report_type", "instance_id"]
+    "reporting_api_reports_generated_total",
+    "Total number of reports generated",
+    ["report_type", "instance_id"],
 )
 
 REPORT_GENERATION_DURATION = Histogram(
@@ -70,7 +76,9 @@ REPORT_GENERATION_DURATION = Histogram(
 )
 
 EXTERNAL_API_CALLS = Counter(
-    "reporting_api_external_api_calls_total", "Total external API calls", ["service", "endpoint", "status", "instance_id"]
+    "reporting_api_external_api_calls_total",
+    "Total external API calls",
+    ["service", "endpoint", "status", "instance_id"],
 )
 
 EXTERNAL_API_DURATION = Histogram(
@@ -130,10 +138,16 @@ class MetricsService:
 
     def record_report_generation(self, report_type: str, duration: float):
         """Enregistre la génération d'un rapport"""
-        REPORT_GENERATION_COUNT.labels(report_type=report_type, instance_id=INSTANCE_ID).inc()
-        REPORT_GENERATION_DURATION.labels(report_type=report_type, instance_id=INSTANCE_ID).observe(duration)
+        REPORT_GENERATION_COUNT.labels(
+            report_type=report_type, instance_id=INSTANCE_ID
+        ).inc()
+        REPORT_GENERATION_DURATION.labels(
+            report_type=report_type, instance_id=INSTANCE_ID
+        ).observe(duration)
 
-    def record_external_api_call(self, service: str, endpoint: str, status: str, duration: float):
+    def record_external_api_call(
+        self, service: str, endpoint: str, status: str, duration: float
+    ):
         """Enregistre un appel à une API externe"""
         EXTERNAL_API_CALLS.labels(
             service=service, endpoint=endpoint, status=status, instance_id=INSTANCE_ID
@@ -174,16 +188,19 @@ class MetricsService:
     def _update_current_rps(self):
         """Met à jour le RPS temps réel basé sur les requêtes récentes"""
         now = time.time()
-        
+
         # Calculer le RPS basé sur toutes les requêtes
         total_requests = sum(
-            metric.samples[0].value for metric in REQUEST_COUNT.collect()
+            metric.samples[0].value
+            for metric in REQUEST_COUNT.collect()
             for sample in metric.samples
-            if sample.labels.get('instance_id') == INSTANCE_ID
+            if sample.labels.get("instance_id") == INSTANCE_ID
         )
 
-        if hasattr(self, 'last_rps_update') and (now - self.last_rps_update) >= 1.0:
-            rps = (total_requests - self.last_request_count) / (now - self.last_rps_update)
+        if hasattr(self, "last_rps_update") and (now - self.last_rps_update) >= 1.0:
+            rps = (total_requests - self.last_request_count) / (
+                now - self.last_rps_update
+            )
             CURRENT_RPS.labels(instance_id=INSTANCE_ID).set(max(0, rps))
             self.last_request_count = total_requests
             self.last_rps_update = now
@@ -194,4 +211,4 @@ class MetricsService:
 
 
 # Instance globale du service de métriques
-metrics_service = MetricsService() 
+metrics_service = MetricsService()

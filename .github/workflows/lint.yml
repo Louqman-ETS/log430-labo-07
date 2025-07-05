@@ -1,0 +1,59 @@
+name: Lint and Format
+
+on:
+  push:
+    branches: [ main, test-charge ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-format:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black==24.4.2 flake8 isort bandit safety
+          
+      - name: Check code formatting with black
+        run: |
+          black --check --line-length 88 .
+          
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only --profile=black .
+          
+      - name: Lint with flake8
+        run: |
+          flake8 --max-line-length=88 --extend-ignore=E203,W503 .
+          
+      - name: Security check with bandit
+        run: |
+          bandit -r src/ -f json -o bandit-report.json || true
+          bandit -r services/ -f json -o bandit-services-report.json || true
+          
+      - name: Check dependencies for vulnerabilities
+        run: |
+          safety check -r requirements.txt
+          for service in inventory-api ecommerce-api retail-api reporting-api; do
+            if [ -f services/$service/requirements.txt ]; then
+              safety check -r services/$service/requirements.txt
+            fi
+          done
+          
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            bandit-services-report.json 

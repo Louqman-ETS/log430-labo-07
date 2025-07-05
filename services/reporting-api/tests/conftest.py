@@ -10,7 +10,8 @@ from unittest.mock import AsyncMock, patch
 # Import the app and database
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from main import app
 from src.database import get_db, Base
@@ -28,6 +29,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 # Create test tables
 Base.metadata.create_all(bind=engine)
 
+
 def override_get_db():
     """Override database dependency for testing"""
     try:
@@ -36,13 +38,16 @@ def override_get_db():
     finally:
         db.close()
 
+
 # Override the database dependency
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture
 def client():
     """Test client fixture"""
     return TestClient(app)
+
 
 @pytest.fixture
 def db_session():
@@ -53,38 +58,45 @@ def db_session():
     finally:
         db.close()
 
+
 @pytest.fixture
 def mock_external_services():
     """Mock external services"""
-    with patch("external_services.external_client.get_products") as mock_products, \
-         patch("external_services.external_client.get_stores") as mock_stores, \
-         patch("external_services.external_client.get_product") as mock_product, \
-         patch("external_services.external_client.get_store") as mock_store:
-        
+    with patch(
+        "external_services.external_client.get_products"
+    ) as mock_products, patch(
+        "external_services.external_client.get_stores"
+    ) as mock_stores, patch(
+        "external_services.external_client.get_product"
+    ) as mock_product, patch(
+        "external_services.external_client.get_store"
+    ) as mock_store:
+
         # Mock products
         mock_products.return_value = [
             {"id": 1, "nom": "Product 1", "code": "CODE1"},
-            {"id": 2, "nom": "Product 2", "code": "CODE2"}
+            {"id": 2, "nom": "Product 2", "code": "CODE2"},
         ]
-        
+
         # Mock stores
         mock_stores.return_value = [
             {"id": 1, "nom": "Store 1"},
-            {"id": 2, "nom": "Store 2"}
+            {"id": 2, "nom": "Store 2"},
         ]
-        
+
         # Mock individual product
         mock_product.return_value = {"id": 1, "nom": "Product 1", "code": "CODE1"}
-        
+
         # Mock individual store
         mock_store.return_value = {"id": 1, "nom": "Store 1"}
-        
+
         yield {
             "products": mock_products,
             "stores": mock_stores,
             "product": mock_product,
-            "store": mock_store
+            "store": mock_store,
         }
+
 
 @pytest.fixture
 def mock_httpx_client():
@@ -92,7 +104,7 @@ def mock_httpx_client():
     with patch("httpx.AsyncClient") as mock_client:
         mock_client_instance = AsyncMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
-        
+
         # Mock successful response
         mock_response = AsyncMock()
         mock_response.status_code = 200
@@ -104,7 +116,7 @@ def mock_httpx_client():
                     "store_id": 1,
                     "sale_lines": [
                         {"product_id": 1, "quantite": 2, "sous_total": 50.0}
-                    ]
+                    ],
                 },
                 {
                     "id": 2,
@@ -112,13 +124,14 @@ def mock_httpx_client():
                     "store_id": 2,
                     "sale_lines": [
                         {"product_id": 2, "quantite": 1, "sous_total": 200.0}
-                    ]
-                }
+                    ],
+                },
             ]
         }
         mock_client_instance.get.return_value = mock_response
-        
+
         yield mock_client_instance
+
 
 @pytest.fixture(autouse=True)
 def cleanup_database():
@@ -129,9 +142,10 @@ def cleanup_database():
             conn.execute(table.delete())
     yield
 
+
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session"""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
-    loop.close() 
+    loop.close()

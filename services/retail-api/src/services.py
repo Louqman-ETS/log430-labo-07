@@ -229,16 +229,16 @@ class SaleService:
         # Extraire les lignes de vente
         sale_data = sale.dict()
         lines = sale_data.pop("lines", [])
-        
+
         # Calculer le total
         total = sum(line["quantite"] * line["prix_unitaire"] for line in lines)
-        
+
         # Créer la vente
         db_sale = models.Sale(**sale_data, total=total)
         self.db.add(db_sale)
         self.db.commit()
         self.db.refresh(db_sale)
-        
+
         # Créer les lignes de vente
         for line in lines:
             db_line = models.SaleLine(
@@ -246,30 +246,28 @@ class SaleService:
                 product_id=line["product_id"],
                 quantite=line["quantite"],
                 prix_unitaire=line["prix_unitaire"],
-                sous_total=line["quantite"] * line["prix_unitaire"]
+                sous_total=line["quantite"] * line["prix_unitaire"],
             )
             self.db.add(db_line)
-        
+
         self.db.commit()
         self.db.refresh(db_sale)
-        
+
         # Mettre à jour le stock via inventory-api
         try:
             for line in lines:
                 await InventoryService.reduce_stock(
-                    line["product_id"], 
-                    line["quantite"], 
-                    "vente_retail", 
-                    f"sale_{db_sale.id}"
+                    line["product_id"],
+                    line["quantite"],
+                    "vente_retail",
+                    f"sale_{db_sale.id}",
                 )
             logger.info(f"✅ Stock updated for sale {db_sale.id}")
         except Exception as e:
             logger.error(f"❌ Error updating stock for sale {db_sale.id}: {e}")
-        
+
         logger.info(f"✅ Sale created: {db_sale.id} with {len(lines)} lines")
         return db_sale
-
-
 
     def get_sale(self, sale_id: int) -> Optional[models.Sale]:
         """Récupérer une vente par son ID"""

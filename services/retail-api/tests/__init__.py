@@ -1,1 +1,1 @@
-# Tests package for retail-api 
+# Tests package for retail-api

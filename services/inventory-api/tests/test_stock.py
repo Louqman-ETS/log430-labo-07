@@ -1,10 +1,14 @@
 import pytest
 from fastapi import status
 
+
 class TestStock:
     def test_get_stock_success(self, client):
         response = client.get("/api/v1/stock/")
-        assert response.status_code == status.HTTP_200_OK or response.status_code == status.HTTP_404_NOT_FOUND
+        assert (
+            response.status_code == status.HTTP_200_OK
+            or response.status_code == status.HTTP_404_NOT_FOUND
+        )
         # Si 404, c'est que l'endpoint n'existe pas ou n'est pas implémenté
         if response.status_code == status.HTTP_200_OK:
             data = response.json()
@@ -38,4 +42,4 @@ class TestStock:
     def test_update_stock_not_found(self, client):
         update_data = {"quantite": 50}
         response = client.put("/api/v1/stock/999", json=update_data)
-        assert response.status_code == status.HTTP_404_NOT_FOUND 
+        assert response.status_code == status.HTTP_404_NOT_FOUND

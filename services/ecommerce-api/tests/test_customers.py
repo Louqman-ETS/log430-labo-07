@@ -1,6 +1,7 @@
 import pytest
 from fastapi import status
 
+
 class TestCustomers:
     def test_get_customers_success(self, client):
         response = client.get("/api/v1/customers/")
@@ -17,7 +18,7 @@ class TestCustomers:
             "first_name": "Test",
             "last_name": "User",
             "phone": "1234567890",
-            "password": "password123"
+            "password": "password123",
         }
         create_response = client.post("/api/v1/customers/", json=customer_data)
         if create_response.status_code == status.HTTP_201_CREATED:
@@ -35,7 +36,7 @@ class TestCustomers:
             "first_name": "Test",
             "last_name": "User",
             "phone": "1234567890",
-            "password": "password123"
+            "password": "password123",
         }
         response = client.post("/api/v1/customers/", json=customer_data)
         assert response.status_code == status.HTTP_201_CREATED
@@ -48,7 +49,7 @@ class TestCustomers:
         customer_data = {
             "first_name": "Test",
             "last_name": "User",
-            "password": "password123"
+            "password": "password123",
         }
         response = client.post("/api/v1/customers/", json=customer_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -60,11 +61,11 @@ class TestCustomers:
             "first_name": "Update",
             "last_name": "User",
             "phone": "1234567890",
-            "password": "password123"
+            "password": "password123",
         }
         create_response = client.post("/api/v1/customers/", json=customer_data)
         customer_id = create_response.json()["id"]
-        
+
         # Mettre à jour le client
         update_data = {"first_name": "Updated"}
         response = client.put(f"/api/v1/customers/{customer_id}", json=update_data)
@@ -79,12 +80,15 @@ class TestCustomers:
             "first_name": "Delete",
             "last_name": "User",
             "phone": "1234567890",
-            "password": "password123"
+            "password": "password123",
         }
         create_response = client.post("/api/v1/customers/", json=customer_data)
         customer_id = create_response.json()["id"]
-        
+
         # Supprimer le client
         response = client.delete(f"/api/v1/customers/{customer_id}")
         # Peut échouer à cause de contraintes d'intégrité, mais c'est normal
-        assert response.status_code in [status.HTTP_204_NO_CONTENT, status.HTTP_500_INTERNAL_SERVER_ERROR] 
+        assert response.status_code in [
+            status.HTTP_204_NO_CONTENT,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ]

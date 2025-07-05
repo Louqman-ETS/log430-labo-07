@@ -1,1 +1,1 @@
-# Tests for inventory-api 
+# Tests for inventory-api

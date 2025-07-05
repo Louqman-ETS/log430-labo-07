@@ -38,11 +38,15 @@ CURRENT_RPS = Gauge(
 )
 
 ERROR_COUNT = Counter(
-    "inventory_api_errors_total", "Total API errors", ["error_type", "endpoint", "instance_id"]
+    "inventory_api_errors_total",
+    "Total API errors",
+    ["error_type", "endpoint", "instance_id"],
 )
 
 HEALTH_STATUS = Gauge(
-    "inventory_api_health_status", "API health status (1=healthy, 0=unhealthy)", ["instance_id"]
+    "inventory_api_health_status",
+    "API health status (1=healthy, 0=unhealthy)",
+    ["instance_id"],
 )
 
 CPU_USAGE = Gauge(
@@ -73,7 +77,9 @@ STOCK_OPERATIONS = Counter(
 )
 
 LOW_STOCK_PRODUCTS = Gauge(
-    "inventory_api_low_stock_products", "Number of products with low stock", ["instance_id"]
+    "inventory_api_low_stock_products",
+    "Number of products with low stock",
+    ["instance_id"],
 )
 
 
@@ -172,16 +178,19 @@ class MetricsService:
     def _update_current_rps(self):
         """Met à jour le RPS temps réel basé sur les requêtes récentes"""
         now = time.time()
-        
+
         # Calculer le RPS basé sur toutes les requêtes
         total_requests = sum(
-            metric.samples[0].value for metric in REQUEST_COUNT.collect()
+            metric.samples[0].value
+            for metric in REQUEST_COUNT.collect()
             for sample in metric.samples
-            if sample.labels.get('instance_id') == INSTANCE_ID
+            if sample.labels.get("instance_id") == INSTANCE_ID
         )
 
-        if hasattr(self, 'last_rps_update') and (now - self.last_rps_update) >= 1.0:
-            rps = (total_requests - self.last_request_count) / (now - self.last_rps_update)
+        if hasattr(self, "last_rps_update") and (now - self.last_rps_update) >= 1.0:
+            rps = (total_requests - self.last_request_count) / (
+                now - self.last_rps_update
+            )
             CURRENT_RPS.labels(instance_id=INSTANCE_ID).set(max(0, rps))
             self.last_request_count = total_requests
             self.last_rps_update = now
@@ -192,4 +201,4 @@ class MetricsService:
 
 
 # Instance globale du service de métriques
-metrics_service = MetricsService() 
+metrics_service = MetricsService()
