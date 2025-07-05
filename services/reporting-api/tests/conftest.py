@@ -17,8 +17,8 @@ from main import app
 from src.database import get_db, Base
 from external_services import external_client
 
-# Test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Test database - using in-memory SQLite
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
