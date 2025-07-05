@@ -1,59 +1,57 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from unittest.mock import Mock, patch
 import sys
 import os
 
-# Ajouter le répertoire src au path
+# Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from main import app
-from src.database import Base, get_db
+from src.database import get_db
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-# Base de données de test en mémoire
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Create in-memory database for testing
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def override_get_db():
-    """Override de la fonction get_db pour les tests"""
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-# Override de la dépendance
-app.dependency_overrides[get_db] = override_get_db
-
-
-@pytest.fixture
-def client():
-    """Client de test FastAPI"""
-    # Créer les tables de test
-    Base.metadata.create_all(bind=engine)
-
-    with TestClient(app) as test_client:
-        yield test_client
-
-    # Nettoyer après les tests
-    Base.metadata.drop_all(bind=engine)
-
-
 @pytest.fixture
 def db_session():
-    """Session de base de données pour les tests"""
-    db = TestingSessionLocal()
+    """Create a new database session for a test."""
+    from src.models import Base
+
+    Base.metadata.create_all(bind=engine)
+    session = TestingSessionLocal()
+
     try:
-        yield db
+        yield session
     finally:
-        db.close()
+        session.close()
+        Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def client(db_session):
+    """Create a test client with a test database."""
+
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
