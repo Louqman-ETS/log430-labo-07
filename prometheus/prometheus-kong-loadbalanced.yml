@@ -22,14 +22,29 @@ scrape_configs:
     metrics_path: /status
     scheme: http
 
-  # Direct microservice metrics (for comparison)
-  - job_name: 'inventory-api-direct'
+  # Direct microservice metrics - Load balanced inventory-api instances
+  - job_name: 'inventory-api-instance-1'
     static_configs:
-      - targets: ['inventory-api:8001']
+      - targets: ['inventory-api-1:8001']
     scrape_interval: 15s
     metrics_path: /metrics
     scheme: http
 
+  - job_name: 'inventory-api-instance-2'
+    static_configs:
+      - targets: ['inventory-api-2:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  - job_name: 'inventory-api-instance-3'
+    static_configs:
+      - targets: ['inventory-api-3:8001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
+  # Direct microservice metrics - Other services
   - job_name: 'retail-api-direct'
     static_configs:
       - targets: ['retail-api:8002']
@@ -97,6 +112,30 @@ scrape_configs:
     scheme: http
     params:
       apikey: ['admin-api-key-12345']
+
+  # Direct health checks for load balanced inventory-api instances
+  - job_name: 'inventory-api-health-checks'
+    static_configs:
+      - targets: ['inventory-api-1:8001', 'inventory-api-2:8001', 'inventory-api-3:8001']
+    scrape_interval: 30s
+    metrics_path: /health
+    scheme: http
+
+  # Database metrics
+  - job_name: 'inventory-db-loadbalanced'
+    static_configs:
+      - targets: ['inventory-db-lb:5432']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+
+  # Redis metrics
+  - job_name: 'redis-loadbalanced'
+    static_configs:
+      - targets: ['redis-lb:6379']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
 
   # Prometheus self-monitoring
   - job_name: 'prometheus'

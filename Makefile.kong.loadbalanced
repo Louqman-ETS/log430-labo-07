@@ -1,0 +1,139 @@
+# Makefile pour Kong avec Load Balancer
+.PHONY: help build up down status logs clean network init test
+
+# Variables
+COMPOSE_FILE=docker-compose.kong.loadbalanced.yml
+NETWORK_NAME=microservices-network
+KONG_ADMIN_URL=http://localhost:9001
+KONG_PROXY_URL=http://localhost:9000
+PROMETHEUS_URL=http://localhost:9090
+GRAFANA_URL=http://localhost:3000
+
+help: ## Affiche l'aide
+	@echo "Commandes disponibles:"
+	@echo "  make network     - Crée le réseau Docker"
+	@echo "  make build       - Construit toutes les images"
+	@echo "  make up          - Démarre tous les services"
+	@echo "  make down        - Arrête tous les services"
+	@echo "  make status      - Affiche le statut des services"
+	@echo "  make logs        - Affiche les logs"
+	@echo "  make logs-kong   - Affiche les logs de Kong"
+	@echo "  make logs-inv    - Affiche les logs des instances inventory"
+	@echo "  make clean       - Nettoie les volumes et images"
+	@echo "  make init        - Initialise l'environnement complet"
+	@echo "  make test        - Teste les endpoints"
+	@echo "  make health      - Vérifie la santé des services"
+	@echo "  make monitoring  - Ouvre les interfaces de monitoring"
+
+network: ## Crée le réseau Docker
+	@echo "Création du réseau Docker..."
+	@docker network create $(NETWORK_NAME) 2>/dev/null || true
+
+build: ## Construit toutes les images
+	@echo "Construction des images Docker..."
+	@docker-compose -f $(COMPOSE_FILE) build --no-cache
+
+up: network ## Démarre tous les services
+	@echo "Démarrage des services..."
+	@docker-compose -f $(COMPOSE_FILE) up -d
+	@echo "Services démarrés!"
+	@echo "Kong Admin: $(KONG_ADMIN_URL)"
+	@echo "Kong Proxy: $(KONG_PROXY_URL)"
+	@echo "Prometheus: $(PROMETHEUS_URL)"
+	@echo "Grafana: $(GRAFANA_URL) (admin/admin)"
+
+down: ## Arrête tous les services
+	@echo "Arrêt des services..."
+	@docker-compose -f $(COMPOSE_FILE) down
+
+status: ## Affiche le statut des services
+	@echo "Statut des services:"
+	@docker-compose -f $(COMPOSE_FILE) ps
+
+logs: ## Affiche les logs de tous les services
+	@docker-compose -f $(COMPOSE_FILE) logs -f
+
+logs-kong: ## Affiche les logs de Kong
+	@docker-compose -f $(COMPOSE_FILE) logs -f kong
+
+logs-inv: ## Affiche les logs des instances inventory
+	@docker-compose -f $(COMPOSE_FILE) logs -f inventory-api-1 inventory-api-2 inventory-api-3
+
+clean: down ## Nettoie les volumes et images
+	@echo "Nettoyage des volumes..."
+	@docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans
+	@docker volume prune -f
+	@docker image prune -f
+
+init: network build up ## Initialise l'environnement complet
+	@echo "Initialisation complète..."
+	@echo "Attente du démarrage des services..."
+	@sleep 30
+	@make health
+
+health: ## Vérifie la santé des services
+	@echo "Vérification de la santé des services..."
+	@echo "Kong Admin API:"
+	@curl -s -o /dev/null -w "%{http_code}" $(KONG_ADMIN_URL)/status || echo "❌ Kong Admin inaccessible"
+	@echo ""
+	@echo "Kong Proxy:"
+	@curl -s -o /dev/null -w "%{http_code}" $(KONG_PROXY_URL)/ || echo "❌ Kong Proxy inaccessible"
+	@echo ""
+	@echo "Inventory API instances:"
+	@curl -s -o /dev/null -w "Instance 1: %{http_code}" http://localhost:8011/health || echo "❌ Instance 1 inaccessible"
+	@echo ""
+	@curl -s -o /dev/null -w "Instance 2: %{http_code}" http://localhost:8012/health || echo "❌ Instance 2 inaccessible"
+	@echo ""
+	@curl -s -o /dev/null -w "Instance 3: %{http_code}" http://localhost:8013/health || echo "❌ Instance 3 inaccessible"
+	@echo ""
+	@echo "Prometheus:"
+	@curl -s -o /dev/null -w "%{http_code}" $(PROMETHEUS_URL)/-/healthy || echo "❌ Prometheus inaccessible"
+	@echo ""
+	@echo "Grafana:"
+	@curl -s -o /dev/null -w "%{http_code}" $(GRAFANA_URL)/api/health || echo "❌ Grafana inaccessible"
+	@echo ""
+
+test: ## Teste les endpoints via Kong
+	@echo "Test des endpoints via Kong..."
+	@echo "Test inventory via Kong (avec clé API):"
+	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/inventory/health || echo "❌ Inventory via Kong inaccessible"
+	@echo ""
+	@echo "Test retail via Kong (avec clé API):"
+	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/retail/health || echo "❌ Retail via Kong inaccessible"
+	@echo ""
+	@echo "Test ecommerce via Kong (avec clé API):"
+	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/ecommerce/health || echo "❌ Ecommerce via Kong inaccessible"
+	@echo ""
+	@echo "Test reporting via Kong (avec clé API):"
+	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/reporting/health || echo "❌ Reporting via Kong inaccessible"
+	@echo ""
+
+monitoring: ## Ouvre les interfaces de monitoring
+	@echo "Ouverture des interfaces de monitoring..."
+	@echo "Prometheus: $(PROMETHEUS_URL)"
+	@echo "Grafana: $(GRAFANA_URL) (admin/admin)"
+	@echo "Kong Admin: $(KONG_ADMIN_URL)"
+	@open $(PROMETHEUS_URL) 2>/dev/null || xdg-open $(PROMETHEUS_URL) 2>/dev/null || echo "Ouvrir manuellement: $(PROMETHEUS_URL)"
+	@open $(GRAFANA_URL) 2>/dev/null || xdg-open $(GRAFANA_URL) 2>/dev/null || echo "Ouvrir manuellement: $(GRAFANA_URL)"
+	@open $(KONG_ADMIN_URL) 2>/dev/null || xdg-open $(KONG_ADMIN_URL) 2>/dev/null || echo "Ouvrir manuellement: $(KONG_ADMIN_URL)"
+
+# Commandes de développement
+restart: down up ## Redémarre tous les services
+
+restart-kong: ## Redémarre seulement Kong
+	@docker-compose -f $(COMPOSE_FILE) restart kong
+
+restart-inventory: ## Redémarre toutes les instances inventory
+	@docker-compose -f $(COMPOSE_FILE) restart inventory-api-1 inventory-api-2 inventory-api-3
+
+scale-inventory: ## Scale les instances inventory (utiliser avec INSTANCES=X)
+	@docker-compose -f $(COMPOSE_FILE) scale inventory-api-1=$(INSTANCES) inventory-api-2=$(INSTANCES) inventory-api-3=$(INSTANCES)
+
+# Commandes de debug
+debug-kong: ## Mode debug pour Kong
+	@docker-compose -f $(COMPOSE_FILE) exec kong kong config db_export /tmp/kong.yml
+	@docker-compose -f $(COMPOSE_FILE) exec kong cat /tmp/kong.yml
+
+debug-upstream: ## Affiche le statut des upstreams
+	@echo "Statut des upstreams Kong:"
+	@curl -s $(KONG_ADMIN_URL)/upstreams/inventory-api-upstream/health | jq '.' 2>/dev/null || echo "❌ Impossible de récupérer le statut des upstreams" 

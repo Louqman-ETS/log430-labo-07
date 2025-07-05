@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
-
-
-  # Kong Gateway
+  # Kong Gateway (mode declarative sans DB)
   kong:
     image: kong/kong-gateway:3.4.1.1
     container_name: kong-gateway
     user: "kong"
     depends_on:
-      - inventory-api
+      - inventory-api-1
+      - inventory-api-2
+      - inventory-api-3
       - retail-api
       - ecommerce-api
       - reporting-api
@@ -24,7 +22,7 @@ services:
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
       KONG_LOG_LEVEL: info
       KONG_PLUGINS: bundled,key-auth,rate-limiting,request-transformer,response-transformer,prometheus
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong-loadbalanced.yml
     ports:
       - "9000:8000"   # Proxy
       - "9443:8443"   # Proxy SSL
@@ -33,7 +31,7 @@ services:
       - "9002:8002"   # Manager GUI
       - "9445:8445"   # Manager GUI SSL
     volumes:
-      - ./kong/kong-declarative.yml:/kong/declarative/kong.yml:ro
+      - ./kong/kong-loadbalanced.yml:/kong/declarative/kong-loadbalanced.yml:ro
       - kong_prefix_vol:/var/lib/kong
       - kong_tmp_vol:/tmp
     healthcheck:
@@ -48,11 +46,11 @@ services:
   # Prometheus pour la collecte de métriques
   prometheus:
     image: prom/prometheus:v2.47.2
-    container_name: prometheus-kong
+    container_name: prometheus-kong-lb
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus-kong-microservices.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus-kong-loadbalanced.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
@@ -67,7 +65,9 @@ services:
       - microservices-network
     depends_on:
       - kong
-      - inventory-api
+      - inventory-api-1
+      - inventory-api-2
+      - inventory-api-3
       - retail-api
       - ecommerce-api
       - reporting-api
@@ -80,7 +80,7 @@ services:
   # Grafana pour la visualisation
   grafana:
     image: grafana/grafana:10.2.0
-    container_name: grafana-kong
+    container_name: grafana-kong-lb
     ports:
       - "3000:3000"
     environment:
@@ -100,25 +100,80 @@ services:
       timeout: 10s
       retries: 3
 
-  # Inventory API
-  inventory-api:
+  # Instance 1 du service inventory-api
+  inventory-api-1:
     build: ./services/inventory-api
-    container_name: inventory-api
+    container_name: inventory-api-1
     environment:
-      - DATABASE_URL=postgresql://postgres:password@inventory-db:5432/inventory_db
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
       - INSTANCE_ID=inventory-api-1
+      - PORT=8001
     ports:
-      - "8001:8001"
+      - "8011:8001"
     depends_on:
-      inventory-db:
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
         condition: service_healthy
     networks:
       - microservices-network
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 30s
+
+  # Instance 2 du service inventory-api
+  inventory-api-2:
+    build: ./services/inventory-api
+    container_name: inventory-api-2
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
+      - INSTANCE_ID=inventory-api-2
+      - PORT=8001
+    ports:
+      - "8012:8001"
+    depends_on:
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Instance 3 du service inventory-api
+  inventory-api-3:
+    build: ./services/inventory-api
+    container_name: inventory-api-3
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
+      - REDIS_URL=redis://redis-lb:6379
+      - INSTANCE_ID=inventory-api-3
+      - PORT=8001
+    ports:
+      - "8013:8001"
+    depends_on:
+      inventory-db-lb:
+        condition: service_healthy
+      redis-lb:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Retail API
   retail-api:
@@ -147,7 +202,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@ecommerce-db:5432/ecommerce_db
       - SECRET_KEY=your-super-secret-key-change-in-production
-      - INVENTORY_API_URL=http://inventory-api:8001
+      - INVENTORY_API_URL=http://inventory-api-1:8001
+      - KONG_INVENTORY_API_URL=http://kong:8000/inventory
       - REDIS_URL=redis://redis:6379/0
       - INSTANCE_ID=ecommerce-api-1
     ports:
@@ -157,7 +213,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      inventory-api:
+      inventory-api-1:
         condition: service_healthy
     networks:
       - microservices-network
@@ -173,16 +229,19 @@ services:
     container_name: reporting-api
     environment:
       - REPORTING_DATABASE_URL=postgresql://postgres:password@reporting-db:5432/reporting_db
-      - INVENTORY_API_URL=http://inventory-api:8001/api/v1
+      - INVENTORY_API_URL=http://inventory-api-1:8001/api/v1
       - RETAIL_API_URL=http://retail-api:8002/api/v1
       - ECOMMERCE_API_URL=http://ecommerce-api:8000/api/v1
+      - KONG_INVENTORY_API_URL=http://kong:8000/inventory/api/v1
+      - KONG_RETAIL_API_URL=http://kong:8000/retail/api/v1
+      - KONG_ECOMMERCE_API_URL=http://kong:8000/ecommerce/api/v1
       - INSTANCE_ID=reporting-api-1
     ports:
       - "8005:8005"
     depends_on:
       reporting-db:
         condition: service_healthy
-      inventory-api:
+      inventory-api-1:
         condition: service_healthy
       retail-api:
         condition: service_healthy
@@ -196,26 +255,43 @@ services:
       timeout: 10s
       retries: 3
 
-  # Bases de données
-  inventory-db:
+  # Base de données partagée pour inventory-api (load balanced)
+  inventory-db-lb:
     image: postgres:15
-    container_name: inventory-db
+    container_name: inventory-db-lb
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-    volumes:
-      - inventory_db_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5443:5432"
     networks:
       - microservices-network
+    volumes:
+      - inventory_db_lb_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
 
+  # Redis partagé pour inventory-api
+  redis-lb:
+    image: redis:7-alpine
+    container_name: redis-lb
+    ports:
+      - "6389:6379"
+    networks:
+      - microservices-network
+    volumes:
+      - redis_lb_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Bases de données pour les autres microservices
   retail-db:
     image: postgres:15
     container_name: retail-db
@@ -273,7 +349,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis pour cache et sessions
+  # Redis pour cache et sessions (autres microservices)
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -295,7 +371,8 @@ volumes:
   kong_tmp_vol:
   prometheus_data:
   grafana_data:
-  inventory_db_data:
+  inventory_db_lb_data:
+  redis_lb_data:
   retail_db_data:
   ecommerce_db_data:
   reporting_db_data:
