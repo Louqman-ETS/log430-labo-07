@@ -49,8 +49,11 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
+
+    # Create client without context manager
+    test_client = TestClient(app)
+    yield test_client
+
     app.dependency_overrides.clear()
 
 
