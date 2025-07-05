@@ -826,21 +826,14 @@ GET    /api/v1/dashboards       # Tableaux de bord
 Ce projet utilise des outils de qualité de code pour maintenir un style cohérent :
 
 - **Black 24.4.2** : Formatage automatique du code Python
-- **isort** : Tri et organisation des imports  
-- **flake8** : Linting et vérification du style
 - **bandit** : Analyse de sécurité
 - **safety** : Vérification des vulnérabilités
 
 ### Commandes Makefile
 
 ```bash
-# Formatage complet
-make lint-all
-
-# Commandes individuelles
+# Formatage
 make format        # Formater avec black
-make sort-imports  # Trier les imports
-make lint          # Vérifier avec flake8
 make check-format  # Vérifier sans modifier
 ```
 
@@ -850,11 +843,8 @@ make check-format  # Vérifier sans modifier
 # Formatage du code
 python -m black --line-length 88 .
 
-# Tri des imports
-python -m isort --profile=black .
-
-# Vérification du style
-python -m flake8 --max-line-length=88 --extend-ignore=E203,W503 .
+# Vérification du formatage
+python -m black --check --line-length 88 .
 ```
 
 ## Contributeurs
