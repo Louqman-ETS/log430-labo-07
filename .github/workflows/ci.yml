@@ -70,7 +70,7 @@ jobs:
         run: |
           cd services/${{ matrix.service }}
           if [ "${{ matrix.service }}" != "reporting-api" ]; then
-            PYTHONPATH=./src python src/init_db.py
+            PYTHONPATH=./src python -m src.init_db
           else
             echo "Skipping database initialization for reporting-api (no database needed)"
           fi
@@ -182,9 +182,6 @@ jobs:
           make -f Makefile.kong.loadbalanced down
         if: always()
 
-
-
-
   build-and-push-images:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
@@ -239,8 +236,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-
-
 
   notify:
     name: Notify Results
