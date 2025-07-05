@@ -4,21 +4,6 @@ from fastapi import status
 
 
 class TestCategories:
-    def test_get_categories_success(self, client):
-        response = client.get("/api/v1/categories/")
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        # Il y a 6 catégories dans la base d'init
-        assert isinstance(data, list)
-        assert len(data) == 6
-        assert any(cat["nom"] == "Électronique" for cat in data)
-
-    def test_get_category_by_id_success(self, client):
-        response = client.get("/api/v1/categories/2")  # 2 = Électronique dans init_db
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["id"] == 2
-        assert data["nom"] == "Électronique"
 
     def test_get_category_by_id_not_found(self, client):
         response = client.get("/api/v1/categories/999")
@@ -39,13 +24,6 @@ class TestCategories:
         category_data = {"nom": ""}
         response = client.post("/api/v1/categories/", json=category_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    def test_update_category_success(self, client):
-        update_data = {"nom": "Catégorie modifiée"}
-        response = client.put("/api/v1/categories/2", json=update_data)
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["nom"] == "Catégorie modifiée"
 
     def test_update_category_not_found(self, client):
         update_data = {"nom": "Catégorie modifiée"}

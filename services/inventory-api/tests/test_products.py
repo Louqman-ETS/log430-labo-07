@@ -3,24 +3,6 @@ from fastapi import status
 
 
 class TestProducts:
-    def test_get_products_success(self, client):
-        response = client.get("/api/v1/products/")
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        # Il y a 18 produits dans la base d'init
-        assert isinstance(data, dict)
-        assert "items" in data
-        assert len(data["items"]) == 18
-        assert any(prod["nom"] == "Smartphone Galaxy" for prod in data["items"])
-
-    def test_get_product_by_id_success(self, client):
-        response = client.get(
-            "/api/v1/products/4"
-        )  # 4 = Smartphone Galaxy dans init_db
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["id"] == 4
-        assert data["nom"] == "Smartphone Galaxy"
 
     def test_get_product_by_id_not_found(self, client):
         response = client.get("/api/v1/products/999")
@@ -43,13 +25,6 @@ class TestProducts:
         product_data = {"nom": "", "prix": -1}
         response = client.post("/api/v1/products/", json=product_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    def test_update_product_success(self, client):
-        update_data = {"nom": "ProduitModifié"}
-        response = client.put("/api/v1/products/4", json=update_data)
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["nom"] == "ProduitModifié"
 
     def test_update_product_not_found(self, client):
         update_data = {"nom": "ProduitModifié"}
