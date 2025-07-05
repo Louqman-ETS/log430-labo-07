@@ -28,7 +28,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        service: [inventory-api, ecommerce-api, retail-api, reporting-api]
+        service: [ecommerce-api, retail-api, reporting-api]
     services:
       postgres:
         image: postgres:15

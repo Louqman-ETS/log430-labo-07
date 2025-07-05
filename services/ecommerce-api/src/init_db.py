@@ -5,7 +5,17 @@ import logging
 from typing import List
 
 from src.database import engine, Base, SessionLocal
-from src.models import Customer, CustomerAuth, Address, Cart, CartItem, Order, OrderItem
+from src.models import (
+    Customer,
+    CustomerAuth,
+    Address,
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
+    OrderStatus,
+    PaymentStatus,
+)
 import src.schemas as schemas
 
 logger = logging.getLogger(__name__)
@@ -185,8 +195,8 @@ def init_database():
                 order_number="ORD-1703123456",
                 customer_id=customers[0].id,
                 cart_id=None,
-                status=models.OrderStatus.CONFIRMED,
-                payment_status=models.PaymentStatus.PAID,
+                status=OrderStatus.CONFIRMED,
+                payment_status=PaymentStatus.PAID,
                 subtotal=Decimal("109.97"),
                 tax_amount=Decimal("21.99"),
                 shipping_amount=Decimal("0.00"),
@@ -199,8 +209,8 @@ def init_database():
                 order_number="ORD-1703123457",
                 customer_id=customers[1].id,
                 cart_id=None,
-                status=models.OrderStatus.SHIPPED,
-                payment_status=models.PaymentStatus.PAID,
+                status=OrderStatus.SHIPPED,
+                payment_status=PaymentStatus.PAID,
                 subtotal=Decimal("59.97"),
                 tax_amount=Decimal("11.99"),
                 shipping_amount=Decimal("5.00"),
