@@ -826,8 +826,6 @@ GET    /api/v1/dashboards       # Tableaux de bord
 Ce projet utilise des outils de qualité de code pour maintenir un style cohérent :
 
 - **Black 24.4.2** : Formatage automatique du code Python
-- **bandit** : Analyse de sécurité
-- **safety** : Vérification des vulnérabilités
 
 ### Commandes Makefile
 
