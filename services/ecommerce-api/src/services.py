@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Configuration des services externes
 PRODUCTS_API_URL = os.getenv("PRODUCTS_API_URL", "http://inventory-api:8001")
 STOCK_API_URL = os.getenv("STOCK_API_URL", "http://inventory-api:8001")
+KONG_API_KEY = os.getenv("KONG_API_KEY", "admin-api-key-12345")
 
 # Configuration pour l'authentification
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
@@ -28,6 +29,12 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Headers pour Kong
+KONG_HEADERS = {
+    "apikey": KONG_API_KEY,
+    "Content-Type": "application/json"
+}
 
 
 class ExternalServiceError(Exception):
@@ -50,7 +57,8 @@ class ProductService:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"{PRODUCTS_API_URL}/api/v1/products/{product_id}"
+                    f"{PRODUCTS_API_URL}/api/v1/products/{product_id}",
+                    headers=KONG_HEADERS
                 )
 
                 if response.status_code == 404:
@@ -87,7 +95,8 @@ class StockService:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"{STOCK_API_URL}/api/v1/stock/products/{product_id}/stock"
+                    f"{STOCK_API_URL}/api/v1/products/{product_id}/stock",
+                    headers=KONG_HEADERS
                 )
 
                 if response.status_code == 404:

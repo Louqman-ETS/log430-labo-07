@@ -66,6 +66,14 @@ scrape_configs:
     metrics_path: /metrics
     scheme: http
 
+  # Saga Orchestrator API direct metrics
+  - job_name: 'saga-orchestrator-api-direct'
+    static_configs:
+      - targets: ['saga-orchestrator-api:8004']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+
   # Kong proxy metrics for microservices
   - job_name: 'kong-proxy-inventory'
     static_configs:
@@ -99,6 +107,16 @@ scrape_configs:
       - targets: ['kong:8000']
     scrape_interval: 15s
     metrics_path: /reporting/metrics
+    scheme: http
+    params:
+      apikey: ['admin-api-key-12345']
+
+  # Kong proxy saga-orchestrator metrics
+  - job_name: 'kong-proxy-saga'
+    static_configs:
+      - targets: ['kong:8000']
+    scrape_interval: 15s
+    metrics_path: /saga/metrics
     scheme: http
     params:
       apikey: ['admin-api-key-12345']

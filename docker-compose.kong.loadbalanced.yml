@@ -11,6 +11,7 @@ services:
       - retail-api
       - ecommerce-api
       - reporting-api
+      - saga-orchestrator-api
     environment:
       KONG_DATABASE: "off"
       KONG_PROXY_ACCESS_LOG: /dev/stdout
@@ -202,10 +203,13 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@ecommerce-db:5432/ecommerce_db
       - SECRET_KEY=your-super-secret-key-change-in-production
-      - INVENTORY_API_URL=http://inventory-api-1:8001
+      - PRODUCTS_API_URL=http://kong:8000/inventory
+      - STOCK_API_URL=http://kong:8000/inventory
+      - INVENTORY_API_URL=http://kong:8000/inventory
       - KONG_INVENTORY_API_URL=http://kong:8000/inventory
       - REDIS_URL=redis://redis:6379/0
       - INSTANCE_ID=ecommerce-api-1
+      - KONG_API_KEY=admin-api-key-12345
     ports:
       - "8000:8000"
     depends_on:
@@ -251,6 +255,31 @@ services:
       - microservices-network
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Saga Orchestrator API
+  saga-orchestrator-api:
+    build: ./services/saga-orchestrator-api
+    container_name: saga-orchestrator-api
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@saga-db:5432/saga_db
+      - INVENTORY_API_URL=http://kong:8000/inventory
+      - RETAIL_API_URL=http://kong:8000/retail
+      - ECOMMERCE_API_URL=http://kong:8000/ecommerce
+      - REPORTING_API_URL=http://kong:8000/reporting
+      - KONG_API_KEY=admin-api-key-12345
+      - INSTANCE_ID=saga-orchestrator-api-1
+    ports:
+      - "8006:8004"
+    depends_on:
+      saga-db:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -349,6 +378,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # Base de données pour le Saga Orchestrator
+  saga-db:
+    image: postgres:15
+    container_name: saga-db
+    environment:
+      POSTGRES_DB: saga_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - saga_db_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis pour cache et sessions (autres microservices)
   redis:
     image: redis:7-alpine
@@ -376,6 +425,7 @@ volumes:
   retail_db_data:
   ecommerce_db_data:
   reporting_db_data:
+  saga_db_data:
   redis_data:
 
 networks:

@@ -86,6 +86,9 @@ health: ## Vérifie la santé des services
 	@echo ""
 	@curl -s -o /dev/null -w "Instance 3: %{http_code}" http://localhost:8013/health || echo "❌ Instance 3 inaccessible"
 	@echo ""
+	@echo "Saga Orchestrator:"
+	@curl -s -o /dev/null -w "%{http_code}" http://localhost:8006/health || echo "❌ Saga Orchestrator inaccessible"
+	@echo ""
 	@echo "Prometheus:"
 	@curl -s -o /dev/null -w "%{http_code}" $(PROMETHEUS_URL)/-/healthy || echo "❌ Prometheus inaccessible"
 	@echo ""
@@ -106,6 +109,9 @@ test: ## Teste les endpoints via Kong
 	@echo ""
 	@echo "Test reporting via Kong (avec clé API):"
 	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/reporting/health || echo "❌ Reporting via Kong inaccessible"
+	@echo ""
+	@echo "Test saga-orchestrator via Kong (avec clé API):"
+	@curl -s -H "apikey: admin-api-key-12345" $(KONG_PROXY_URL)/saga/health || echo "❌ Saga Orchestrator via Kong inaccessible"
 	@echo ""
 
 monitoring: ## Ouvre les interfaces de monitoring

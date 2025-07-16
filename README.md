@@ -15,6 +15,7 @@ Architecture microservices complète pour la gestion multi-magasins avec API Gat
 - [Évolution du Projet](#évolution-du-projet)
 - [Microservices](#microservices)
 - [Kong API Gateway](#kong-api-gateway)
+- [Saga Orchestrée - Transactions Distribuées](#saga-orchestrée---transactions-distribuées)
 - [Load Balancing et Haute Disponibilité](#load-balancing-et-haute-disponibilité)
 - [Monitoring et Métriques](#monitoring-et-métriques)
 - [Documentation](#documentation)
@@ -35,10 +36,11 @@ Système complet de gestion multi-magasins évoluant d'une architecture monolith
 - **Scalabilité** : Horizontale avec Kong Gateway
 
 ### Fonctionnalités Principales
-- **4 Microservices** : Inventory, Ecommerce, Retail, Reporting
+- **5 Microservices** : Inventory, Ecommerce, Retail, Reporting, Saga Orchestrator
+- **Saga Orchestrée** : Gestion des transactions distribuées
 - **API Gateway** : Kong avec load balancing intelligent
 - **Interface Web** : Application Flask responsive
-- **Monitoring** : Prometheus + Grafana
+- **Monitoring** : Prometheus + Grafana avec dashboards saga
 - **Cache distribué** : Redis avec stratégies TTL
 - **Logs centralisés** : Kong Gateway + structured logging
 
@@ -67,22 +69,22 @@ Système complet de gestion multi-magasins évoluant d'une architecture monolith
 ### Microservices Domain Map
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        DOMAINES MÉTIER                                  │
-├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
-│   INVENTORY     │   ECOMMERCE     │    RETAIL       │   REPORTING       │
-│                 │                 │                 │                   │
-│ • Products      │ • Customers     │ • Stores        │ • Analytics       │
-│ • Categories    │ • Orders        │ • Cash Registers│ • KPIs            │
-│ • Stock Levels  │ • Carts         │ • Sales Trans.  │ • Dashboards      │
-│ • Suppliers     │ • Payments      │ • Returns       │ • Trends          │
-│ • Warehouses    │ • Shipping      │ • Inventory     │ • Forecasting     │
-│                 │                 │                 │                   │
-│ Port: 8001      │ Port: 8002      │ Port: 8003      │ Port: 8004        │
-│ DB: inventory   │ DB: ecommerce   │ DB: retail      │ DB: reporting     │
-└─────────────────┴─────────────────┴─────────────────┴───────────────────┘
-         ↑                   ↑               ↑               ↑
-    Product Catalog     Customer Journey   POS Operations   Business Intel
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                               DOMAINES MÉTIER                                       │
+├─────────────┬─────────────┬─────────────┬─────────────┬───────────────────────────┤
+│ INVENTORY   │ ECOMMERCE   │   RETAIL    │ REPORTING   │    SAGA ORCHESTRATOR      │
+│             │             │             │             │                           │
+│ • Products  │ • Customers │ • Stores    │ • Analytics │ • Transaction Coord.      │
+│ • Categories│ • Orders    │ • Cash Reg. │ • KPIs      │ • Distributed Saga        │
+│ • Stock     │ • Carts     │ • Sales     │ • Dashboard │ • Compensation Logic      │
+│ • Suppliers │ • Payments  │ • Returns   │ • Trends    │ • State Management        │
+│ • Warehouse │ • Shipping  │ • Inventory │ • Forecast  │ • Service Orchestration   │
+│             │             │             │             │                           │
+│ Port: 8001  │ Port: 8002  │ Port: 8003  │ Port: 8004  │ Port: 8005                │
+│ DB: inv     │ DB: ecom    │ DB: retail  │ DB: report  │ DB: saga_orchestrator     │
+└─────────────┴─────────────┴─────────────┴─────────────┴───────────────────────────┘
+      ↑              ↑            ↑            ↑                    ↑
+Product Catalog  Customer Journey POS Ops  Business Intel  Distributed Transactions
 ```
 
 ## Évolution du Projet
@@ -105,6 +107,13 @@ Système complet de gestion multi-magasins évoluant d'une architecture monolith
 - **Prometheus + Grafana** : Monitoring avancé
 - **Logging centralisé** : Traçabilité complète
 - **API Key Management** : Sécurité et rate limiting
+
+### Phase 4 - Lab 6 : Saga Orchestrée et Observabilité
+- **Saga Orchestrator** : Gestion des transactions distribuées
+- **Pattern Saga Orchestrée** : Cohérence des données inter-services
+- **Mécanismes de Compensation** : Annulation automatique en cas d'échec
+- **Observabilité Avancée** : Monitoring et métriques saga
+- **Validation RESTful** : APIs conformes aux standards
 
 ## Microservices
 
@@ -176,6 +185,24 @@ Responsabilités:
   - Prévisions
 ```
 
+### 5. Saga Orchestrator API (Port 8005)
+**Domaine** : Coordination des transactions distribuées
+```yaml
+Endpoints:
+  - POST /api/v1/customers/{customer_id}/order-processing
+  - GET /api/v1/sagas/{saga_id}
+  - GET /api/v1/sagas
+  - GET /api/v1/health
+  - GET /metrics
+
+Responsabilités:
+  - Orchestration des sagas
+  - Gestion des compensations
+  - Cohérence des transactions
+  - Monitoring des processus métier
+  - États et historique des sagas
+```
+
 ## Kong API Gateway
 
 ### Configuration Load Balancée
@@ -219,6 +246,215 @@ upstreams:
           interval: 10
           http_failures: 3
 ```
+
+## Saga Orchestrée - Transactions Distribuées
+
+### Architecture Saga
+
+Le système implémente le **pattern Saga Orchestrée** pour maintenir la cohérence des données dans les transactions distribuées qui impliquent plusieurs microservices.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SAGA ORCHESTRATION PATTERN                           │
+├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
+│ ORCHESTRATEUR   │   PARTICIPANTS  │   COMPENSATIONS │   OBSERVABILITÉ   │
+│                 │                 │                 │                   │
+│ • Central       │ • Inventory API │ • Release Stock │ • État Temps Réel │
+│ • Stateful      │ • Ecommerce API │ • Cancel Order  │ • Métriques       │
+│ • Sequential    │ • Sync Calls    │ • Refund Pay    │ • Dashboards      │
+│ • Compensate    │ • Independent   │ • Automatic     │ • Logs Saga       │
+│ • Monitor       │ • RESTful       │ • Reversible    │ • Alerting        │
+│                 │                 │                 │                   │
+│ Port: 8005      │ Ports: 8001-2   │ Inverse Order   │ Port: 3000        │
+└─────────────────┴─────────────────┴─────────────────┴───────────────────┘
+         ↑                   ↑               ↑               ↑
+   Central Control     Domain Services   Error Recovery   Real-time View
+```
+
+### Workflow de Traitement de Commande
+
+#### Étapes de la Saga
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : Saga créée
+    
+    PENDING --> STOCK_CHECKING : Vérification stock
+    STOCK_CHECKING --> STOCK_RESERVED : Stock disponible
+    STOCK_RESERVED --> ORDER_CREATED : Commande créée
+    ORDER_CREATED --> PAYMENT_PROCESSING : Traitement paiement
+    PAYMENT_PROCESSING --> PAYMENT_COMPLETED : Paiement réussi
+    PAYMENT_COMPLETED --> COMPLETED : ✅ Succès
+    
+    STOCK_CHECKING --> COMPENSATING : ❌ Échec
+    STOCK_RESERVED --> COMPENSATING : ❌ Échec  
+    ORDER_CREATED --> COMPENSATING : ❌ Échec
+    PAYMENT_PROCESSING --> COMPENSATING : ❌ Échec
+    
+    COMPENSATING --> COMPENSATED : Compensations OK
+    COMPENSATING --> FAILED : Échec critique
+```
+
+#### Scénario de Succès
+
+```yaml
+POST /customers/123/order-processing
+Payload:
+  products:
+    - product_id: 1
+      quantity: 2
+    - product_id: 5
+      quantity: 1
+  shipping_address: "123 Main St"
+  billing_address: "123 Main St"
+  payment_method: "credit_card"
+
+Flux d'exécution:
+  1. CHECK_STOCK     → ✅ Produits disponibles
+  2. RESERVE_STOCK   → ✅ Stock réservé
+  3. CREATE_ORDER    → ✅ Commande créée (ID: 456)
+  4. PROCESS_PAYMENT → ✅ Paiement traité (ID: 789)
+  5. CONFIRM_ORDER   → ✅ Commande confirmée
+
+Résultat: COMPLETED - Transaction réussie
+```
+
+#### Scénario d'Échec avec Compensation
+
+```yaml
+POST /customers/99999/order-processing
+# Customer inexistant
+
+Flux d'exécution:
+  1. CHECK_STOCK     → ✅ Produits disponibles
+  2. RESERVE_STOCK   → ✅ Stock réservé
+  3. CREATE_ORDER    → ❌ Customer 99999 not found
+
+Compensations automatiques:
+  1. RELEASE_STOCK   → ✅ Stock libéré
+
+Résultat: COMPENSATED - Système cohérent
+```
+
+### Mécanismes de Compensation
+
+#### Mapping Actions ↔ Compensations
+
+| Action Originale | Compensation | Description |
+|-----------------|-------------|-------------|
+| `CHECK_STOCK` | Aucune | Lecture seule |
+| `RESERVE_STOCK` | `RELEASE_STOCK` | Libère le stock réservé |
+| `CREATE_ORDER` | `CANCEL_ORDER` | Annule la commande |
+| `PROCESS_PAYMENT` | `REFUND_PAYMENT` | Rembourse le paiement |
+| `CONFIRM_ORDER` | Aucune | Étape finale |
+
+#### Ordre d'Exécution
+
+Les compensations sont exécutées dans l'**ordre inverse** des étapes réussies, garantissant une restauration cohérente de l'état du système.
+
+### APIs Saga
+
+#### Démarrage de Saga
+```bash
+# Nouvelle commande pour customer existant
+curl -X POST "http://localhost:8000/api/v1/customers/123/order-processing" \
+  -H "X-API-Key: admin-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": [
+      {"product_id": 1, "quantity": 2},
+      {"product_id": 5, "quantity": 1}
+    ],
+    "shipping_address": "123 Main St",
+    "billing_address": "123 Main St",
+    "payment_method": "credit_card"
+  }'
+
+# Réponse
+{
+  "saga_id": "saga_12345",
+  "status": "started",
+  "message": "Order processing saga started successfully"
+}
+```
+
+#### Suivi de Saga
+```bash
+# État d'une saga spécifique
+curl -X GET "http://localhost:8000/api/v1/sagas/saga_12345" \
+  -H "X-API-Key: admin-key-12345"
+
+# Réponse
+{
+  "saga_id": "saga_12345",
+  "status": "COMPLETED",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:45Z",
+  "duration": 45.2,
+  "steps": [
+    {"step": "CHECK_STOCK", "status": "SUCCESS", "duration": 0.1},
+    {"step": "RESERVE_STOCK", "status": "SUCCESS", "duration": 0.2},
+    {"step": "CREATE_ORDER", "status": "SUCCESS", "duration": 0.3},
+    {"step": "PROCESS_PAYMENT", "status": "SUCCESS", "duration": 2.1},
+    {"step": "CONFIRM_ORDER", "status": "SUCCESS", "duration": 0.1}
+  ]
+}
+```
+
+#### Liste des Sagas
+```bash
+# Toutes les sagas récentes
+curl -X GET "http://localhost:8000/api/v1/sagas?limit=10" \
+  -H "X-API-Key: admin-key-12345"
+```
+
+### Observabilité Saga
+
+#### Métriques Prometheus Spécifiques
+
+```yaml
+# Compteurs de sagas
+saga_orchestrator_sagas_total{status="completed|compensated|failed"}
+
+# Durée des sagas  
+saga_orchestrator_saga_duration_seconds
+
+# Étapes détaillées
+saga_orchestrator_saga_steps_total{step="CHECK_STOCK|RESERVE_STOCK|...", status="success|failure"}
+
+# Compensations
+saga_orchestrator_compensations_total{compensation_type="RELEASE_STOCK|CANCEL_ORDER|..."}
+
+# Participants
+saga_orchestrator_service_calls_total{service="inventory|ecommerce", status="success|failure"}
+```
+
+#### Dashboard Grafana Saga
+
+Le dashboard de monitoring affiche :
+- **Total des Sagas** (complétées/compensées/échouées)
+- **Statut en Temps Réel** de la dernière saga
+- **Durée Moyenne** par étape
+- **Taux de Succès** global
+- **Métriques de Compensation** par type
+- **Performance des Services** participants
+
+### Avantages de l'Approche
+
+#### Cohérence des Données
+- **Atomicité distribuée** : Toutes les étapes réussissent ou sont annulées
+- **Isolation** : Chaque saga maintient son propre contexte
+- **Durabilité** : État persisté en base PostgreSQL
+
+#### Résilience
+- **Compensation automatique** : Annulation des actions en cas d'échec
+- **Retry policies** : Gestion des erreurs transitoires  
+- **Circuit breaker** : Protection contre les pannes en cascade
+
+#### Observabilité
+- **Traçabilité complète** : Historique de chaque étape
+- **Monitoring temps réel** : Dashboards et alertes
+- **Debugging facilité** : Logs structurés avec contexte complet
 
 ### Plugins Kong Configurés
 
@@ -427,6 +663,13 @@ services:
 - total_products_sold
 - inventory_low_stock_alerts
 - average_order_value
+
+# Saga Orchestrator
+- saga_orchestrator_sagas_total{status="completed|compensated|failed"}
+- saga_orchestrator_saga_duration_seconds
+- saga_orchestrator_saga_steps_total{step, status}
+- saga_orchestrator_compensations_total{compensation_type}
+- saga_orchestrator_service_calls_total{service, status}
 ```
 
 ### Dashboards Grafana
@@ -449,14 +692,23 @@ services:
 - **Customer Activity** : Activité client
 - **System Health** : Santé globale du système
 
+#### 4. Saga Orchestrator Dashboard
+- **Saga Status Overview** : Répartition complétées/compensées/échouées
+- **Real-time Saga State** : État de la dernière saga exécutée
+- **Step Performance** : Durée moyenne par étape de saga
+- **Compensation Metrics** : Fréquence et types de compensations
+- **Service Reliability** : Taux de succès des appels inter-services
+
 ## Documentation
 
 ### Documentation Technique
 
 #### 1. Architecture Documentation
-- **[Rapport Arc42](docs/rapport-arc42/rapport-arc42-microservices.md)** : Architecture complète
-- **[Vues 4+1](docs/docs4+1/)** : Diagrammes PlantUML
-- **[ADR](docs/ADR/)** : Décisions architecturales
+- **[Rapport Arc42](docs-etape2/rapport-arc42/rapport-arc42-microservices.md)** : Architecture microservices
+- **[Rapport Saga Orchestrée](docs-etape3/rapport-saga-orchestrateur.md)** : Transactions distribuées
+- **[Vues 4+1](docs-etape2/docs4+1/)** : Diagrammes PlantUML
+- **[ADR](docs-etape2/ADR/)** : Décisions architecturales microservices
+- **[ADR Saga](docs-etape3/ADR/)** : Décisions architecturales saga
 
 #### 2. Documentation API
 - **OpenAPI Specs** : Documentation automatique par service
@@ -618,6 +870,34 @@ export let options = {
 };
 ```
 
+#### 3. Test de Saga
+```bash
+# Tests fonctionnels des sagas
+./test-saga-rapport.sh
+
+# Test saga réussie
+curl -X POST "http://localhost:8000/api/v1/customers/1/order-processing" \
+  -H "X-API-Key: admin-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": [{"product_id": 1, "quantity": 1}],
+    "shipping_address": "123 Main St",
+    "billing_address": "123 Main St", 
+    "payment_method": "credit_card"
+  }'
+
+# Test saga avec compensation (customer inexistant)
+curl -X POST "http://localhost:8000/api/v1/customers/99999/order-processing" \
+  -H "X-API-Key: admin-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": [{"product_id": 1, "quantity": 1}],
+    "shipping_address": "123 Main St",
+    "billing_address": "123 Main St",
+    "payment_method": "credit_card"
+  }'
+```
+
 ### Résultats de Performance
 
 #### Benchmarks Atteints
@@ -694,6 +974,7 @@ docker-compose exec inventory-1 python src/init_db.py
 docker-compose exec ecommerce-1 python src/init_db.py
 docker-compose exec retail-1 python src/init_db.py
 docker-compose exec reporting-1 python src/init_db.py
+docker-compose exec saga-orchestrator-1 python src/init_db.py
 ```
 
 ## Utilisation
@@ -711,6 +992,21 @@ curl -X GET "http://localhost:9000/api/v1/products" \
 
 curl -X GET "http://localhost:9000/api/v1/stores" \
   -H "X-API-Key: frontend-key-67890"
+
+# Démarrage d'une saga de commande
+curl -X POST "http://localhost:9000/api/v1/customers/1/order-processing" \
+  -H "X-API-Key: admin-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "products": [{"product_id": 1, "quantity": 2}],
+    "shipping_address": "123 Main St",
+    "billing_address": "123 Main St",
+    "payment_method": "credit_card"
+  }'
+
+# Suivi d'une saga
+curl -X GET "http://localhost:9000/api/v1/sagas/saga_12345" \
+  -H "X-API-Key: admin-key-12345"
 ```
 
 #### Interface Web Flask
@@ -770,6 +1066,15 @@ GET    /api/v1/reports/sales    # Rapports de ventes
 GET    /api/v1/reports/inventory # Rapports d'inventaire
 GET    /api/v1/analytics/trends # Analyses de tendances
 GET    /api/v1/dashboards       # Tableaux de bord
+```
+
+#### Saga Orchestrator Service
+```bash
+POST   /api/v1/customers/{id}/order-processing  # Démarrer saga commande
+GET    /api/v1/sagas/{saga_id}                  # État d'une saga
+GET    /api/v1/sagas                            # Liste des sagas
+GET    /api/v1/health                           # Santé du service
+GET    /metrics                                 # Métriques Prometheus
 ```
 
 ## Technologies Utilisées

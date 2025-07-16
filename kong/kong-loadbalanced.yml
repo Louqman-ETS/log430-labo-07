@@ -245,6 +245,60 @@ services:
         config:
           key_names:
             - apikey
+  - name: saga-orchestrator-api
+    url: http://saga-orchestrator-api:8004
+    connect_timeout: 60000
+    write_timeout: 60000
+    read_timeout: 60000
+    retries: 5
+    routes:
+      - name: saga-route
+        paths:
+          - /saga
+        strip_path: true
+        preserve_host: false
+    plugins:
+      # Plugin CORS pour saga-orchestrator-api
+      - name: cors
+        config:
+          origins:
+            - "http://localhost:3000"
+            - "http://localhost:8080"
+            - "http://localhost:5000"
+            - "https://yourdomain.com"
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - apikey
+            - X-Request-ID
+          exposed_headers:
+            - X-Auth-Token
+            - X-Request-ID
+            - X-RateLimit-Limit
+            - X-RateLimit-Remaining
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      # Plugin d'authentification
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
 # Configuration des consommateurs et clés API
 consumers:
   - username: admin-user
