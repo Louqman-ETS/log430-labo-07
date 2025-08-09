@@ -48,30 +48,7 @@ Notre implémentation utilise le **pattern Saga Orchestrée** avec les caractér
 
 ## 2. Diagramme de la Machine d'État
 
-```mermaid
-stateDiagram-v2
-    [*] --> PENDING : Saga créée
-    
-    PENDING --> STOCK_CHECKING : Début vérification stock
-    STOCK_CHECKING --> STOCK_RESERVED : Stock disponible
-    STOCK_RESERVED --> ORDER_CREATED : Commande créée
-    ORDER_CREATED --> PAYMENT_PROCESSING : Traitement paiement
-    PAYMENT_PROCESSING --> PAYMENT_COMPLETED : Paiement réussi
-    PAYMENT_COMPLETED --> COMPLETED : Confirmation finale
-    
-    STOCK_CHECKING --> COMPENSATING : Échec vérification
-    STOCK_RESERVED --> COMPENSATING : Échec création commande
-    ORDER_CREATED --> COMPENSATING : Échec paiement
-    PAYMENT_PROCESSING --> COMPENSATING : Échec paiement
-    PAYMENT_COMPLETED --> COMPENSATING : Échec confirmation
-    
-    COMPENSATING --> COMPENSATED : Compensations terminées
-    COMPENSATING --> FAILED : Échec compensation
-    
-    COMPLETED --> [*] : Transaction réussie
-    COMPENSATED --> [*] : Transaction annulée
-    FAILED --> [*] : Échec critique
-```
+![Saga Complétée](../out/docs-etape3/test/saga_orchestrator_state.svg)
 
 ### 2.1 États de la Saga
 

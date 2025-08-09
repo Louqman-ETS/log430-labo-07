@@ -9,68 +9,13 @@ Panier e‑commerce (création de panier, ajout d’articles, checkout). À la c
 - Event Store: PostgreSQL (`event-store-db`).
 - CQRS: Commandes côté `ecommerce-api`; requêtes via read models (`event-audit-api`).
 
-```mermaid
-graph LR
-  subgraph "Command Side (Write)"
-    EC[ecommerce-api]
-  end
-
-  subgraph "Event Bus"
-    BUS[Redis Streams]
-  end
-
-  subgraph "Consumers"
-    AUD[event-audit-api]
-    NOTIF[event-notifier]
-  end
-
-  subgraph "Event Store & Read Models"
-    ES[(PostgreSQL event_store)]
-    RM[Read Model: Cart Projection]
-  end
-
-  EC -->|publish CartCreated\nCartItemAdded\nCartCheckedOut\nOrderCreated| BUS
-  BUS -->|XREADGROUP| AUD
-  BUS -->|XREADGROUP| NOTIF
-  AUD -->|persist events| ES
-  AUD -->|replay/projection| RM
-```
+![Saga Complétée](../out/docs-etape3/test/sarchitecture_evementielle.svg)
 
 *Figure : Schéma de l’architecture événementielle.* 
 
 ## Diagramme de séquence – Saga chorégraphiée
 
-```mermaid
-sequenceDiagram
-    title Saga chorégraphiée - Checkout Order
-
-    actor Client
-    participant EC as ecommerce-api
-    participant BUS as Redis Streams / Event Bus
-    participant INV as inventory-saga-consumer
-    participant AUD as event-audit-api
-
-    Client->>EC: POST /api/v1/orders/checkout
-    EC->>EC: Crée Order + OrderItems
-    EC->>BUS: OrderCreated(items, total)
-    BUS-->>AUD: consume & store
-    BUS-->>INV: consume OrderCreated
-    INV->>INV: Réserver stock par item
-    alt Réservation OK
-        INV->>BUS: StockReserved(order_id)
-        BUS-->>AUD: consume & store
-    else Échec partiel
-        INV->>BUS: StockReservationFailed(order_id, details)
-        BUS-->>AUD: consume & store
-    end
-
-    Client->>EC: POST /api/v1/orders/{id}/simulate-payment-failure
-    EC->>BUS: PaymentFailed(order_id, items)
-    BUS-->>INV: consume PaymentFailed
-    INV->>INV: Compensation: restituer stock
-    INV->>BUS: StockCompensated(order_id)
-    BUS-->>AUD: consume & store
-```
+![Saga Complétée](../out/docs-etape3/test/saga_choreography.svg)
 
 *Figure : Diagramme de séquence de la saga chorégraphiée (checkout et compensation).* 
 
