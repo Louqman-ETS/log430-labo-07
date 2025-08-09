@@ -251,27 +251,7 @@ services:
 
 # Configuration des upstreams pour load balancing
 upstreams:
-  - name: inventory-api-upstream
-    algorithm: round-robin
-    healthchecks:
-      active:
-        type: http
-        http_path: "/health"
-        healthy:
-          interval: 10
-          successes: 2
-        unhealthy:
-          interval: 10
-          http_failures: 3
-          tcp_failures: 3
-          timeouts: 3
-    targets:
-      - target: inventory-api-1:8001
-        weight: 100
-      - target: inventory-api-2:8001
-        weight: 100
-      - target: inventory-api-3:8001
-        weight: 100
+  # (supprimé) upstreams load balancing — single instance mapping via service URLs
 
 # Configuration des consommateurs et clés API
 consumers:

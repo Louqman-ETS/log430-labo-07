@@ -1,13 +1,10 @@
 services:
-  # Kong Gateway (mode declarative sans DB)
   kong:
     image: kong/kong-gateway:3.4.1.1
     container_name: kong-gateway
     user: "kong"
     depends_on:
-      - inventory-api-1
-      - inventory-api-2
-      - inventory-api-3
+      - inventory-api
       - retail-api
       - ecommerce-api
       - reporting-api
@@ -23,31 +20,24 @@ services:
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
       KONG_LOG_LEVEL: info
       KONG_PLUGINS: bundled,key-auth,rate-limiting,request-transformer,response-transformer,prometheus
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong-loadbalanced.yml
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong-declarative.yml
     ports:
-      - "9000:8000"   # Proxy
-      - "9443:8443"   # Proxy SSL
-      - "9001:8001"   # Admin API
-      - "9444:8444"   # Admin API SSL
-      - "9002:8002"   # Manager GUI
-      - "9445:8445"   # Manager GUI SSL
+      - "9000:8000"
+      - "9443:8443"
+      - "9001:8001"
+      - "9444:8444"
+      - "9002:8002"
+      - "9445:8445"
     volumes:
-      - ./kong/kong-loadbalanced.yml:/kong/declarative/kong-loadbalanced.yml:ro
+      - ./kong/kong-declarative.yml:/kong/declarative/kong-declarative.yml:ro
       - kong_prefix_vol:/var/lib/kong
       - kong_tmp_vol:/tmp
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
     networks:
       - microservices-network
 
-  # Prometheus pour la collecte de métriques
   prometheus:
     image: prom/prometheus:v2.47.2
-    container_name: prometheus-kong-lb
+    container_name: prometheus-kong
     ports:
       - "9090:9090"
     volumes:
@@ -57,31 +47,20 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
-      - '--web.external-url=http://localhost:9090'
+      - '--storage.tsdb.retention.time=30d'
     networks:
       - microservices-network
     depends_on:
       - kong
-      - inventory-api-1
-      - inventory-api-2
-      - inventory-api-3
+      - inventory-api
       - retail-api
       - ecommerce-api
       - reporting-api
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Grafana pour la visualisation
   grafana:
     image: grafana/grafana:10.2.0
-    container_name: grafana-kong-lb
+    container_name: grafana-kong
     ports:
       - "3000:3000"
     environment:
@@ -95,27 +74,21 @@ services:
       - microservices-network
     depends_on:
       - prometheus
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Instance 1 du service inventory-api
-  inventory-api-1:
+  inventory-api:
     build: ./services/inventory-api
-    container_name: inventory-api-1
+    container_name: inventory-api
     environment:
       - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
-      - REDIS_URL=redis://redis-lb:6379
+      - REDIS_URL=redis://redis:6379
       - INSTANCE_ID=inventory-api-1
       - PORT=8001
     ports:
-      - "8011:8001"
+      - "8014:8001"
     depends_on:
       inventory-db-lb:
         condition: service_healthy
-      redis-lb:
+      redis:
         condition: service_healthy
     networks:
       - microservices-network
@@ -126,57 +99,6 @@ services:
       retries: 3
       start_period: 30s
 
-  # Instance 2 du service inventory-api
-  inventory-api-2:
-    build: ./services/inventory-api
-    container_name: inventory-api-2
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
-      - REDIS_URL=redis://redis-lb:6379
-      - INSTANCE_ID=inventory-api-2
-      - PORT=8001
-    ports:
-      - "8012:8001"
-    depends_on:
-      inventory-db-lb:
-        condition: service_healthy
-      redis-lb:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Instance 3 du service inventory-api
-  inventory-api-3:
-    build: ./services/inventory-api
-    container_name: inventory-api-3
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@inventory-db-lb:5432/inventory_db
-      - REDIS_URL=redis://redis-lb:6379
-      - INSTANCE_ID=inventory-api-3
-      - PORT=8001
-    ports:
-      - "8013:8001"
-    depends_on:
-      inventory-db-lb:
-        condition: service_healthy
-      redis-lb:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=5)"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
-  # Retail API
   retail-api:
     build: ./services/retail-api
     container_name: retail-api
@@ -195,8 +117,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
-  # Ecommerce API
   ecommerce-api:
     build: ./services/ecommerce-api
     container_name: ecommerce-api
@@ -210,6 +132,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - INSTANCE_ID=ecommerce-api-1
       - KONG_API_KEY=admin-api-key-12345
+      - EVENT_BUS_URL=redis://redis:6379/0
+      - EVENT_STREAM=ecommerce.carts.events
+      - ORDERS_EVENT_STREAM=ecommerce.orders.events
+      - PAYMENTS_EVENT_STREAM=ecommerce.payments.events
     ports:
       - "8000:8000"
     depends_on:
@@ -217,7 +143,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      inventory-api-1:
+      event-store-db:
+        condition: service_started
+      inventory-api:
         condition: service_healthy
     networks:
       - microservices-network
@@ -226,14 +154,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
-  # Reporting API
   reporting-api:
     build: ./services/reporting-api
     container_name: reporting-api
     environment:
       - REPORTING_DATABASE_URL=postgresql://postgres:password@reporting-db:5432/reporting_db
-      - INVENTORY_API_URL=http://inventory-api-1:8001/api/v1
+      - INVENTORY_API_URL=http://inventory-api:8001/api/v1
       - RETAIL_API_URL=http://retail-api:8002/api/v1
       - ECOMMERCE_API_URL=http://ecommerce-api:8000/api/v1
       - KONG_INVENTORY_API_URL=http://kong:8000/inventory/api/v1
@@ -245,7 +173,7 @@ services:
     depends_on:
       reporting-db:
         condition: service_healthy
-      inventory-api-1:
+      inventory-api:
         condition: service_healthy
       retail-api:
         condition: service_healthy
@@ -258,8 +186,81 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
-  # Saga Orchestrator API
+  event-audit-api:
+    build: ./services/event-audit-api
+    container_name: event-audit-api
+    environment:
+      - EVENT_STORE_URL=postgresql://postgres:password@event-store-db:5432/event_store
+      - EVENT_BUS_URL=redis://redis:6379/0
+      - EVENT_STREAM=ecommerce.carts.events
+      - EVENT_GROUP=audit-consumers
+      - INSTANCE_ID=event-audit-api-1
+    depends_on:
+      event-store-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8010:8010"
+    command: ["python", "-m", "src.uvicorn_runner"]
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  event-notifier:
+    build: ./services/event-notifier
+    container_name: event-notifier
+    environment:
+      - EVENT_BUS_URL=redis://redis:6379/0
+      - EVENT_STREAM=ecommerce.carts.events
+      - EVENT_GROUP=notifier-consumers
+      - INSTANCE_ID=event-notifier-1
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8011:8011"
+    command: ["python", "-m", "src.uvicorn_runner"]
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8011/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  inventory-saga-consumer:
+    build: ./services/inventory-saga-consumer
+    container_name: inventory-saga-consumer
+    environment:
+      - EVENT_BUS_URL=redis://redis:6379/0
+      - ORDERS_EVENT_STREAM=ecommerce.orders.events
+      - PAYMENTS_EVENT_STREAM=ecommerce.payments.events
+      - INVENTORY_API_URL=http://inventory-api:8001
+      - EVENT_GROUP=inventory-saga
+      - INSTANCE_ID=inventory-saga-1
+    depends_on:
+      redis:
+        condition: service_healthy
+      inventory-api:
+        condition: service_healthy
+    ports:
+      - "8012:8012"
+    command: ["python", "-m", "src.uvicorn_runner"]
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8012/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   saga-orchestrator-api:
     build: ./services/saga-orchestrator-api
     container_name: saga-orchestrator-api
@@ -284,7 +285,25 @@ services:
       timeout: 10s
       retries: 3
 
-  # Base de données partagée pour inventory-api (load balanced)
+  event-store-db:
+    image: postgres:15
+    container_name: event-store-db
+    environment:
+      POSTGRES_DB: event_store
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - event_store_db_data:/var/lib/postgresql/data
+    ports:
+      - "5460:5432"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   inventory-db-lb:
     image: postgres:15
     container_name: inventory-db-lb
@@ -300,27 +319,10 @@ services:
       - inventory_db_lb_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis partagé pour inventory-api
-  redis-lb:
-    image: redis:7-alpine
-    container_name: redis-lb
-    ports:
-      - "6389:6379"
-    networks:
-      - microservices-network
-    volumes:
-      - redis_lb_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # Bases de données pour les autres microservices
   retail-db:
     image: postgres:15
     container_name: retail-db
@@ -378,7 +380,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Base de données pour le Saga Orchestrator
   saga-db:
     image: postgres:15
     container_name: saga-db
@@ -398,7 +399,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis pour cache et sessions (autres microservices)
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -421,13 +421,13 @@ volumes:
   prometheus_data:
   grafana_data:
   inventory_db_lb_data:
-  redis_lb_data:
   retail_db_data:
   ecommerce_db_data:
   reporting_db_data:
   saga_db_data:
   redis_data:
+  event_store_db_data:
 
 networks:
   microservices-network:
-    driver: bridge 
+    driver: bridge

@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+
+package "Command Side (Write)" {
+  [ecommerce-api]
+}
+
+package "Event Bus" {
+  [Redis Streams] as Redis
+}
+
+package "Consumers" {
+  [event-audit-api]
+  [event-notifier]
+}
+
+package "Event Store & Read Models" {
+  database "PostgreSQL (event_store)" as EventStore
+  [Read Model: Cart Projection]
+}
+
+[ecommerce-api] --> Redis : publish CartCreated\\nCartItemAdded\\nCartCheckedOut\\nOrderCreated
+Redis --> [event-audit-api] : XREADGROUP
+Redis --> [event-notifier] : XREADGROUP
+[event-audit-api] --> EventStore : persist events
+[event-audit-api] --> [Read Model: Cart Projection] : replay/projection
+
+@enduml
+
+@startuml saga_choreography
+title Saga chorégraphiée - Checkout Order
+
+actor Client
+participant "ecommerce-api" as EC
+participant "Redis Streams\nEvent Bus" as BUS
+participant "inventory-saga-consumer" as INV
+participant "event-audit-api" as AUD
+
+Client -> EC: POST /api/v1/orders/checkout
+EC -> EC: Crée Order + OrderItems
+EC -> BUS: OrderCreated(items, total) on ecommerce.orders.events
+BUS -> AUD: consume & store
+BUS -> INV: consume OrderCreated
+INV -> INV: Réserver stock par item
+alt Réservation OK
+    INV -> BUS: StockReserved(order_id)
+    BUS -> AUD: consume & store
+else Échec partiel
+    INV -> BUS: StockReservationFailed(order_id, details)
+    BUS -> AUD: consume & store
+end
+
+Client -> EC: POST /api/v1/orders/{id}/simulate-payment-failure
+EC -> BUS: PaymentFailed(order_id, items) on ecommerce.payments.events
+BUS -> INV: consume PaymentFailed
+INV -> INV: Compensation: restituer stock
+INV -> BUS: StockCompensated(order_id)
+BUS -> AUD: consume & store
+
+@enduml

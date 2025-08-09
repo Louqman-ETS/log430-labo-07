@@ -2,7 +2,7 @@
 .PHONY: help build up down status logs clean network init test
 
 # Variables
-COMPOSE_FILE=docker-compose.kong.loadbalanced.yml
+COMPOSE_FILE=docker-compose.kong.yml
 NETWORK_NAME=microservices-network
 KONG_ADMIN_URL=http://localhost:9001
 KONG_PROXY_URL=http://localhost:9000

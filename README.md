@@ -539,8 +539,7 @@ consumers:
 
 ### Configuration Haute Disponibilité
 
-```yaml
-# docker-compose.kong.loadbalanced.yml
+# docker-compose.kong.yml
 version: '3.8'
 
 services:
@@ -747,7 +746,7 @@ cd log430-labo-05
 make -f Makefile.kong.loadbalanced up
 
 # Ou avec Docker Compose
-docker-compose -f docker-compose.kong.loadbalanced.yml up -d
+docker-compose -f docker-compose.kong.yml up -d
 ```
 
 #### 2. Vérification des Services

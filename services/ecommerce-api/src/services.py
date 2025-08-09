@@ -15,6 +15,7 @@ from decimal import Decimal
 
 import src.models as models
 import src.schemas as schemas
+from src.events import EventPublisher
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 PRODUCTS_API_URL = os.getenv("PRODUCTS_API_URL", "http://inventory-api:8001")
 STOCK_API_URL = os.getenv("STOCK_API_URL", "http://inventory-api:8001")
 KONG_API_KEY = os.getenv("KONG_API_KEY", "admin-api-key-12345")
+ORDERS_EVENT_STREAM = os.getenv("ORDERS_EVENT_STREAM", "ecommerce.orders.events")
+PAYMENTS_EVENT_STREAM = os.getenv("PAYMENTS_EVENT_STREAM", "ecommerce.payments.events")
 
 # Configuration pour l'authentification
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
@@ -454,6 +457,7 @@ class CartService:
 
     def __init__(self, db: Session):
         self.db = db
+        self.publisher = EventPublisher()
 
     def get_carts(
         self,
@@ -513,6 +517,20 @@ class CartService:
         self.db.add(db_cart)
         self.db.commit()
         self.db.refresh(db_cart)
+        # Publish domain event
+        try:
+            self.publisher.publish(
+                event_type="CartCreated",
+                aggregate_type="Cart",
+                aggregate_id=db_cart.id,
+                data={
+                    "customer_id": db_cart.customer_id,
+                    "session_id": db_cart.session_id,
+                    "expires_at": db_cart.expires_at.isoformat() if db_cart.expires_at else None,
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Failed to publish CartCreated event: {e}")
         return db_cart
 
     def update_cart(
@@ -645,6 +663,21 @@ class CartService:
             self.db.add(db_item)
             self.db.commit()
             self.db.refresh(db_item)
+            # Publish domain event
+            try:
+                self.publisher.publish(
+                    event_type="CartItemAdded",
+                    aggregate_type="Cart",
+                    aggregate_id=cart_id,
+                    data={
+                        "cart_item_id": db_item.id,
+                        "product_id": db_item.product_id,
+                        "quantity": db_item.quantity,
+                        "unit_price": str(db_item.unit_price),
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to publish CartItemAdded event: {e}")
             return db_item
 
     def update_cart_item(
@@ -831,6 +864,7 @@ class OrderService:
         self, checkout_data: schemas.CheckoutRequest
     ) -> models.Order:
         """Traite une commande de checkout depuis un panier"""
+        publisher = EventPublisher()
         # Récupérer le panier
         cart_service = CartService(self.db)
         cart = cart_service.get_cart(checkout_data.cart_id)
@@ -906,7 +940,76 @@ class OrderService:
 
         self.db.commit()
         self.db.refresh(order)
+        # Publish domain events (choreography: include items for downstream services)
+        try:
+            items_payload = [
+                {
+                    "product_id": ci.product_id,
+                    "quantity": ci.quantity,
+                    "unit_price": str(ci.unit_price),
+                }
+                for ci in cart.items
+            ]
+
+            publisher.publish(
+                event_type="OrderCreated",
+                aggregate_type="Order",
+                aggregate_id=order.id,
+                data={
+                    "order_number": order.order_number,
+                    "customer_id": order.customer_id,
+                    "cart_id": order.cart_id,
+                    "total_amount": str(order.total_amount),
+                    "items": items_payload,
+                },
+                stream=ORDERS_EVENT_STREAM,
+            )
+            publisher.publish(
+                event_type="CartCheckedOut",
+                aggregate_type="Cart",
+                aggregate_id=cart.id,
+                data={
+                    "order_id": order.id,
+                    "order_number": order.order_number,
+                    "total_amount": str(order.total_amount),
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Failed to publish checkout events: {e}")
         return order
+
+    def simulate_payment_failure(self, order_id: int) -> bool:
+        """Publie un événement de paiement échoué pour déclencher la compensation (saga chorégraphiée)."""
+        order = self.get_order(order_id)
+        if not order:
+            return False
+        items = self.get_order_items(order_id)
+        items_payload = [
+            {
+                "product_id": it.product_id,
+                "quantity": it.quantity,
+                "unit_price": str(it.unit_price),
+            }
+            for it in items
+        ]
+        publisher = EventPublisher()
+        try:
+            publisher.publish(
+                event_type="PaymentFailed",
+                aggregate_type="Order",
+                aggregate_id=order.id,
+                data={
+                    "order_number": order.order_number,
+                    "customer_id": order.customer_id,
+                    "items": items_payload,
+                    "reason": "simulated_failure",
+                },
+                stream=PAYMENTS_EVENT_STREAM,
+            )
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to publish PaymentFailed: {e}")
+            return False
 
     def update_order_status(
         self, order_id: int, status: schemas.OrderStatus

@@ -194,3 +194,12 @@ def cancel_order(
         return {"message": "Order cancelled successfully", "order_id": order_id}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{order_id}/simulate-payment-failure")
+def simulate_payment_failure(order_id: int, service: OrderService = Depends(get_order_service)):
+    """Simuler l'échec d'un paiement pour déclencher la compensation (saga chorégraphiée)."""
+    ok = service.simulate_payment_failure(order_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Payment failure simulated", "order_id": order_id}
